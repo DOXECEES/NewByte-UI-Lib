@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
 add_executable(${PROJECT_NAME} WIN32 
+
         src/main.cpp
         src/IWindow.cpp
         src/IWindow.hpp
@@ -22,11 +23,14 @@ add_executable(${PROJECT_NAME} WIN32
         src/DoceTree.hpp
         src/ChildWindow.cpp
         src/ChildWindow.hpp
+        src/CaptionButtons.cpp
+        src/CaptionButtons.hpp
 
         src/Renderer/FactorySingleton.cpp
         src/Renderer/FactorySingleton.hpp
         src/Renderer/Renderer.cpp
         src/Renderer/Renderer.hpp
+        
 )
 
 

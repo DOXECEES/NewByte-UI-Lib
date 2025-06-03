@@ -246,6 +246,7 @@ public:
 
         case WM_PAINT:
         {
+            if(this == nullptr) return 0;
             onClientPaint();
             return 0;
         }

@@ -4,6 +4,7 @@
 
 #include <Windows.h>
 #include <cstdint>
+#include <string>
 
 #define DCX_USESTYLE 0x00010000
 
@@ -51,9 +52,45 @@ struct NbColor
         return RGB(r, g, b);
     }
 
-    // связать с движком
+    bool operator==(const NbColor& other) const
+    { 
+        return r == other.r 
+            && g == other.g
+            && b == other.b 
+            && a == other.a; 
+    }
 
+    // связать с движком
 };
+
+// get from boost::hash_combine
+template <class T>
+inline void hash_combine(std::size_t& seed, const T& v)
+{
+    std::hash<T> hasher;
+    seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+}
+
+template <>
+struct std::hash<NbColor>
+{
+  std::size_t operator()(const NbColor& color) const
+  {
+    using std::size_t;
+    using std::hash;
+    using std::string;
+
+
+    size_t seed = 0;
+    hash_combine(seed, color.r);
+    hash_combine(seed, color.g);
+    hash_combine(seed, color.b);
+    hash_combine(seed, color.a);
+
+    return seed;
+  }
+};
+
 
 
 template<typename T>

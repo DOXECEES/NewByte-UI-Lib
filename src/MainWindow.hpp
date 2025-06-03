@@ -18,35 +18,39 @@
 #include "Renderer/FactorySingleton.hpp"
 #include "Renderer/Renderer.hpp"
 
-struct CaptionButton
-{
-    CaptionButton(std::wstring text, int width, int height = 30, NbColor hoverColor = {105, 105, 105})
-        : text(text)
-        , width(width)
-        , height(height)
-        , hoverColor(hoverColor)
-        , func()
-    {
-        rect.bottom = height;
-        rect.left = 0;
-        rect.right = width;
-        rect.top = 0;
-    }
+#include "CaptionButtons.hpp"
 
-    void setFunc(std::function<void()> func)
-    {
-        this->func = func;
-    }
+// struct CaptionButton
+// {
+//     CaptionButton(const std::wstring& text, const int width, const int height = 30, const NbColor& hoverColor = {105, 105, 105})
+//         : text(text)
+//         , width(width)
+//         , height(height)
+//         , hoverColor(hoverColor)
+//         , func()
+//     {
+//         rect.bottom = height;
+//         rect.left = 0;
+//         rect.right = width;
+//         rect.top = 0;
+//     }
 
-    std::function<void()>   func;
+//     void setFunc(std::function<void()> func)
+//     {
+//         this->func = func;
+//     }
 
-    RECT                    rect;
-    std::wstring            text;
-    int                     width;
-    int                     height      = 30;
-    NbColor                 hoverColor;
+//     std::function<void()>   func;
 
-};
+//     RECT                    rect;
+//     std::wstring            text;
+//     int                     width;
+//     int                     height      = 30;
+//     NbColor                 hoverColor;
+//     NbColor                 color;
+// };
+
+
 
 class MainWindow : public IWindow
 {
@@ -76,7 +80,6 @@ public:
 
         initDirect2d();
 
-        SetWindowLongPtr(handle, GWLP_USERDATA, (LONG_PTR)this);
 
         ShowWindow(handle, TRUE);
         UpdateWindow(handle);
@@ -88,7 +91,7 @@ public:
         w1->setBackgroundColor(NbColor(232, 232, 232));
         
         captionButtonColor = renderer.createSolidColorBrush(pRenderTarget, NbColor{ 105, 105, 105 });
-
+        captionButtonsContainer = new CaptionButtons(pRenderTarget);
         //
         prevSize = size;
 
@@ -113,6 +116,13 @@ public:
             CloseWindow(handle); 
         });
 
+        captionButtonsContainer->addButton(captionButtons[0]);
+        captionButtonsContainer->addButton(captionButtons[1]);
+        captionButtonsContainer->addButton(captionButtons[2]);
+
+        SetWindowLongPtr(handle, GWLP_USERDATA, (LONG_PTR)this);
+
+
     }
 
     void onSizeChanged(const NbSize<int>& newSize) override
@@ -125,16 +135,14 @@ public:
         frameColor = renderer.createSolidColorBrush(pRenderTarget, NbColor{ 32, 32, 32 });
         backgroundColor = renderer.createSolidColorBrush(pRenderTarget, NbColor{ 46, 46, 46 });
         captionButtonColor = renderer.createSolidColorBrush(pRenderTarget, NbColor{ 105, 105, 105 });
+
+        captionButtonsContainer->changeRenderTarget(pRenderTarget);
+
         InvalidateRect(handle, nullptr, FALSE);
     }
 
     void onClientPaint() override
     {
-        PAINTSTRUCT ps;
-        BeginPaint(handle, &ps);
-
-
-
         pRenderTarget->BeginDraw();
 
         // Очистка клиентской области (фон)
@@ -156,21 +164,13 @@ public:
         D2D1_RECT_F captionRect = D2D1::RectF(0, 0, width, captionHeight);
         pRenderTarget->FillRectangle(captionRect, frameColor);
 
-        // Рисуем кнопки
-        for (const auto& button : captionButtons)
-        {
-            D2D1_RECT_F buttonRect = D2D1::RectF(static_cast<float>(rc.right - button.width), static_cast<float>(rc.top),
-                static_cast<float>(rc.right), static_cast<float>(rc.top + button.height));
-            pRenderTarget->FillRectangle(buttonRect, captionButtonColor);
-        }
+        captionButtonsContainer->draw();
 
         HRESULT hr = pRenderTarget->EndDraw();
         if (FAILED(hr))
         {
-            // Обработка ошибок рисования
+            auto err = GetLastError();
         }
-
-        EndPaint(handle, &ps);
 
     }
 
@@ -388,6 +388,7 @@ public:
 private:
 
     //DoceTree *tree = nullptr;
+    CaptionButtons* captionButtonsContainer = nullptr;
 
     std::vector<CaptionButton>  captionButtons =
     {

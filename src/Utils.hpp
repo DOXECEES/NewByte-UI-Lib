@@ -3,6 +3,9 @@
 
 #include <Windows.h>
 
+#include <d2d1.h>
+#pragma comment(lib, "d2d1")
+
 #include "Core.hpp"
 
 namespace Utils
@@ -38,23 +41,13 @@ namespace Utils
         return ret;
     }
 
-    bool isPointInsideRect(const NbPoint<int> pos, const RECT& rect)
-    {
-        return rect.bottom > pos.y && rect.top < pos.y 
-                && rect.left < pos.x && rect.right > pos.x;
-    }
+    bool isPointInsideRect(const NbPoint<int> pos, const RECT &rect);
 
-    int getWidthFromRect(const RECT& rect) noexcept
-    {
-        return static_cast<int>(rect.bottom - rect.top);
-    }
+    int getWidthFromRect(const RECT &rect) noexcept;
 
-    int getHeightFromRect(const RECT& rect) noexcept
-    {
-        return static_cast<int>(rect.right - rect.left);
-    }
+    int getHeightFromRect(const RECT &rect) noexcept;
 
-    
+    D2D1::ColorF toD2D1Color(const NbColor &color) noexcept;
 };
 
 #endif

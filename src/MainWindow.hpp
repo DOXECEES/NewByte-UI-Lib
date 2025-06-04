@@ -91,7 +91,8 @@ public:
         w1->setBackgroundColor(NbColor(232, 232, 232));
         
         captionButtonColor = renderer.createSolidColorBrush(pRenderTarget, NbColor{ 105, 105, 105 });
-        captionButtonsContainer = new CaptionButtons(pRenderTarget);
+        captionButtonsContainer = new CaptionButtons(handle);
+        captionButtonRenderer = new CaptionButtonRenderer(pRenderTarget);
         //
         prevSize = size;
 
@@ -136,7 +137,8 @@ public:
         backgroundColor = renderer.createSolidColorBrush(pRenderTarget, NbColor{ 46, 46, 46 });
         captionButtonColor = renderer.createSolidColorBrush(pRenderTarget, NbColor{ 105, 105, 105 });
 
-        captionButtonsContainer->changeRenderTarget(pRenderTarget);
+        captionButtonsContainer->onSizeChanged();
+        captionButtonRenderer->changeRenderTarget(pRenderTarget);
 
         InvalidateRect(handle, nullptr, FALSE);
     }
@@ -164,7 +166,7 @@ public:
         D2D1_RECT_F captionRect = D2D1::RectF(0, 0, width, captionHeight);
         pRenderTarget->FillRectangle(captionRect, frameColor);
 
-        captionButtonsContainer->draw();
+        captionButtonsContainer->draw(*captionButtonRenderer);
 
         HRESULT hr = pRenderTarget->EndDraw();
         if (FAILED(hr))
@@ -389,12 +391,12 @@ private:
 
     //DoceTree *tree = nullptr;
     CaptionButtons* captionButtonsContainer = nullptr;
-
+    CaptionButtonRenderer* captionButtonRenderer = nullptr;
     std::vector<CaptionButton>  captionButtons =
     {
-        {L"✕", 50, 30, {240, 7, 23}},
-        {L"🗖", 30, 30},
-        {L"🗕", 30, 30},
+        { L"✕", 50, 30, {240, 7, 23} },
+        { L"🗖", 30, 30 },
+        { L"🗕", 30, 30 },
     };
 
     ID2D1SolidColorBrush*       captionButtonColor      = nullptr;

@@ -4,6 +4,8 @@
 
 #include <d2d1.h>
 #pragma comment(lib, "d2d1")
+#include <dwrite.h>
+#pragma comment(lib, "dwrite")
 
 namespace Renderer
 {
@@ -25,10 +27,29 @@ namespace Renderer
                 ID2D1Factory* pFactory = getFactory();
                 if (pFactory) pFactory->Release();
             }
+
+            static IDWriteFactory* getDirectWriteFactory()
+            {
+                static IDWriteFactory* writeFactory = nullptr;
+                if (!writeFactory)
+                {
+                    HRESULT hr = DWriteCreateFactory(
+                        DWRITE_FACTORY_TYPE_SHARED,
+                        __uuidof(IDWriteFactory),
+                        reinterpret_cast<IUnknown**>(&writeFactory)
+                    );
+
+                    if(hr != S_OK)
+                    {
+                        return nullptr;
+                    }
+                }
+
+                return writeFactory;
+            }
             
         private:
-
-
+            FactorySingleton() = default;
     };
 };
 

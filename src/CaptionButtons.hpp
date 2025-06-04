@@ -65,7 +65,6 @@ private:
 class ICaptionButtonRenderer
 {
 public:
-    virtual ~ICaptionButtonRenderer() = 0;
     virtual void render(CaptionButton& button) = 0;
 };
 
@@ -76,6 +75,7 @@ public:
     static constexpr int            DEFAULT_FONT_SIZE   = 12;
 
     CaptionButtonRenderer(ID2D1HwndRenderTarget* renderTarget);
+    ~CaptionButtonRenderer() = default;
    
     void changeRenderTarget(ID2D1HwndRenderTarget* renderTarget);
     void render(CaptionButton &button) override;

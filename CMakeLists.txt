@@ -6,33 +6,12 @@ project(NewByte_Engine)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+FILE(GLOB_RECURSE headers "src/*.h")
+FILE(GLOB_RECURSE sources "src/*.cpp")
 
+add_executable(${PROJECT_NAME} WIN32 ${sources} ${headers})
 
-add_executable(${PROJECT_NAME} WIN32 
-
-        src/main.cpp
-        src/IWindow.cpp
-        src/IWindow.hpp
-        src/Core.cpp
-        src/Core.hpp
-        src/MainWindow.cpp
-        src/MainWindow.hpp
-        src/Utils.cpp
-        src/Utils.hpp
-        src/DoceTree.cpp
-        src/DoceTree.hpp
-        src/ChildWindow.cpp
-        src/ChildWindow.hpp
-        src/CaptionButtons.cpp
-        src/CaptionButtons.hpp
-
-        src/Renderer/FactorySingleton.cpp
-        src/Renderer/FactorySingleton.hpp
-        src/Renderer/Renderer.cpp
-        src/Renderer/Renderer.hpp
-        
-)
-
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${sources} ${headers})
 
 
 if(MSVC)

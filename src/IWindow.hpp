@@ -13,8 +13,52 @@
 #include <commctrl.h>
 
 #include <sstream>
+#include <variant>
 
 #include "Core.hpp"
+
+
+class NbWindowHandle
+{
+
+public:
+    enum class PlatformType
+    {
+        WIN,
+        X11
+    };
+
+    static NbWindowHandle fromHwnd(const HWND &handle) { return NbWindowHandle(handle); };
+
+
+    NbWindowHandle() = default;
+
+    template <typename T>
+    T getHandle() const
+    {
+        if (!std::holds_alternative<T>(handle))
+         {
+            throw std::runtime_error("Invalid handle type requested");
+        }
+        return std::get<T>(handle);
+    }
+
+    PlatformType getPlatform() const noexcept { return platform; }
+
+    operator HWND() const { return getHandle<HWND>(); }
+
+private:
+
+    template <typename T,
+              typename = std::enable_if_t<std::disjunction_v<std::is_same<T, HWND>,
+                                                             std::is_same<T, int>>>>
+    explicit NbWindowHandle(const T &handle) { this->handle = handle; }
+
+    
+
+    PlatformType platform = PlatformType::WIN;
+    std::variant <HWND, int> handle;
+};
 
 
 
@@ -144,7 +188,7 @@ protected:
     }
 
 protected:
-    HWND                    handle;
+    NbWindowHandle          handle;
 
     
     Renderer::Renderer      renderer;

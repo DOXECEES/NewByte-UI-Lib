@@ -63,6 +63,27 @@ struct NbColor
     // связать с движком
 };
 
+template<typename T>
+struct NbRect
+{
+
+    NbRect(const T x, const T y, const T width, const T height)
+    : x(x)
+    , y(y)
+    , width(width)
+    , height(height) 
+    {} 
+
+
+    T x         = {};
+    T y         = {};
+    T width     = {};
+    T height    = {};
+
+
+
+};
+
 // get from boost::hash_combine
 template <class T>
 inline void hash_combine(std::size_t& seed, const T& v)

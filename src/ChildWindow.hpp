@@ -29,9 +29,11 @@ public:
 
         size = { 400, 300 };
 
-        handle = CreateWindowEx(0, wc.lpszClassName, L"Child Window",
+        HWND ihandle = CreateWindowEx(0, wc.lpszClassName, L"Child Window",
             WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
             x, y, size.width, size.height, _handle, nullptr, wc.hInstance, nullptr);
+
+        handle = NbWindowHandle::fromHwnd(ihandle);
 
         initDirect2d();
 

@@ -69,9 +69,12 @@ public:
         RegisterClass(&wc);
         size = { 500, 300 };
 
-        handle = CreateWindow(wc.lpszClassName, L"Тёмная тема в WinAPI",
+        HWND _handle = CreateWindow(wc.lpszClassName, L"Тёмная тема в WinAPI",
                               WS_OVERLAPPED | WS_THICKFRAME | WS_CLIPCHILDREN | WS_CLIPSIBLINGS , CW_USEDEFAULT, CW_USEDEFAULT, size.width, size.height,
                               nullptr, nullptr, wc.hInstance, nullptr);
+
+        handle = NbWindowHandle::fromHwnd(_handle);
+
         DWORD style = GetWindowLong(handle, GWL_STYLE);
         style &= ~(WS_CAPTION | WS_THICKFRAME);
         SetWindowLong(handle, GWL_STYLE, style);

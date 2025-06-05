@@ -48,6 +48,31 @@ namespace Utils
     int getHeightFromRect(const RECT &rect) noexcept;
 
     D2D1::ColorF toD2D1Color(const NbColor &color) noexcept;
+
+    template <typename T>
+    constexpr NbSize<T> toNbSize(const SIZE &size) noexcept
+    {
+        return NbSize<T>(static_cast<T>(size.cx), static_cast<T>(size.cy));
+    }
+
+    template <typename T>
+    constexpr NbPoint<T> toNbPoint(const POINT &point) noexcept
+    {
+        return NbPoint<T>(static_cast<T>(point.x), static_cast<T>(point.y));
+    }
+
+    template <typename T>
+    constexpr NbRect<T> toNbRect(const RECT &rect) noexcept
+    {
+        return NbRect<T>(
+            static_cast<T>(rect.left),
+            static_cast<T>(rect.top),
+            static_cast<T>(rect.right - rect.left),
+            static_cast<T>(rect.bottom - rect.top)
+        );
+    }
+    
+
 };
 
 #endif

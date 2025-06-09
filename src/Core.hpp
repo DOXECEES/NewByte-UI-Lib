@@ -1,16 +1,30 @@
 #ifndef SRC_CORE_HPP
 #define SRC_CORE_HPP
 
-
-#include <Windows.h>
 #include <cstdint>
 #include <string>
+#include <variant>
+#include <stdexcept>
 
 #define DCX_USESTYLE 0x00010000
+
+// get from boost::hash_combine
+template <class T>
+inline void hash_combine(std::size_t& seed, const T& v)
+{
+    std::hash<T> hasher;
+    seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+}
+
+
+
 
 template <typename T>
 struct NbPoint
 {
+    constexpr NbPoint() = default;
+    constexpr NbPoint(const T& x, const T& y) : x(x), y(y) {}
+
     T x = {};
     T y = {};
 
@@ -25,6 +39,10 @@ struct NbPoint
 template <typename T>
 struct NbSize
 {
+
+    constexpr NbSize() = default;
+    constexpr NbSize(const T& width, const T& height) : width(width), height(height) {}
+
     T width  = {};
     T height = {};
 
@@ -47,10 +65,6 @@ struct NbColor
         : r(red), g(green), b(blue), a(alpha) {}
 
 
-    operator COLORREF()
-    {
-        return RGB(r, g, b);
-    }
 
     bool operator==(const NbColor& other) const
     { 
@@ -84,13 +98,7 @@ struct NbRect
 
 };
 
-// get from boost::hash_combine
-template <class T>
-inline void hash_combine(std::size_t& seed, const T& v)
-{
-    std::hash<T> hasher;
-    seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-}
+
 
 template <>
 struct std::hash<NbColor>

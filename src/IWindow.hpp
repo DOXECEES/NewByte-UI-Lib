@@ -18,47 +18,6 @@
 #include "Core.hpp"
 
 
-class NbWindowHandle
-{
-
-public:
-    enum class PlatformType
-    {
-        WIN,
-        X11
-    };
-
-    static NbWindowHandle fromHwnd(const HWND &handle) { return NbWindowHandle(handle); };
-
-
-    NbWindowHandle() = default;
-
-    template <typename T>
-    T getHandle() const
-    {
-        if (!std::holds_alternative<T>(handle))
-         {
-            throw std::runtime_error("Invalid handle type requested");
-        }
-        return std::get<T>(handle);
-    }
-
-    PlatformType getPlatform() const noexcept { return platform; }
-
-    operator HWND() const { return getHandle<HWND>(); }
-
-private:
-
-    template <typename T,
-              typename = std::enable_if_t<std::disjunction_v<std::is_same<T, HWND>,
-                                                             std::is_same<T, int>>>>
-    explicit NbWindowHandle(const T &handle) { this->handle = handle; }
-
-    
-
-    PlatformType platform = PlatformType::WIN;
-    std::variant <HWND, int> handle;
-};
 
 
 
@@ -188,14 +147,22 @@ protected:
     }
 
 protected:
+    class WindowState
+    {
+        NbPoint<int>            position            = { };
+        NbSize<int>             size                = { 1, 1 };
+    };
+
     NbWindowHandle          handle;
 
     
     Renderer::Renderer      renderer;
-    ID2D1HwndRenderTarget*  pRenderTarget       = nullptr;
+    // TODO : убрать в рендер
+    ID2D1HwndRenderTarget*  pRenderTarget       = nullptr;  
 
-    ID2D1SolidColorBrush*   backgroundColor     = nullptr;
+    ID2D1SolidColorBrush*   backgroundColor     = nullptr;  
     ID2D1SolidColorBrush*   frameColor          = nullptr;
+    // END_TODO;
 
     FrameSize               frameSize           = {};
     NbPoint<int>            minWindowSize       = { MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT };
@@ -215,7 +182,6 @@ protected:
 public:
     LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
-        
         switch (message)
         {
         case WM_NCCREATE:

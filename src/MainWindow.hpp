@@ -20,6 +20,7 @@
 
 #include "CaptionButtons.hpp"
 
+
 // struct CaptionButton
 // {
 //     CaptionButton(const std::wstring& text, const int width, const int height = 30, const NbColor& hoverColor = {105, 105, 105})
@@ -79,8 +80,6 @@ public:
         style &= ~(WS_CAPTION | WS_THICKFRAME);
         SetWindowLong(handle, GWL_STYLE, style);
         
-
-
         initDirect2d();
 
 

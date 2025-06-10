@@ -17,10 +17,11 @@ namespace WindowInterface
     class WindowState
     {
     public:
-        NbColor         color       = {45, 45, 45};
+        NbColor         color       = { 45, 45, 45 };
         NbColor         frameColor  = { 35, 35, 35 };
         NbSize<int>     size        = { 800, 600 };
         std::wstring    title       = L"Ui-Lib";
+        NbColor         fontColor   = { 255, 255, 255 };
         FrameSize       frameSize;
 
     };

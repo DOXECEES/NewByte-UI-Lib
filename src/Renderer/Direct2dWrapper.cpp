@@ -23,6 +23,16 @@ Direct2dHandleRenderTarget Direct2dWrapper::createRenderTarget(const NbWindowHan
     return Direct2dHandleRenderTarget(renderTarget);
 }
 
+// Direct2dTextFormat Direct2dWrapper::createTextFormat(const std::wstring& font) noexcept
+// {
+//     IDWriteFactory* directFactory = Renderer::FactorySingleton::getDirectWriteFactory();
+//     IDWriteTextFormat* textFormat = nullptr;
+//     directFactory->CreateTextFormat(font.c_str(), nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 12, L"en-us", &textFormat);
+//     textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+//     textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+//     return Direct2dTextFormat(textFormat);
+// }
+
 ID2D1SolidColorBrush *Direct2dWrapper::createSolidColorBrush(const Direct2dHandleRenderTarget &renderTarget, const NbColor &color) noexcept
 {
     return renderTarget.createSolidBrush(color);

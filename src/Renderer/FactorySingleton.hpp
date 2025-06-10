@@ -18,7 +18,10 @@ namespace Renderer
                 static ID2D1Factory* pFactory = nullptr;
                 if (!pFactory)
                 {
-                    D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &pFactory);
+                    D2D1_FACTORY_OPTIONS options = {};
+                    options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+                    D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &pFactory);
+
                 }
                 return pFactory;
             }

@@ -10,8 +10,11 @@ namespace Renderer
     void Direct2dRenderer::render(WindowInterface::IWindow *window) 
     {
         const NbSize<int>& windowSize = window->getSize(); 
+        
 
         renderTarget.beginDraw();
+
+
         renderTarget.fillRectangle({0, 0, windowSize.width, windowSize.height}, window->getColor());
 
         const NbColor &frameColor = window->getFrameColor();
@@ -29,7 +32,15 @@ namespace Renderer
         NbRect<int> rightBorder = {windowSize.width - frameSize.right, frameSize.top, frameSize.right, windowSize.height - frameSize.top - frameSize.bot};
         renderTarget.fillRectangle(rightBorder, frameColor);
 
-        renderTarget.endDraw();
+        renderTarget.drawText(window->getTitle(), {0, 0, windowSize.width, frameSize.top}, window->getFontColor());
+
+
+        HRESULT hr = renderTarget.endDraw();
+
+        if (FAILED(hr)) {
+            OutputDebugString(L"EndDraw failed\n");
+        }
+
     }
     void Direct2dRenderer::resize(WindowInterface::IWindow *window)
     {

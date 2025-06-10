@@ -25,6 +25,8 @@ namespace WindowInterface
         const NbColor& getColor() const noexcept { return state.color; };
         const NbColor& getFrameColor() const noexcept { return state.frameColor; };
         const FrameSize& getFrameSize() const noexcept { return state.frameSize; };
+        const std::wstring& getTitle() const noexcept { return state.title; };
+        const NbColor& getFontColor() const noexcept { return state.fontColor; };
 
     protected:
         NbWindowHandle      handle;

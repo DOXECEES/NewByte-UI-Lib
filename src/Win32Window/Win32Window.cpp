@@ -3,6 +3,7 @@
 #include "../WindowInterface/WindowMapper.hpp"
 #include "../Renderer/Direct2dRenderer.hpp"
 
+
 namespace Win32Window
 {
     Window::Window()
@@ -17,6 +18,14 @@ namespace Win32Window
         HWND _handle = CreateWindow(L"NbWindowClass", L"NbWindow", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, state.size.width, state.size.height, nullptr, nullptr, nullptr, this);
         handle = NbWindowHandle::fromWinHandle(_handle);
         WindowInterface::WindowMapper::registerWindow(handle, this);
+       
+        LONG style = GetWindowLong(handle.as<HWND>(), GWL_STYLE);
+        style &= ~(WS_CAPTION);
+        SetWindowLong(handle.as<HWND>(), GWL_STYLE, style);
+
+        SetWindowPos(handle.as<HWND>(), nullptr, 0, 0, 0, 0,
+                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
+
 
         // renderer
         renderer = new Renderer::Direct2dRenderer(this);

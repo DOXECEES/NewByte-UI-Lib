@@ -33,8 +33,20 @@ public:
         SafeRelease(&renderTarget);
     }
 
+    void beginDraw() noexcept
+    {
+        renderTarget->BeginDraw();
+    }
+
+    HRESULT endDraw() noexcept
+    {
+        return renderTarget->EndDraw();
+    }
+
     void resize(const NbSize<int> &size) noexcept
     {
+        uint32_t dpi = GetDpiForWindow(renderTarget->GetHwnd());
+        renderTarget->SetDpi(dpi, dpi);
         renderTarget->Resize(D2D1::SizeU(size.width, size.height));
     }
 

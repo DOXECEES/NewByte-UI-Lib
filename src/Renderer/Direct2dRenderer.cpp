@@ -5,16 +5,14 @@ namespace Renderer
     Direct2dRenderer::Direct2dRenderer(WindowInterface::IWindow *window)
         : renderTarget(Direct2dWrapper::createRenderTarget(window->getHandle(), window->getSize()))
     {
-
     }
 
     void Direct2dRenderer::render(WindowInterface::IWindow *window) 
     {
         const NbSize<int>& windowSize = window->getSize(); 
 
-        renderTarget.getRawRenderTarget()->BeginDraw();
-        ID2D1SolidColorBrush* brush = renderTarget.createSolidBrush(window->getColor());
-        renderTarget.getRawRenderTarget()->FillRectangle(D2D1::RectF(0, 0, windowSize.width, windowSize.height), brush);
+        renderTarget.beginDraw();
+        renderTarget.fillRectangle({0, 0, windowSize.width, windowSize.height}, window->getColor());
 
         const NbColor &frameColor = window->getFrameColor();
         const WindowInterface::FrameSize& frameSize = window->getFrameSize();
@@ -31,7 +29,7 @@ namespace Renderer
         NbRect<int> rightBorder = {windowSize.width - frameSize.right, frameSize.top, frameSize.right, windowSize.height - frameSize.top - frameSize.bot};
         renderTarget.fillRectangle(rightBorder, frameColor);
 
-        renderTarget.getRawRenderTarget()->EndDraw();
+        renderTarget.endDraw();
     }
     void Direct2dRenderer::resize(WindowInterface::IWindow *window)
     {

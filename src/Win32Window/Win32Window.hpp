@@ -33,6 +33,28 @@ namespace Win32Window
                 {
                     return 0;
                 }
+                case WM_GETMINMAXINFO:
+                {
+                    MINMAXINFO* mmi = reinterpret_cast<MINMAXINFO*>(lParam);
+
+                    HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+                    MONITORINFO mi = { sizeof(mi) };
+                    if (GetMonitorInfo(hMonitor, &mi))
+                    {
+                        RECT rcWork = mi.rcWork;       
+                        RECT rcMonitor = mi.rcMonitor; 
+
+                        mmi->ptMaxSize.x = rcWork.right - rcWork.left;
+                        mmi->ptMaxSize.y = rcWork.bottom - rcWork.top;
+
+                        mmi->ptMaxPosition.x = rcWork.left;
+                        mmi->ptMaxPosition.y = rcWork.top;
+
+                    }
+
+                    return 0; 
+                }
+
                 case WM_SIZE:
                 {
                     onSize({LOWORD(lParam), HIWORD(lParam)});

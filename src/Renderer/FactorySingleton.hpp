@@ -14,6 +14,7 @@ namespace Renderer
         public:
             static ID2D1Factory* getFactory()
             {
+                
                 static ID2D1Factory* pFactory = nullptr;
                 if (!pFactory)
                 {

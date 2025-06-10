@@ -17,7 +17,9 @@ Direct2dHandleRenderTarget Direct2dWrapper::createRenderTarget(const NbWindowHan
     {
         return nullptr;
     }
-    
+
+    uint32_t dpi = GetDpiForWindow(handle.as<HWND>());
+    renderTarget->SetDpi(dpi, dpi);
     return Direct2dHandleRenderTarget(renderTarget);
 }
 

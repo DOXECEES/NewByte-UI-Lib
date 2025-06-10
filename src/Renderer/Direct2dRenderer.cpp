@@ -10,11 +10,26 @@ namespace Renderer
 
     void Direct2dRenderer::render(WindowInterface::IWindow *window) 
     {
+        const NbSize<int>& windowSize = window->getSize(); 
+
         renderTarget.getRawRenderTarget()->BeginDraw();
         ID2D1SolidColorBrush* brush = renderTarget.createSolidBrush(window->getColor());
-        renderTarget.getRawRenderTarget()->FillRectangle(D2D1::RectF(0, 0, window->getSize().width, window->getSize().height), brush);
+        renderTarget.getRawRenderTarget()->FillRectangle(D2D1::RectF(0, 0, windowSize.width, windowSize.height), brush);
 
+        const NbColor &frameColor = window->getFrameColor();
+        const WindowInterface::FrameSize& frameSize = window->getFrameSize();
         
+        NbRect<int> topBorder = { 0, 0, windowSize.width, frameSize.top};
+        renderTarget.fillRectangle(topBorder, frameColor);
+
+        NbRect<int> botBorder = {0, windowSize.height - frameSize.bot, windowSize.width, frameSize.bot};
+        renderTarget.fillRectangle(botBorder, frameColor);
+
+        NbRect<int> leftBorder = {0, frameSize.top, frameSize.left, windowSize.height - frameSize.top - frameSize.bot};
+        renderTarget.fillRectangle(leftBorder, frameColor);
+
+        NbRect<int> rightBorder = {windowSize.width - frameSize.right, frameSize.top, frameSize.right, windowSize.height - frameSize.top - frameSize.bot};
+        renderTarget.fillRectangle(rightBorder, frameColor);
 
         renderTarget.getRawRenderTarget()->EndDraw();
     }

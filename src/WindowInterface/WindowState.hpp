@@ -10,7 +10,7 @@ namespace WindowInterface
     {
         int right   = 5;
         int left    = 5;
-        int top     = 30;
+        int top     = 35;
         int bot     = 5;
     };
 
@@ -18,6 +18,7 @@ namespace WindowInterface
     {
     public:
         NbColor         color       = {45, 45, 45};
+        NbColor         frameColor  = { 35, 35, 35 };
         NbSize<int>     size        = { 800, 600 };
         std::wstring    title       = L"Ui-Lib";
         FrameSize       frameSize;

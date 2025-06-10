@@ -11,6 +11,11 @@
 #include <d2d1.h>
 #pragma comment(lib, "d2d1")
 
+namespace Direct2dUtils
+{
+    D2D1_RECT_F toD2D1Rect(const NbRect<int>& rect) noexcept;
+}
+
 class Direct2dHandleRenderTarget
 {
 public:
@@ -31,6 +36,18 @@ public:
     void resize(const NbSize<int> &size) noexcept
     {
         renderTarget->Resize(D2D1::SizeU(size.width, size.height));
+    }
+
+    void drawRectangle(const NbRect<int>& rect, const NbColor& color, const float strokeWidth = 1.0f) const noexcept
+    {
+        ID2D1SolidColorBrush *brush = createSolidBrush(color);
+        renderTarget->DrawRectangle(Direct2dUtils::toD2D1Rect(rect), brush, strokeWidth);
+    }
+
+    void fillRectangle(const NbRect<int>& rect, const NbColor& color) const noexcept
+    {
+        ID2D1SolidColorBrush *brush = createSolidBrush(color);
+        renderTarget->FillRectangle(Direct2dUtils::toD2D1Rect(rect), brush);
     }
 
     ID2D1SolidColorBrush *createSolidBrush(const NbColor &color) const noexcept

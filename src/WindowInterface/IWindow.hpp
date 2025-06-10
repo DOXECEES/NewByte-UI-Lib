@@ -23,6 +23,8 @@ namespace WindowInterface
 
         const NbSize<int>& getSize() const noexcept { return state.size; };
         const NbColor& getColor() const noexcept { return state.color; };
+        const NbColor& getFrameColor() const noexcept { return state.frameColor; };
+        const FrameSize& getFrameSize() const noexcept { return state.frameSize; };
 
     protected:
         NbWindowHandle      handle;

@@ -2,6 +2,7 @@
 #define SRC_WIN32WINDOW_WIN32WINDOW_HPP
 
 #include <Windows.h>
+#include <windowsx.h>
 
 #include "../WindowInterface/IWindow.hpp"
 
@@ -28,10 +29,58 @@ namespace Win32Window
                     renderer->render(this);
                     return 0;
                 }
+                case WM_NCCALCSIZE:
+                {
+                    return 0;
+                }
                 case WM_SIZE:
                 {
                     onSize({LOWORD(lParam), HIWORD(lParam)});
                     return 0;
+                }
+                case WM_NCHITTEST:  // if order important
+                {
+                    int x = GET_X_LPARAM(lParam);
+                    int y = GET_Y_LPARAM(lParam);
+
+                    POINT point = {x,y};
+
+                    ScreenToClient(hWnd, &point);
+                    
+                    constexpr int SIZE_TO_MOVE_ARROW = 10;
+
+                    if(point.x < SIZE_TO_MOVE_ARROW && point.y < SIZE_TO_MOVE_ARROW)
+                        return HTTOPLEFT;
+
+                    if (point.y < SIZE_TO_MOVE_ARROW)
+                        return HTTOP;
+                  
+                    RECT rc;
+                    GetClientRect(hWnd, &rc);
+                  
+                    if(point.y > rc.bottom - state.frameSize.bot && point.x < SIZE_TO_MOVE_ARROW)
+                        return HTBOTTOMLEFT;
+
+                    if(point.x > rc.right - state.frameSize.right && point.y > rc.bottom - state.frameSize.bot)
+                        return HTBOTTOMRIGHT;
+
+                    if (point.x < state.frameSize.left)
+                        return HTLEFT;
+
+                    if (point.x > rc.right - state.frameSize.right)
+                        return HTRIGHT;
+
+                    if (point.y < state.frameSize.bot) // same as bot 
+                        return HTTOP;
+
+                    if (point.y < state.frameSize.top)
+                        return HTCAPTION;
+
+
+                    if (point.y > rc.bottom - state.frameSize.bot)
+                        return HTBOTTOM;
+
+                    return HTCLIENT;
                 }
                 case WM_DESTROY:
                 {

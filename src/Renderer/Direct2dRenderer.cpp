@@ -13,6 +13,9 @@ namespace Renderer
         renderTarget.getRawRenderTarget()->BeginDraw();
         ID2D1SolidColorBrush* brush = renderTarget.createSolidBrush(window->getColor());
         renderTarget.getRawRenderTarget()->FillRectangle(D2D1::RectF(0, 0, window->getSize().width, window->getSize().height), brush);
+
+        
+
         renderTarget.getRawRenderTarget()->EndDraw();
     }
     void Direct2dRenderer::resize(WindowInterface::IWindow *window)

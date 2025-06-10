@@ -62,10 +62,10 @@ class Direct2dWrapper
 
 public:
     static Direct2dHandleRenderTarget createRenderTarget(const NbWindowHandle &handle, const NbSize<int> &size) noexcept;
-    static ID2D1SolidColorBrush *createSolidColorBrush(const Direct2dHandleRenderTarget &renderTarget, const NbColor &color) noexcept;
+    static ID2D1SolidColorBrush* createSolidColorBrush(const Direct2dHandleRenderTarget &renderTarget, const NbColor &color) noexcept;
 
 private:
-    inline static ID2D1Factory *factory = Renderer::FactorySingleton::getFactory();
+    inline static ID2D1Factory* factory = Renderer::FactorySingleton::getFactory();
 };
 
 #endif

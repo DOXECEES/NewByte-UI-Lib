@@ -5,15 +5,14 @@ namespace Renderer
     Direct2dRenderer::Direct2dRenderer(WindowInterface::IWindow *window)
         : renderTarget(Direct2dWrapper::createRenderTarget(window->getHandle(), window->getSize()))
     {
+        captionButtonRenderer = new Direct2dCaptionButtonRenderer(&renderTarget);
     }
 
     void Direct2dRenderer::render(WindowInterface::IWindow *window) 
     {
         const NbSize<int>& windowSize = window->getSize(); 
         
-
         renderTarget.beginDraw();
-
 
         renderTarget.fillRectangle({0, 0, windowSize.width, windowSize.height}, window->getColor());
 
@@ -34,6 +33,7 @@ namespace Renderer
 
         renderTarget.drawText(window->getTitle(), {0, 0, windowSize.width, frameSize.top}, window->getFontColor());
 
+        captionButtonRenderer->render(window->getCaptionButtonsContainer());
 
         HRESULT hr = renderTarget.endDraw();
 
@@ -41,9 +41,12 @@ namespace Renderer
             OutputDebugString(L"EndDraw failed\n");
         }
 
+
+
     }
     void Direct2dRenderer::resize(WindowInterface::IWindow *window)
     {
         renderTarget.resize(window->getSize());
     }
 }
+

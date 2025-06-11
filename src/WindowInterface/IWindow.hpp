@@ -9,6 +9,8 @@
 
 #include "WindowState.hpp"
 
+#include "../CaptionButtons.hpp"
+
 namespace WindowInterface
 {
     class IWindow
@@ -28,11 +30,16 @@ namespace WindowInterface
         const std::wstring& getTitle() const noexcept { return state.title; };
         const NbColor& getFontColor() const noexcept { return state.fontColor; };
 
-    protected:
-        NbWindowHandle      handle;
-        WindowState         state;
+        CaptionButtonsContainer* getCaptionButtonsContainer() noexcept { return &captionButtonsContainer; };
 
-        IWindowRenderer*    renderer = nullptr;
+    protected:
+        NbWindowHandle                  handle;
+        WindowState                     state;
+
+        IWindowRenderer*                renderer = nullptr;
+
+        CaptionButtonsContainer         captionButtonsContainer;
+        
     
     };
 };

@@ -4,6 +4,8 @@
 #include "../WindowInterface/IWindowRenderer.hpp"
 #include "../WindowInterface/IWindow.hpp"
 
+#include "Direct2dCaptionButtonRenderer.hpp"
+
 #include "Direct2dWrapper.hpp"
 
 #include <d2d1.h>

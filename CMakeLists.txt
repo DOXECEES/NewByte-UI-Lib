@@ -51,6 +51,8 @@ add_executable(${PROJECT_NAME} WIN32
         src/Renderer/Direct2dRenderer.hpp
         src/Renderer/Direct2dWrapper.cpp
         src/Renderer/Direct2dWrapper.hpp
+        src/Renderer/Direct2dCaptionButtonRenderer.cpp
+        src/Renderer/Direct2dCaptionButtonRenderer.hpp
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${sources} ${headers})

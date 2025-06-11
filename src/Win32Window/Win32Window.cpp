@@ -30,6 +30,16 @@ namespace Win32Window
         // renderer
         renderer = new Renderer::Direct2dRenderer(this);
 
+         std::vector<CaptionButton>  captionButtons =
+        {
+            { L"✕", 50, 35, {240, 7, 23} },
+            { L"🗖", 30, 35 },
+            { L"🗕", 30, 35 },
+        };
+
+        captionButtonsContainer.addButton(captionButtons[0]);
+        captionButtonsContainer.addButton(captionButtons[1]);
+        captionButtonsContainer.addButton(captionButtons[2]);
 
         ShowWindow(handle.as<HWND>(), TRUE);
         UpdateWindow(handle.as<HWND>());
@@ -41,6 +51,7 @@ namespace Win32Window
         OutputDebugString(L"Window resized\n");
         state.size = std::move(newSize);
 
+        captionButtonsContainer.setPaintArea(NbRect<int>(0, 0, state.size.width, state.size.height));
         renderer->resize(this);
     }
 

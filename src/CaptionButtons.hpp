@@ -16,9 +16,6 @@
 
 struct CaptionButton
 {
-    friend class CaptionButtons;
-
-    static constexpr int NOT_BOUNDED = -1;
     static constexpr int DEFAULT_HEIGTH = 30;
     
     CaptionButton(const std::wstring& text, const int width, const int height = 30, const NbColor& color = {105, 105, 105}, const NbColor& hoverColor = {105, 105, 105})
@@ -28,11 +25,9 @@ struct CaptionButton
         , hoverColor(hoverColor)
         , color(color)
         , func()
+        , rect(0, 0, width, height)
     {
-        rect.bottom = height;
-        rect.left = 0;
-        rect.right = width;
-        rect.top = 0;
+
     }
 
     void setFunc(std::function<void()> func)
@@ -40,75 +35,39 @@ struct CaptionButton
         this->func = func;
     }
 
-    const RECT& getWindowSpaceRect() const { return windowSpaceRect; }
-
     std::function<void()>   func;
 
-    RECT                    rect;
+    NbRect<int>             rect;
     std::wstring            text;
     int                     width;
     int                     height              = DEFAULT_HEIGTH;
     NbColor                 hoverColor;
-    NbColor                 color               = {105, 105, 105};
+    NbColor                 color               = { 105, 105, 105 };
     bool                    isHovered           = false;
-
-private:
-
-    void setLayoutIndex(const int index) { this->index = index; }
-    void setWindowSpaceRect(const RECT& rect) { this->windowSpaceRect = rect; }
-
-    RECT                    windowSpaceRect     = {0, 0, 0, 0};
-    int                     index               = NOT_BOUNDED;      
+    
 };
 
 
-class ICaptionButtonRenderer
-{
-public:
-    virtual void render(CaptionButton& button) = 0;
-};
-
-class CaptionButtonRenderer : public ICaptionButtonRenderer
-{
-public:
-    static constexpr wchar_t const* DEFAULT_FONT        = L"Segoe UI";
-    static constexpr int            DEFAULT_FONT_SIZE   = 12;
-
-    CaptionButtonRenderer(ID2D1HwndRenderTarget* renderTarget);
-    ~CaptionButtonRenderer() = default;
-   
-    void changeRenderTarget(ID2D1HwndRenderTarget* renderTarget);
-    void render(CaptionButton &button) override;
-
-private:
-    std::unordered_map<NbColor, ID2D1SolidColorBrush*>  colorMap;
-
-    IDWriteTextFormat*                                  textFormat      = nullptr;
-    ID2D1HwndRenderTarget*                              renderTarget    = nullptr;
-    ID2D1SolidColorBrush*                               fontBrush       = nullptr;
-
-    HWND                                                parent          = nullptr;
-
-};
-
-class CaptionButtons
+class CaptionButtonsContainer
 {
 public:
 
-    CaptionButtons(HWND parent);
-    ~CaptionButtons();
+    CaptionButtonsContainer();
+    ~CaptionButtonsContainer();
 
     void addButton(CaptionButton& button);
-    void draw(CaptionButtonRenderer& renderer);    // should call between BeginDraw and EndDraw
 
-    void onSizeChanged();
+    const std::vector<CaptionButton> &getButtons() const { return buttons; };
+    
+    const NbRect<int>& getPaintArea() const { return paintArea; };
+    void setPaintArea(const NbRect<int>& paintArea) { this->paintArea = paintArea; };
 
 private:
-    void calculateCaptionButtonWindowSpaceRect(CaptionButton& button);
+    void recalculateRect(CaptionButton &button, const size_t index);
 
 private:
+    NbRect<int>                                         paintArea;    
     std::vector<CaptionButton>                          buttons;
-    HWND                                                parent = nullptr;
 };
 
 

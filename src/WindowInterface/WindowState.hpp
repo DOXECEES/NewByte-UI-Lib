@@ -23,6 +23,8 @@ namespace WindowInterface
         std::wstring    title       = L"Ui-Lib";
         NbColor         fontColor   = { 255, 255, 255 };
         FrameSize       frameSize;
+        NbSize<int>     minSize    = { 400, 300 };
+
 
     };
 

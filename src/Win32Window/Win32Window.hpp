@@ -50,6 +50,8 @@ namespace Win32Window
                         mmi->ptMaxPosition.x = rcWork.left;
                         mmi->ptMaxPosition.y = rcWork.top;
 
+                        mmi->ptMinTrackSize.x = state.minSize.width;
+                        mmi->ptMinTrackSize.y = state.minSize.height;
                     }
 
                     return 0; 
@@ -60,7 +62,7 @@ namespace Win32Window
                     onSize({LOWORD(lParam), HIWORD(lParam)});
                     return 0;
                 }
-                case WM_NCHITTEST:  // if order important
+                case WM_NCHITTEST:  // if's order important
                 {
                     int x = GET_X_LPARAM(lParam);
                     int y = GET_Y_LPARAM(lParam);
@@ -97,7 +99,6 @@ namespace Win32Window
 
                     if (point.y < state.frameSize.top)
                         return HTCAPTION;
-
 
                     if (point.y > rc.bottom - state.frameSize.bot)
                         return HTBOTTOM;

@@ -12,7 +12,7 @@ CaptionButtonsContainer::CaptionButtonsContainer()
 
 CaptionButtonsContainer::~CaptionButtonsContainer()
 {
-
+    
 }
 
 

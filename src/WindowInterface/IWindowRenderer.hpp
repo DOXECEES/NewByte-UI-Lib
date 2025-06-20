@@ -2,6 +2,7 @@
 #define SRC_WINDOWINTERFACE_IWINDOWRENDERER_HPP
 
 #include "../Core.hpp"
+#include "../Widgets/IWidgetRenderer.hpp"
 
 class CaptionButtonsContainer;
 
@@ -25,7 +26,8 @@ namespace WindowInterface
     
     protected:
 
-        ICaptionButtonRenderer* captionButtonRenderer = nullptr;
+        ICaptionButtonRenderer*     captionButtonRenderer   = nullptr;
+        Widgets::IWidgetRenderer*   widgetRenderer          = nullptr;
     
     };
 }

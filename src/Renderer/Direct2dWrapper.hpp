@@ -73,6 +73,23 @@ public:
         renderTarget->DrawRectangle(Direct2dUtils::toD2D1Rect(rect), brush, strokeWidth);
     }
 
+    void drawRoundedRectangle(const NbRect<int>& rect, const int radius, const NbColor& color, const float strokeWidth = 1.0f) const noexcept
+    {
+        ID2D1SolidColorBrush *brush = createSolidBrush(color);
+        ID2D1SolidColorBrush *pStrokeBrush = createSolidBrush({ 0, 0, 0 });
+
+        const D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
+            Direct2dUtils::toD2D1Rect(rect),
+            radius,
+            radius
+        );
+
+        renderTarget->FillRoundedRectangle(&roundedRect, brush);
+        //renderTarget->DrawRoundedRectangle(&roundedRect, pStrokeBrush, 75.0f);
+
+        //renderTarget->DrawRoundedRectangle(roundedRect, brush, strokeWidth, nullptr);
+    }
+
     void drawText(const std::wstring& text, const NbRect<int>& rect, const NbColor& color) const noexcept
     {
         renderTarget->DrawText(text.c_str(), static_cast<UINT32>(text.length()), textFormat, Direct2dUtils::toD2D1Rect(rect), createSolidBrush(color));

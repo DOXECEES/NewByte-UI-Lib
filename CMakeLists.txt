@@ -25,6 +25,10 @@ add_executable(${PROJECT_NAME} WIN32
         src/ChildWindow.hpp
         src/CaptionButtons.cpp
         src/CaptionButtons.hpp
+        src/Layout.cpp
+        src/Layout.hpp
+
+
 
         src/Win32Window/Win32Window.cpp
         src/Win32Window/Win32Window.hpp
@@ -39,9 +43,13 @@ add_executable(${PROJECT_NAME} WIN32
         src/WindowInterface/WindowMapper.hpp
         src/WindowInterface/IWindowRenderer.hpp
         src/WindowInterface/IWindowRenderer.cpp
-        
-        src/WindowInterface/WindowCore.hpp
         src/WindowInterface/WindowState.hpp
+        src/WindowInterface/WindowState.cpp
+        src/WindowInterface/WindowStyle.cpp
+        src/WindowInterface/WindowStyle.hpp
+      
+
+        src/WindowInterface/WindowCore.hpp
 
         src/Renderer/FactorySingleton.cpp
         src/Renderer/FactorySingleton.hpp
@@ -53,6 +61,16 @@ add_executable(${PROJECT_NAME} WIN32
         src/Renderer/Direct2dWrapper.hpp
         src/Renderer/Direct2dCaptionButtonRenderer.cpp
         src/Renderer/Direct2dCaptionButtonRenderer.hpp
+        src/Renderer/Direct2dWidgetRenderer.cpp
+        src/Renderer/Direct2dWidgetRenderer.hpp
+
+
+        src/Widgets/IWidget.cpp
+        src/Widgets/IWidget.hpp
+        src/Widgets/Button.cpp
+        src/Widgets/Button.hpp
+        src/Widgets/IWidgetRenderer.cpp
+        src/Widgets/IWidgetRenderer.hpp
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${sources} ${headers})

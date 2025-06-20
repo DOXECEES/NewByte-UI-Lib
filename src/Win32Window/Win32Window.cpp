@@ -3,6 +3,7 @@
 #include "../WindowInterface/WindowMapper.hpp"
 #include "../Renderer/Direct2dRenderer.hpp"
 
+#include "../Widgets/Button.hpp"
 
 namespace Win32Window
 {
@@ -37,6 +38,8 @@ namespace Win32Window
             { L"🗕", 30, 35 },
         };
 
+        widgets.push_back(new Widgets::Button(NbRect<int>(100, 100, 100, 100)));
+        
         captionButtonsContainer.addButton(captionButtons[0]);
         captionButtonsContainer.addButton(captionButtons[1]);
         captionButtonsContainer.addButton(captionButtons[2]);
@@ -49,7 +52,7 @@ namespace Win32Window
     void Window::onSize(const NbSize<int>& newSize)
     {
         OutputDebugString(L"Window resized\n");
-        state.size = std::move(newSize);
+        state.setSize(newSize);
 
         captionButtonsContainer.setPaintArea(NbRect<int>(0, 0, state.size.width, state.size.height));
         renderer->resize(this);

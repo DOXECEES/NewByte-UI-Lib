@@ -6,15 +6,17 @@ namespace Renderer
         : renderTarget(Direct2dWrapper::createRenderTarget(window->getHandle(), window->getSize()))
     {
         captionButtonRenderer = new Direct2dCaptionButtonRenderer(&renderTarget);
+        widgetRenderer = new Direct2dWidgetRenderer(&renderTarget);
     }
 
     void Direct2dRenderer::render(WindowInterface::IWindow *window) 
     {
         const NbSize<int>& windowSize = window->getSize(); 
-        
+        const WindowInterface::WindowStyle& style = window->getStyle();
         renderTarget.beginDraw();
 
-        renderTarget.fillRectangle({0, 0, windowSize.width, windowSize.height}, window->getColor());
+        renderTarget.drawRoundedRectangle({0, 0, windowSize.width, windowSize.height}, style.getBorderRadius() , window->getColor());
+
 
         const NbColor &frameColor = window->getFrameColor();
         const WindowInterface::FrameSize& frameSize = window->getFrameSize();
@@ -34,6 +36,9 @@ namespace Renderer
         renderTarget.drawText(window->getTitle(), {0, 0, windowSize.width, frameSize.top}, window->getFontColor());
 
         captionButtonRenderer->render(window->getCaptionButtonsContainer());
+
+        for(auto& widget : window->getWidgets())
+            widgetRenderer->render(widget);
 
         HRESULT hr = renderTarget.endDraw();
 

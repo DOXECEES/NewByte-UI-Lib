@@ -56,9 +56,25 @@ namespace Win32Window
 
                     return 0; 
                 }
-
                 case WM_SIZE:
                 {
+                    const int borderRadius = style.getBorderRadius();
+                    RECT rc;
+                    GetClientRect(hWnd, &rc);
+                    HRGN hRgn;
+                    if(IsMaximized(hWnd))
+                    {
+                        hRgn = CreateRoundRectRgn(0, 0, rc.right + state.frameSize.right, rc.bottom + state.frameSize.bot, 0, 0);
+
+                    }
+                    else
+                    {
+                        hRgn = CreateRoundRectRgn(0, 0, rc.right, rc.bottom, borderRadius, borderRadius);
+                    }
+
+                    SetWindowRgn(hWnd, hRgn, TRUE);
+                    DeleteObject(hRgn);
+
                     onSize({LOWORD(lParam), HIWORD(lParam)});
                     return 0;
                 }

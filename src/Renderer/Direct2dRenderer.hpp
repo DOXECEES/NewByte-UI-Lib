@@ -5,6 +5,7 @@
 #include "../WindowInterface/IWindow.hpp"
 
 #include "Direct2dCaptionButtonRenderer.hpp"
+#include "Direct2dWidgetRenderer.hpp"
 
 #include "Direct2dWrapper.hpp"
 

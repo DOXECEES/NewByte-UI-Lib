@@ -64,6 +64,7 @@ namespace Win32Window
                     HRGN hRgn;
                     if(IsMaximized(hWnd))
                     {
+                        state.isMaximized = true;
                         hRgn = CreateRoundRectRgn(0, 0, rc.right + state.frameSize.right, rc.bottom + state.frameSize.bot, 0, 0);
 
                     }

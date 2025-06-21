@@ -32,6 +32,7 @@ namespace WindowInterface
         const FrameSize& getFrameSize() const noexcept { return state.frameSize; };
         const std::wstring& getTitle() const noexcept { return state.title; };
         const NbColor& getFontColor() const noexcept { return state.fontColor; };
+        const bool isMaximized() const noexcept { return state.isMaximized; };
 
         const WindowStyle& getStyle() const noexcept { return style; };
 

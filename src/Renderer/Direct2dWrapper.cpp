@@ -6,6 +6,12 @@ D2D1_RECT_F Direct2dUtils::toD2D1Rect(const NbRect<int> &rect) noexcept
     return D2D1::RectF(static_cast<float>(rect.x), static_cast<float>(rect.y), static_cast<float>(rect.x + rect.width), static_cast<float>(rect.y + rect.height));
 }
 
+D2D1_COLOR_F Direct2dUtils::toD2D1Color(const NbColor& color) noexcept
+{
+    return D2D1::ColorF(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
+}
+
+
 Direct2dHandleRenderTarget Direct2dWrapper::createRenderTarget(const NbWindowHandle &handle, const NbSize<int> &size) noexcept
 {
     D2D1_SIZE_U renderTargetSize = D2D1::SizeU(size.width, size.height);

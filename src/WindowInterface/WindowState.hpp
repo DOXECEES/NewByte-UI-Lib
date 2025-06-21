@@ -39,6 +39,8 @@ namespace WindowInterface
         NbSize<int>     minSize     = { 400, 300 };
         
         FrameSize       frameSize;
+
+        bool            isMaximized = false;
     };
 
 };

@@ -15,7 +15,16 @@ namespace Renderer
         const WindowInterface::WindowStyle& style = window->getStyle();
         renderTarget.beginDraw();
 
-        renderTarget.drawRoundedRectangle({0, 0, windowSize.width, windowSize.height}, style.getBorderRadius() , window->getColor());
+        renderTarget.clear(window->getColor());
+        if(window->isMaximized())
+        {
+            renderTarget.drawRoundedRectangle({0, 0, windowSize.width, windowSize.height}, 0 , window->getColor());
+        }
+        else
+        {
+            renderTarget.drawRoundedRectangle({0, 0, windowSize.width, windowSize.height}, style.getBorderRadius() , window->getColor());
+        }
+
 
 
         const NbColor &frameColor = window->getFrameColor();

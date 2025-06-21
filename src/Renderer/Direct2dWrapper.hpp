@@ -14,6 +14,7 @@
 namespace Direct2dUtils
 {
     D2D1_RECT_F toD2D1Rect(const NbRect<int>& rect) noexcept;
+    D2D1_COLOR_F toD2D1Color(const NbColor& color) noexcept;
 }
 
 
@@ -58,6 +59,11 @@ public:
     HRESULT endDraw() noexcept
     {
         return renderTarget->EndDraw();
+    }
+
+    void clear(const NbColor &color) const noexcept
+    {
+        renderTarget->Clear(Direct2dUtils::toD2D1Color(color));
     }
 
     void resize(const NbSize<int> &size) noexcept

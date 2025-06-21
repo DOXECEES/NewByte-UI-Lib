@@ -10,7 +10,7 @@ namespace WindowInterface
         int getBorderRadius() const noexcept;
 
     private:
-        int borderRadius = 15;
+        int borderRadius = 25;
 
 
 

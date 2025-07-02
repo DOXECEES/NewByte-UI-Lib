@@ -38,6 +38,22 @@ namespace Win32Window
             { L"🗕", 30, 35 },
         };
 
+       captionButtons[0].setFunc([this]()
+        {
+            DestroyWindow(handle.as<HWND>()); 
+        });
+        captionButtons[1].setFunc([this]()
+        {  
+            if(isMaximized())
+                ShowWindow(handle.as<HWND>(), SW_RESTORE);
+            else
+                ShowWindow(handle.as<HWND>(), SW_MAXIMIZE);
+        });
+        captionButtons[2].setFunc([this]()
+        {
+            CloseWindow(handle.as<HWND>()); 
+        });
+
         //widgets.push_back(new Widgets::Button(NbRect<int>(100, 100, 100, 100)));
         
         captionButtonsContainer.addButton(captionButtons[0]);

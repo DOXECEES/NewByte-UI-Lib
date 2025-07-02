@@ -35,6 +35,9 @@ struct CaptionButton
         this->func = func;
     }
 
+    bool hitTest(const NbRect<int>& windowRect, const NbPoint<int> &point) const noexcept;
+    void onClick(const NbRect<int>& windowRect, const NbPoint<int> &point) const noexcept;
+
     std::function<void()>   func;
 
     NbRect<int>             rect;
@@ -61,6 +64,13 @@ public:
     
     const NbRect<int>& getPaintArea() const { return paintArea; };
     void setPaintArea(const NbRect<int>& paintArea) { this->paintArea = paintArea; };
+
+    inline auto begin() { return buttons.begin(); }
+    inline auto end() { return buttons.end(); }
+ 
+    inline auto begin() const { return buttons.begin(); }
+    inline auto end() const { return buttons.end(); }
+
 
 private:
     void recalculateRect(CaptionButton &button, const size_t index);

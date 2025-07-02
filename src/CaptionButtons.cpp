@@ -39,5 +39,14 @@ void CaptionButtonsContainer::recalculateRect(CaptionButton &button, const size_
     button.rect = NbRect<int>(offset, 0, button.width, button.height);
 }
 
+bool CaptionButton::hitTest(const NbRect<int>& windowRect, const NbPoint<int> &point) const noexcept
+{
+    NbRect<int> newRect = {windowRect.width - rect.width - rect.x, rect.y, rect.width, rect.height};
+    return point.x >= newRect.x && point.x < newRect.x + newRect.width && point.y >= newRect.y && point.y < newRect.y + newRect.height;
+}
 
 
+void CaptionButton::onClick(const NbRect<int>& windowRect, const NbPoint<int> &point) const noexcept
+{
+    if(hitTest(windowRect, point)) func();
+}

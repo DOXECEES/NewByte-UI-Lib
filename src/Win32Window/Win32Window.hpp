@@ -5,7 +5,7 @@
 #include <windowsx.h>
 
 #include "../WindowInterface/IWindow.hpp"
-
+#include "../Utils.hpp"
 
 namespace Win32Window
 {
@@ -33,6 +33,16 @@ namespace Win32Window
                 case WM_NCCALCSIZE:
                 {
                     return 0;
+                }
+                case WM_NCLBUTTONDOWN:
+                {
+                    NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                    Utils::convertToWindowSpace(hWnd, point);
+                    for (auto& captionButton : captionButtonsContainer)
+                    {
+                        captionButton.onClick(captionButtonsContainer.getPaintArea(), point);
+                    }
+                    break;
                 }
                 case WM_LBUTTONDOWN:
                 {

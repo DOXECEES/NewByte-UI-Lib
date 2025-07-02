@@ -172,6 +172,10 @@ namespace Win32Window
 
                     return HTCLIENT;
                 }
+                case WM_NCACTIVATE: 
+                {
+                    return TRUE; // remove white frame around window
+                }
                 case WM_DESTROY:
                 {
                     PostQuitMessage(0);

@@ -52,6 +52,23 @@ namespace Renderer
                 return writeFactory;
             }
             
+            static ID2D1PathGeometry* getPathGeometry()
+            {
+                ID2D1Factory* factory = getFactory();
+                static ID2D1PathGeometry *pathGeometry = nullptr;
+                if(!pathGeometry)
+                {
+                    HRESULT hr = factory->CreatePathGeometry(&pathGeometry);
+                    
+                    if(hr != S_OK)
+                    {
+                        return nullptr;
+                    }
+                }
+                
+                return pathGeometry;
+            }
+
         private:
             FactorySingleton() = default;
     };

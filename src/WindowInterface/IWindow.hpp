@@ -1,6 +1,8 @@
 #ifndef SRC_WINDOWINTERFACE_IWINDOW_HPP
 #define SRC_WINDOWINTERFACE_IWINDOW_HPP
 
+#include <set>
+
 #include "../Core.hpp"
 
 #include "WindowCore.hpp"
@@ -15,6 +17,12 @@
 
 namespace WindowInterface
 {
+    class IWindowStateChangedListener
+    {
+    public:
+        virtual void onSizeChanged(const NbSize<int>& newSize) = 0;
+    };
+
     class IWindow
     {
     public:
@@ -22,6 +30,7 @@ namespace WindowInterface
         virtual ~IWindow() = default;
 
         virtual void onSize(const NbSize<int>& newSize) = 0;
+        virtual void show() = 0;
 
         const NbWindowHandle &getHandle() const noexcept { return handle; };
 
@@ -35,19 +44,27 @@ namespace WindowInterface
         const bool isMaximized() const noexcept { return state.isMaximized; };
 
         const WindowStyle& getStyle() const noexcept { return style; };
+        const NbRect<int> getClientRect() const noexcept { return state.clientRect; };
 
         CaptionButtonsContainer* getCaptionButtonsContainer() noexcept { return &captionButtonsContainer; };
         const std::vector<Widgets::IWidget*>& getWidgets() const noexcept { return widgets; };
 
+        void linkWidget(Widgets::IWidget* widget) { widgets.push_back(widget); };
+        void addStateChangedListener(IWindowStateChangedListener* listener) { stateChangedListeners.insert(listener); };
+        void removeStateChangedListener(IWindowStateChangedListener* listener) { stateChangedListeners.erase(listener); };
+
+        
+
     protected:
-        NbWindowHandle                  handle;
-        WindowState                     state;
-        WindowStyle style;
+        NbWindowHandle                              handle;
+        WindowState                                 state;
+        std::set<IWindowStateChangedListener*>      stateChangedListeners;
+        WindowStyle                                 style;
 
-        IWindowRenderer*                renderer = nullptr;
+        IWindowRenderer*                            renderer                    = nullptr;
 
-        CaptionButtonsContainer         captionButtonsContainer;
-        std::vector<Widgets::IWidget*>  widgets;
+        CaptionButtonsContainer                     captionButtonsContainer;
+        std::vector<Widgets::IWidget*>              widgets;
     
     };
 };

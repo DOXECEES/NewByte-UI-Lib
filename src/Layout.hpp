@@ -4,6 +4,7 @@
 #include "Core.hpp"
 
 #include "WindowInterface/IWindow.hpp"
+#include "Widgets/IWidget.hpp"
 
 #include <vector>
 
@@ -15,31 +16,80 @@ struct Padding
     int bottom  = 5;
 };
 
-NbRect<int> applyPaddingToRect(const NbRect<int>& rect, const Padding& padding);
+NbRect<int> applyPaddingToRect(const NbRect<int>& rect, const Padding& padding)
+{
+    return NbRect<int>(rect.x + padding.left, rect.y + padding.top, rect.width - padding.left - padding.right, rect.height - padding.top - padding.bottom);
+}
 
 
-class Layout
+class Layout : WindowInterface::IWindowStateChangedListener
 {
 public:
-    Layout(WindowInterface::IWindow *window);
+    Layout(WindowInterface::IWindow *window)
+        :window(window)
+    {
+        window->addStateChangedListener(this);
+    }
+
     virtual ~Layout() = default;
 
-    void addWidget(Widgets::IWidget *widget);
+    void onSizeChanged(const NbSize<int>& size) override
+    {
+        caclulateLayout();
+    }
 
-    void setSpacing(const int spacing) noexcept;
+    void addWidget(Widgets::IWidget *widget)
+    {
+        window->linkWidget(widget);
+        linkedWidgets.push_back(widget);
+    }
+
+    void setSpacing(const int spacing) noexcept
+    {
+        this->spacing = spacing;
+    }
 
 protected:
 
     virtual void caclulateLayout() noexcept = 0;
 
-    std::vector<WindowInterface::IWindow *> linkedWidgets;
-    int spacing = 5;
+    std::vector<Widgets::IWidget*>  linkedWidgets;
+    int                             spacing         = 5;
+
+    WindowInterface::IWindow*       window          = nullptr;
+
 };
 
 
 class VBoxLayout : public Layout
 {
 public:
+    VBoxLayout(WindowInterface::IWindow *window) : Layout(window) {}
+
+    void caclulateLayout() noexcept override 
+    {
+        const NbRect<int>& clientRect = window->getClientRect();
+        int countOfWidgets = linkedWidgets.size();
+
+        int dx = clientRect.width / countOfWidgets;
+        int dy = clientRect.height / countOfWidgets;
+
+        int currentIteration = 0;
+        for(auto& widget : linkedWidgets)
+        {
+            NbRect<int> rect = {
+                clientRect.x ,
+                clientRect.y + currentIteration * dy,
+                clientRect.width,
+                dy
+            };
+
+            rect = applyPaddingToRect(rect, Padding());
+
+            widget->setRect(rect);
+            currentIteration++;
+        }
+    }
 
 };
 

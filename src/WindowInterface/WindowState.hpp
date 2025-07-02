@@ -37,7 +37,10 @@ namespace WindowInterface
         std::wstring    title       = L"Ui-Lib";
         NbColor         fontColor   = { 255, 255, 255 };
         NbSize<int>     minSize     = { 400, 300 };
+        NbRect<int>     clientRect  = { 0, 0, size.width - frameSize.left - frameSize.right, size.height - frameSize.top - frameSize.bot };
         
+        
+
         FrameSize       frameSize;
 
         bool            isMaximized = false;

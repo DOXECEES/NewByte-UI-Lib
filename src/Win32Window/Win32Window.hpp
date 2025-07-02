@@ -16,6 +16,7 @@ namespace Win32Window
         ~Window() {};
 
         virtual void onSize(const NbSize<int>& newSize) override;
+        virtual void show() override;
 
     private:
         bool registerWindowClass();
@@ -31,6 +32,29 @@ namespace Win32Window
                 }
                 case WM_NCCALCSIZE:
                 {
+                    return 0;
+                }
+                case WM_LBUTTONDOWN:
+                {
+                    NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+
+                    for(const auto& widget : widgets)
+                    {
+                        if(widget->hitTest(point))
+                        {
+                            widget->onClick();
+                        }
+                    }
+                    return 0;
+                }
+                case WM_MOUSEMOVE:
+                {
+                    NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+
+                    for(const auto& widget : widgets)
+                    {
+                        widget->setIsHover(widget->hitTest(point));
+                    }
                     return 0;
                 }
                 case WM_GETMINMAXINFO:
@@ -77,6 +101,20 @@ namespace Win32Window
                     DeleteObject(hRgn);
 
                     onSize({LOWORD(lParam), HIWORD(lParam)});
+
+                    RECT rect;
+                    GetClientRect(hWnd, &rect);
+                
+                    state.clientRect = NbRect<int>(rect.left + state.frameSize.left
+                        , rect.top + state.frameSize.top
+                        , rect.right - rect.left - state.frameSize.left - state.frameSize.right
+                        , rect.bottom - rect.top - state.frameSize.top - state.frameSize.bot);
+
+                    for(auto& listener : stateChangedListeners)
+                    {
+                        listener->onSizeChanged(state.clientSize);
+                    }
+                    
                     return 0;
                 }
                 case WM_NCHITTEST:  // if's order important

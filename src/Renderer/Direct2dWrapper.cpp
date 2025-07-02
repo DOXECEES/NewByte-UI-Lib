@@ -11,6 +11,10 @@ D2D1_COLOR_F Direct2dUtils::toD2D1Color(const NbColor& color) noexcept
     return D2D1::ColorF(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
 }
 
+D2D1_POINT_2F Direct2dUtils::toD2D1Point(const NbPoint<int> &point) noexcept
+{
+    return D2D1::Point2F(static_cast<float>(point.x), static_cast<float>(point.y));
+}
 
 Direct2dHandleRenderTarget Direct2dWrapper::createRenderTarget(const NbWindowHandle &handle, const NbSize<int> &size) noexcept
 {

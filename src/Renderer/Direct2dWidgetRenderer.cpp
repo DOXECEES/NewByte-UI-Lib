@@ -10,6 +10,8 @@ namespace Renderer
 
     void Direct2dWidgetRenderer::render(IWidget *widget)
     {
-        renderTarget->fillRectangle(widget->getRect(), widget->getColor());
+        const NbColor &color = widget->getIsHover() ? widget->getHoverColor() : widget->getColor();
+        
+        renderTarget->fillRectangle(widget->getRect(), color);
     }
 };

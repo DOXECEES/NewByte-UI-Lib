@@ -25,22 +25,35 @@ namespace Renderer
             renderTarget.drawRoundedRectangle({0, 0, windowSize.width, windowSize.height}, style.getBorderRadius() , window->getColor());
         }
 
-
-
         const NbColor &frameColor = window->getFrameColor();
         const WindowInterface::FrameSize& frameSize = window->getFrameSize();
+
+        const int radius = window->isMaximized() ? 0 : style.getBorderRadius();
         
+        // frame lines without rounded corners //
         NbRect<int> topBorder = { 0, 0, windowSize.width, frameSize.top};
         renderTarget.fillRectangle(topBorder, frameColor);
 
-        NbRect<int> botBorder = {0, windowSize.height - frameSize.bot, windowSize.width, frameSize.bot};
+        NbRect<int> botBorder = {0 + radius, windowSize.height - frameSize.bot, windowSize.width - radius - radius, frameSize.bot};
         renderTarget.fillRectangle(botBorder, frameColor);
 
-        NbRect<int> leftBorder = {0, frameSize.top, frameSize.left, windowSize.height - frameSize.top - frameSize.bot};
+        NbRect<int> leftBorder = {0, frameSize.top, frameSize.left, windowSize.height - frameSize.top - frameSize.bot - radius };
         renderTarget.fillRectangle(leftBorder, frameColor);
 
-        NbRect<int> rightBorder = {windowSize.width - frameSize.right, frameSize.top, frameSize.right, windowSize.height - frameSize.top - frameSize.bot};
+        NbRect<int> rightBorder = {windowSize.width - frameSize.right, frameSize.top, frameSize.right, windowSize.height - frameSize.top - frameSize.bot - radius  };
         renderTarget.fillRectangle(rightBorder, frameColor);
+        //
+
+        // corners
+
+        NbPoint<int> start = {windowSize.width, windowSize.height - radius};
+        NbPoint<int> end = {windowSize.width - radius, windowSize.height};
+        //renderTarget.drawArc(start, end, radius, frameColor);
+        
+
+        // NbRect<int> botRightCorner = {windowSize.width - radius, windowSize.height - radius, radius, radius};
+        // renderTarget.fillRectangle(botRightCorner, frameColor);
+        //
 
         renderTarget.drawText(window->getTitle(), {0, 0, windowSize.width, frameSize.top}, window->getFontColor());
 
@@ -51,7 +64,8 @@ namespace Renderer
 
         HRESULT hr = renderTarget.endDraw();
 
-        if (FAILED(hr)) {
+        if (FAILED(hr))
+        {
             OutputDebugString(L"EndDraw failed\n");
         }
 

@@ -15,6 +15,7 @@ namespace Direct2dUtils
 {
     D2D1_RECT_F toD2D1Rect(const NbRect<int>& rect) noexcept;
     D2D1_COLOR_F toD2D1Color(const NbColor& color) noexcept;
+    D2D1_POINT_2F toD2D1Point(const NbPoint<int>& point) noexcept;
 }
 
 
@@ -96,6 +97,38 @@ public:
         //renderTarget->DrawRoundedRectangle(roundedRect, brush, strokeWidth, nullptr);
     }
 
+    void drawArc(const NbPoint<int>& startPoint, const NbPoint<int>& endPoint, const int radius, const NbColor& color) const noexcept
+    {
+        ID2D1PathGeometry* pathGeometry = Renderer::FactorySingleton::getPathGeometry();
+        ID2D1GeometrySink* sink = nullptr;
+        HRESULT hr = pathGeometry->Open(&sink);
+        if(hr != S_OK)
+        {
+            OutputDebugString(L"EndDraw failed\n");
+        }
+
+        sink->BeginFigure(Direct2dUtils::toD2D1Point(startPoint), D2D1_FIGURE_BEGIN_HOLLOW);
+
+        D2D1_ARC_SEGMENT arc = D2D1::ArcSegment(
+            Direct2dUtils::toD2D1Point(endPoint),
+            D2D1::SizeF(radius, radius),
+            0.0f,                            // угол поворота эллипса
+            D2D1_SWEEP_DIRECTION_CLOCKWISE, // направление обхода
+            D2D1_ARC_SIZE_SMALL             // малая дуга
+        );
+
+        sink->AddArc(arc);
+
+        sink->EndFigure(D2D1_FIGURE_END_OPEN);
+        sink->Close();
+        sink->Release();
+
+        ID2D1Brush* brush = createSolidBrush(color);
+
+        renderTarget->DrawGeometry(pathGeometry, brush, 2.0f);
+    }
+
+
     void drawText(const std::wstring& text, const NbRect<int>& rect, const NbColor& color) const noexcept
     {
         renderTarget->DrawText(text.c_str(), static_cast<UINT32>(text.length()), textFormat, Direct2dUtils::toD2D1Rect(rect), createSolidBrush(color));
@@ -126,9 +159,9 @@ public:
     }
 
 private:
-    ID2D1HwndRenderTarget *renderTarget = nullptr;
-    mutable std::unordered_map<NbColor, ID2D1SolidColorBrush *> colorMap;
-    IDWriteTextFormat* textFormat = nullptr;
+    ID2D1HwndRenderTarget*                                      renderTarget = nullptr;
+    mutable std::unordered_map<NbColor, ID2D1SolidColorBrush*>  colorMap;
+    IDWriteTextFormat*                                          textFormat = nullptr;
 };
 
 

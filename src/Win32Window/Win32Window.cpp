@@ -38,14 +38,11 @@ namespace Win32Window
             { L"🗕", 30, 35 },
         };
 
-        widgets.push_back(new Widgets::Button(NbRect<int>(100, 100, 100, 100)));
+        //widgets.push_back(new Widgets::Button(NbRect<int>(100, 100, 100, 100)));
         
         captionButtonsContainer.addButton(captionButtons[0]);
         captionButtonsContainer.addButton(captionButtons[1]);
         captionButtonsContainer.addButton(captionButtons[2]);
-
-        ShowWindow(handle.as<HWND>(), TRUE);
-        UpdateWindow(handle.as<HWND>());
 
     }
 
@@ -56,6 +53,12 @@ namespace Win32Window
 
         captionButtonsContainer.setPaintArea(NbRect<int>(0, 0, state.size.width, state.size.height));
         renderer->resize(this);
+    }
+
+    void Window::show()
+    {
+        ShowWindow(handle.as<HWND>(), TRUE);
+        UpdateWindow(handle.as<HWND>());
     }
 
     bool Window::registerWindowClass()

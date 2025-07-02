@@ -34,6 +34,8 @@ add_executable(${PROJECT_NAME} WIN32
         src/Win32Window/Win32Window.hpp
         src/Win32Window/Win32EventLoop.cpp
         src/Win32Window/Win32EventLoop.hpp
+        src/Win32Window/Win32ModalWindow.cpp
+        src/Win32Window/Win32ModalWindow.hpp
 
         src/WindowInterface/IWindow.cpp
         src/WindowInterface/IWindow.hpp

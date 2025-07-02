@@ -53,7 +53,6 @@ namespace WindowInterface
         void addStateChangedListener(IWindowStateChangedListener* listener) { stateChangedListeners.insert(listener); };
         void removeStateChangedListener(IWindowStateChangedListener* listener) { stateChangedListeners.erase(listener); };
 
-        
 
     protected:
         NbWindowHandle                              handle;

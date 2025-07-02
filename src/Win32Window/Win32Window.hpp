@@ -18,6 +18,8 @@ namespace Win32Window
         virtual void onSize(const NbSize<int>& newSize) override;
         virtual void show() override;
 
+        const NbWindowHandle &getHandle() const noexcept { return handle; };
+
     private:
         bool registerWindowClass();
 
@@ -178,24 +180,24 @@ namespace Win32Window
             }
             return DefWindowProc(hWnd, message, wParam, lParam);
         }
-        
-    inline static LRESULT CALLBACK staticWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-    {
-        Window *pThis = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWL_USERDATA));
-        
-        if (message == WM_NCCREATE)
+            
+        inline static LRESULT CALLBACK staticWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
-            auto* cs = reinterpret_cast<CREATESTRUCT*>(lParam);
-            pThis = static_cast<Window*>(cs->lpCreateParams);
-            SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(cs->lpCreateParams));
+            Window *pThis = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWL_USERDATA));
+            
+            if (message == WM_NCCREATE)
+            {
+                auto* cs = reinterpret_cast<CREATESTRUCT*>(lParam);
+                pThis = static_cast<Window*>(cs->lpCreateParams);
+                SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(cs->lpCreateParams));
+            }
+
+            if (pThis)
+                return pThis->wndProc(hWnd, message, wParam, lParam);
+            return DefWindowProc(hWnd, message, wParam, lParam);
+
+                    
         }
-
-        if (pThis)
-            return pThis->wndProc(hWnd, message, wParam, lParam);
-        return DefWindowProc(hWnd, message, wParam, lParam);
-
-                
-    }
 
     };
 };

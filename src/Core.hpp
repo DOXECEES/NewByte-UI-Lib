@@ -8,6 +8,13 @@
 
 #define DCX_USESTYLE 0x00010000
 
+enum class SpecialKeyCode
+{
+    NONE,
+    CTRL,
+
+};
+
 // get from boost::hash_combine
 template <class T>
 inline void hash_combine(std::size_t& seed, const T& v)

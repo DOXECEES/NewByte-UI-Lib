@@ -10,16 +10,32 @@ namespace Widgets
     {
     }
 
-    void TextEdit::onButtonClicked(const wchar_t symbol)
+    void TextEdit::onButtonClicked(const wchar_t symbol, SpecialKeyCode specialCode)
     {
         switch (symbol)
         {
         case 0x25:
-            decrementCaretPos();
+            if(specialCode == SpecialKeyCode::CTRL)
+            {
+                decrementCaretPosOnWord();
+            }
+            else
+            {
+                decrementCaretPos();
+            }
             break;
         case 0x27:
-            incrementCaretPos();
+        {
+            if(specialCode == SpecialKeyCode::CTRL)
+            {
+                incrementCaretPosOnWord();
+            }
+            else
+            {
+                incrementCaretPos();
+            }
             break;
+        }
         default:
             break;
         }
@@ -50,8 +66,44 @@ namespace Widgets
     {
         if(caretPosition > 0) caretPosition--;
     }
+    
+
     void TextEdit::incrementCaretPos() noexcept
     {
         if(caretPosition < data.length()) caretPosition++;
+    }
+    
+    void TextEdit::decrementCaretPosOnWord() noexcept
+    {
+        if(caretPosition == 0) return;
+
+        for (size_t i = caretPosition - 1; i > 0; --i)
+        {
+            if (data[i] == L' ' && iswalnum(data[i - 1]))
+            {
+                caretPosition = i;
+                return;
+            }
+        }
+
+        caretPosition = 0;
+
+    }
+    void TextEdit::incrementCaretPosOnWord() noexcept
+    {
+        size_t len = data.length();
+
+        if(len == 0) return;
+
+        for (size_t i = caretPosition; i < len - 1; ++i)
+        {
+            if (data[i] == L' ' && iswalnum(data[i + 1]))
+            {
+                caretPosition = i + 1;
+                return;
+            }
+        }
+
+        caretPosition = len;
     }
 };

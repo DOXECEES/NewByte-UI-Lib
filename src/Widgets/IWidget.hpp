@@ -11,7 +11,7 @@ namespace Widgets
     class IWidget : public IIndexable
     {
     public:
-        
+    
         IWidget(NbRect<int> rect) : rect(rect) {}
         virtual ~IWidget() = default;
         virtual void onClick() 
@@ -20,7 +20,7 @@ namespace Widgets
             onClickCallback();
         };
 
-        virtual void onButtonClicked(const wchar_t symbol) {};
+        virtual void onButtonClicked(const wchar_t symbol, SpecialKeyCode specialCode = SpecialKeyCode::NONE) {};
         virtual void onSymbolButtonClicked(const wchar_t symbol) {};
         virtual bool hitTest(const NbPoint<int>& pos) = 0;
 

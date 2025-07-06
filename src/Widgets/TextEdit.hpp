@@ -17,7 +17,7 @@ namespace Widgets
         virtual bool hitTest(const NbPoint<int> &pos) override;
 
         virtual void onClick() override;
-        virtual void onButtonClicked(const wchar_t symbol);
+        virtual void onButtonClicked(const wchar_t symbol, SpecialKeyCode specialCode = SpecialKeyCode::NONE) override;
         virtual void onSymbolButtonClicked(const wchar_t symbol);
 
         inline bool getIsDataChanged() const noexcept { return isDataChanged; }
@@ -30,6 +30,8 @@ namespace Widgets
         void decrementCaretPos() noexcept;
         void incrementCaretPos() noexcept;
 
+        void decrementCaretPosOnWord() noexcept;
+        void incrementCaretPosOnWord() noexcept;
     private:
         std::wstring    data;
 

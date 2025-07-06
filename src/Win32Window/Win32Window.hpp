@@ -89,23 +89,28 @@ namespace Win32Window
                 }
                 case WM_CHAR:
                 {
-                    // setFocusedWidget();
-                    // getFocusedWidget();
-
                     if(!focusedWidget)
                         return 0;
 
+                    
                     focusedWidget->onSymbolButtonClicked((wchar_t)wParam);
 
                     return 0;
                 }
                 case WM_KEYDOWN:
                 {
-                   
                     if(!focusedWidget)
                         return 0;
 
-                    focusedWidget->onButtonClicked(wParam);
+                    if(GetAsyncKeyState(VK_CONTROL) & 0x8000)
+                    {
+                        focusedWidget->onButtonClicked(wParam, SpecialKeyCode::CTRL);
+                    }
+                    else
+                    {
+                        focusedWidget->onButtonClicked(wParam);
+                    }
+                
 
                     return 0;
                 }

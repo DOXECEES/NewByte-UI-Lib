@@ -13,12 +13,17 @@ namespace Win32Window
     {
     public:
         Window();
-        ~Window() {};
+        ~Window() 
+        {
+            delete renderer;
+        };
 
         virtual void onSize(const NbSize<int>& newSize) override;
         virtual void show() override;
 
         const NbWindowHandle &getHandle() const noexcept { return handle; };
+
+        inline static Widgets::IWidget *focusedWidget = nullptr; // only one widget can have focus
 
     private:
         bool registerWindowClass();
@@ -46,6 +51,15 @@ namespace Win32Window
                     }
                     break;
                 }
+                // case WM_TIMER:
+                // {
+                //     if (wParam == 1)
+                //     {
+                //         caretVisible = !caretVisible;
+                //         InvalidateRect(hWnd, NULL, FALSE);
+                //     }
+                //     break;
+                // }
                 case WM_LBUTTONDOWN:
                 {
                     NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
@@ -54,6 +68,10 @@ namespace Win32Window
                     {
                         if(widget->hitTest(point))
                         {
+                            if(focusedWidget) focusedWidget->setUnfocused();
+                            
+                            focusedWidget = widget;
+                            focusedWidget->setFocused();
                             widget->onClick();
                         }
                     }
@@ -67,6 +85,28 @@ namespace Win32Window
                     {
                         widget->setIsHover(widget->hitTest(point));
                     }
+                    return 0;
+                }
+                case WM_CHAR:
+                {
+                    // setFocusedWidget();
+                    // getFocusedWidget();
+
+                    if(!focusedWidget)
+                        return 0;
+
+                    focusedWidget->onSymbolButtonClicked((wchar_t)wParam);
+
+                    return 0;
+                }
+                case WM_KEYDOWN:
+                {
+                   
+                    if(!focusedWidget)
+                        return 0;
+
+                    focusedWidget->onButtonClicked(wParam);
+
                     return 0;
                 }
                 case WM_GETMINMAXINFO:

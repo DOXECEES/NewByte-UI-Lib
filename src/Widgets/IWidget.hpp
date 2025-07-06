@@ -2,22 +2,26 @@
 #define SRC_WIDGETS_IWIDGET_HPP
 
 #include "../Core.hpp"
+#include "../IIndexable.hpp"
 
 #include <functional>
 
 namespace Widgets
 {
-    class IWidget
+    class IWidget : public IIndexable
     {
     public:
         
         IWidget(NbRect<int> rect) : rect(rect) {}
         virtual ~IWidget() = default;
-        void onClick() 
+        virtual void onClick() 
         {
             if(onClickCallback == nullptr) return;
             onClickCallback();
         };
+
+        virtual void onButtonClicked(const wchar_t symbol) {};
+        virtual void onSymbolButtonClicked(const wchar_t symbol) {};
         virtual bool hitTest(const NbPoint<int>& pos) = 0;
 
         inline void setSize(const NbSize<int>& newSize) { rect.width = newSize.width; rect.height = newSize.height; }
@@ -35,17 +39,21 @@ namespace Widgets
 
         inline void setOnClickCallback(const std::function<void()>& onClickCallback) { this->onClickCallback = onClickCallback; }
 
-
+        inline bool getIsFocused() const noexcept { return isFocused; }
+        inline void setFocused() noexcept { isFocused = true; }
+        inline void setUnfocused() noexcept { isFocused = false; }
+        
     protected:
 
-        NbRect<int> rect = { 0, 0, 0, 0 };
-        NbColor color = { 200, 200, 200 };
-        NbColor hoverColor = { 255, 255, 255 };
+        NbRect<int>             rect                = { 0, 0, 0, 0 };
+        NbColor                 color               = { 200, 200, 200 };
+        NbColor                 hoverColor          = { 255, 255, 255 };
 
-        std::function<void()> onClickCallback;
+        std::function<void()>   onClickCallback;
 
     // state
-        bool isHover = false;
+        bool                    isHover             = false;
+        bool                    isFocused           = false;
     };
 }
 

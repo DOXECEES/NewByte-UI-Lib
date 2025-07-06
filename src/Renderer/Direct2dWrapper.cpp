@@ -47,3 +47,23 @@ ID2D1SolidColorBrush *Direct2dWrapper::createSolidColorBrush(const Direct2dHandl
 {
     return renderTarget.createSolidBrush(color);
 }
+
+IDWriteTextFormat *Direct2dWrapper::createTextFormatForWidget(Widgets::IWidget* widget, const std::wstring &font) noexcept
+{
+    IDWriteFactory *directFactory = Renderer::FactorySingleton::getDirectWriteFactory();
+    IDWriteTextFormat *textFormat = nullptr;
+    directFactory->CreateTextFormat(font.c_str(), nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 32, L"en-us", &textFormat);
+    textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+    textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+    Renderer::Direct2dGlobalWidgetMapper::addTextFormat(widget, textFormat);
+    return textFormat;
+}
+
+// IDWriteTextLayout *Direct2dWrapper::createTextLayout(const std::wstring& text, IDWriteTextFormat* textFormat)
+// {
+//     IDWriteFactory *writeFactory = Renderer::FactorySingleton::getDirectWriteFactory();
+
+//     IDWriteTextLayout *textLayout = nullptr;
+//     writeFactory->CreateTextLayout(text.c_str(), text.length(), textFormat, 0, 0, &textLayout);
+//     return textLayout;
+// }

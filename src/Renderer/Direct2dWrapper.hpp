@@ -6,19 +6,30 @@
 #include "FactorySingleton.hpp"
 #include "../Utils.hpp"
 
+#include "Direct2dGlobalWidgetMapper.hpp"
+
 #include <unordered_map>
 
 #include <d2d1.h>
 #pragma comment(lib, "d2d1")
+
+class Direct2dWrapper;
+
 
 namespace Direct2dUtils
 {
     D2D1_RECT_F toD2D1Rect(const NbRect<int>& rect) noexcept;
     D2D1_COLOR_F toD2D1Color(const NbColor& color) noexcept;
     D2D1_POINT_2F toD2D1Point(const NbPoint<int>& point) noexcept;
+
 }
 
-
+enum class TextAlignment
+{
+    CENTER,
+    LEFT,
+    RIGHT
+};
 
 class Direct2dHandleRenderTarget
 {
@@ -129,9 +140,54 @@ public:
     }
 
 
-    void drawText(const std::wstring& text, const NbRect<int>& rect, const NbColor& color) const noexcept
+    void drawText(const std::wstring& text, const NbRect<int>& rect, const NbColor& color, TextAlignment alignment = TextAlignment::CENTER) const noexcept
     {
+        switch (alignment)
+        {
+        case TextAlignment::CENTER:
+            textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            break;
+        case TextAlignment::LEFT:
+            textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            break;
+        case TextAlignment::RIGHT:
+            textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+            break;
+        default:
+            break;
+        }
         renderTarget->DrawText(text.c_str(), static_cast<UINT32>(text.length()), textFormat, Direct2dUtils::toD2D1Rect(rect), createSolidBrush(color));
+        //IDWriteTextLayout* textLayout = Direct2dWrapper::createTextLayout(text, textFormat);
+        
+        //IDWriteFactory *writeFactory = Renderer::FactorySingleton::getDirectWriteFactory();
+
+        
+        //IDWriteTextLayout *textLayout = nullptr;
+        //writeFactory->CreateTextLayout(text.c_str(), text.length(), textFormat, rect.width, rect.height, &textLayout);
+
+        //renderTarget->DrawTextLayout(Direct2dUtils::toD2D1Point(NbPoint<int>(rect.x, rect.y)), textLayout, createSolidBrush(color));
+
+    }
+
+    void drawText(IDWriteTextLayout* textLayout, const NbRect<int>& rect, const NbColor& color, TextAlignment alignment = TextAlignment::CENTER) const noexcept
+    {
+        switch (alignment)
+        {
+        case TextAlignment::CENTER:
+            textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            break;
+        case TextAlignment::LEFT:
+            textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            break;
+        case TextAlignment::RIGHT:
+            textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+            break;
+        default:
+            break;
+        }
+
+        renderTarget->DrawTextLayout(Direct2dUtils::toD2D1Point(NbPoint<int>(rect.x, rect.y)), textLayout, createSolidBrush(color));
+
     }
 
     void fillRectangle(const NbRect<int>& rect, const NbColor& color) const noexcept
@@ -194,6 +250,8 @@ public:
     static Direct2dHandleRenderTarget createRenderTarget(const NbWindowHandle &handle, const NbSize<int> &size) noexcept;
     //static Direct2dTextFormat createTextFormat(const std::wstring& font) noexcept
     static ID2D1SolidColorBrush* createSolidColorBrush(const Direct2dHandleRenderTarget &renderTarget, const NbColor &color) noexcept;
+    //static IDWriteTextLayout* createTextLayout(const std::wstring& text, IDWriteTextFormat* textFormat = nullptr);
+    static IDWriteTextFormat* createTextFormatForWidget(Widgets::IWidget* widget, const std::wstring& font) noexcept;
 
 private:
     inline static ID2D1Factory* factory = Renderer::FactorySingleton::getFactory();

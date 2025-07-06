@@ -27,6 +27,8 @@ add_executable(${PROJECT_NAME} WIN32
         src/CaptionButtons.hpp
         src/Layout.cpp
         src/Layout.hpp
+        src/IIndexable.cpp
+        src/IIndexable.hpp
 
 
 
@@ -65,6 +67,8 @@ add_executable(${PROJECT_NAME} WIN32
         src/Renderer/Direct2dCaptionButtonRenderer.hpp
         src/Renderer/Direct2dWidgetRenderer.cpp
         src/Renderer/Direct2dWidgetRenderer.hpp
+        src/Renderer/Direct2dGlobalWidgetMapper.cpp
+        src/Renderer/Direct2dGlobalWidgetMapper.hpp
 
 
         src/Widgets/IWidget.cpp
@@ -73,6 +77,8 @@ add_executable(${PROJECT_NAME} WIN32
         src/Widgets/Button.hpp
         src/Widgets/IWidgetRenderer.cpp
         src/Widgets/IWidgetRenderer.hpp
+        src/Widgets/TextEdit.cpp
+        src/Widgets/TextEdit.hpp
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${sources} ${headers})

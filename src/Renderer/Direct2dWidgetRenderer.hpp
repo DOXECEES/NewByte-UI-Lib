@@ -4,7 +4,6 @@
 #include "Direct2dWrapper.hpp"
 
 #include "../Widgets/IWidgetRenderer.hpp"
-#include "../Widgets/Button.hpp"
 
 
 namespace Renderer
@@ -19,9 +18,12 @@ namespace Renderer
     private:
 
         void renderButton(IWidget* widget);
+        void renderTextEdit(IWidget* widget);
+
+        void createTextLayoutForWidget(IWidget* widget);
 
         Direct2dHandleRenderTarget* renderTarget = nullptr;
-    
+
     };
 
 

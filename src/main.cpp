@@ -7,6 +7,7 @@
 
 #include "Layout.hpp"
 #include "Widgets/Button.hpp"
+#include "Widgets/TextEdit.hpp"
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow)
 {
@@ -25,7 +26,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow)
     });
 
     layout->addWidget(button);
-    layout->addWidget(new Widgets::Button(NbRect<int>(100, 100, 100, 100)));
+    layout->addWidget(new Widgets::TextEdit(NbRect<int>(100, 100, 100, 100)));
     layout->addWidget(new Widgets::Button(NbRect<int>(100, 100, 100, 100)));
     layout->addWidget(new Widgets::Button(NbRect<int>(100, 100, 100, 100)));
     layout->addWidget(new Widgets::Button(NbRect<int>(100, 100, 100, 100)));
@@ -37,6 +38,9 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow)
     
 
     eventLoop.run();
+
+    delete layout;
+    
     // MainWindow window;
     // window.setTitle(L"UI-Lib test");
     // window.setBackgroundColor(NbColor(32, 32, 32));

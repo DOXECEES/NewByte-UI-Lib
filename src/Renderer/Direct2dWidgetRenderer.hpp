@@ -20,7 +20,7 @@ namespace Renderer
         void renderButton(IWidget* widget);
         void renderTextEdit(IWidget* widget);
 
-        void createTextLayoutForWidget(IWidget* widget);
+        void createTextLayoutForWidget(IWidget* widget, const std::wstring& data = L"");
 
         Direct2dHandleRenderTarget* renderTarget = nullptr;
 

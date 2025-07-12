@@ -13,7 +13,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow)
 {
     Win32Window::Window window;
     Win32Window::Win32EventLoop eventLoop;
-    
+
     Layout *layout = new VBoxLayout(&window);
 
     Widgets::Button *button = new Widgets::Button(NbRect<int>(100, 100, 100, 100));
@@ -33,9 +33,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow)
     layout->addWidget(new Widgets::Button(NbRect<int>(100, 100, 100, 100)));
     layout->addWidget(new Widgets::Button(NbRect<int>(100, 100, 100, 100)));
 
-
     window.show();
-    
 
     eventLoop.run();
 

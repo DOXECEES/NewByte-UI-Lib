@@ -22,6 +22,8 @@ namespace Widgets
 
         virtual void onButtonClicked(const wchar_t symbol, SpecialKeyCode specialCode = SpecialKeyCode::NONE) {};
         virtual void onSymbolButtonClicked(const wchar_t symbol) {};
+        virtual void onTimer() {};
+
         virtual bool hitTest(const NbPoint<int>& pos) = 0;
 
         inline void setSize(const NbSize<int>& newSize) { rect.width = newSize.width; rect.height = newSize.height; }

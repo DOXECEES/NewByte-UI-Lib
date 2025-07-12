@@ -7,6 +7,7 @@ namespace Renderer
     {
         captionButtonRenderer = new Direct2dCaptionButtonRenderer(&renderTarget);
         widgetRenderer = new Direct2dWidgetRenderer(&renderTarget);
+
     }
 
     void Direct2dRenderer::render(WindowInterface::IWindow *window) 

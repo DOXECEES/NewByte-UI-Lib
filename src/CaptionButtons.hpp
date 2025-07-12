@@ -46,7 +46,7 @@ struct CaptionButton
     int                     height              = DEFAULT_HEIGTH;
     NbColor                 hoverColor;
     NbColor                 color               = { 105, 105, 105 };
-    bool                    isHovered           = false;
+    mutable bool            isHovered           = false;
     
 };
 

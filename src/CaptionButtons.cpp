@@ -42,7 +42,9 @@ void CaptionButtonsContainer::recalculateRect(CaptionButton &button, const size_
 bool CaptionButton::hitTest(const NbRect<int>& windowRect, const NbPoint<int> &point) const noexcept
 {
     NbRect<int> newRect = {windowRect.width - rect.width - rect.x, rect.y, rect.width, rect.height};
-    return point.x >= newRect.x && point.x < newRect.x + newRect.width && point.y >= newRect.y && point.y < newRect.y + newRect.height;
+    isHovered = point.x >= newRect.x && point.x < newRect.x + newRect.width 
+        && point.y >= newRect.y && point.y < newRect.y + newRect.height;
+    return isHovered;
 }
 
 

@@ -36,30 +36,52 @@ namespace Widgets
             }
             break;
         }
-        default:
+        case 0x08:
+        {
+            if(specialCode == SpecialKeyCode::CTRL)
+            {
+                deleteWord();
+            }
+            else
+            {
+                deleteChar();
+            }
             break;
         }
+        case 0x2E:
+        {
+            deleteCharRight();
+            break;
+        }
+        default:
+            return;
+        }
+
+        isCaretVisible = true;
     }
 
     void TextEdit::onSymbolButtonClicked(const wchar_t symbol)
     {
         // make some type of validator
         
-        if(symbol == L'\r')
-            return;
-
-        if(symbol == L'\b'&& caretPosition > 0)
+        switch (symbol)
         {
-            data.erase(caretPosition - 1, 1);
-            caretPosition--;
-            isDataChanged = true;
+        case L'\r':
+        case L'\b':
             return;
-        }    
+        default:
+            break;
+        }
         
         data.insert(caretPosition, 1, symbol);
         caretPosition++;
         isDataChanged = true;
+        isCaretVisible = true;
+    }
 
+    void TextEdit::onTimer()
+    {
+        isCaretVisible = !isCaretVisible;
     }
 
     void TextEdit::decrementCaretPos() noexcept
@@ -72,6 +94,8 @@ namespace Widgets
     {
         if(caretPosition < data.length()) caretPosition++;
     }
+    
+    
     
     void TextEdit::decrementCaretPosOnWord() noexcept
     {
@@ -106,4 +130,49 @@ namespace Widgets
 
         caretPosition = len;
     }
+    void TextEdit::deleteChar() noexcept
+    {
+        if(caretPosition > 0 )
+        {
+            data.erase(caretPosition - 1, 1);
+            caretPosition--;
+            isDataChanged = true;
+        }
+    }
+    void TextEdit::deleteCharRight() noexcept
+    {
+        if(caretPosition < data.length())
+        {
+            data.erase(caretPosition, 1);
+            isDataChanged = true;
+        }
+    }
+    void TextEdit::deleteWord() noexcept
+    {
+        // if(caretPosition == 0) return;
+
+        // std::function<bool(wchar_t)> comp;
+
+        // if(iswalnum(data[caretPosition - 1]))
+        // {
+        //     comp = iswspace;
+        // }
+        // else
+        // {
+        //     comp = iswalnum;
+        // }
+
+        // for (int i = caretPosition; i >= 0;  i--)
+        // {
+        //     if(comp(data[i]))
+        //     {
+        //         data.erase(i, caretPosition - i);
+        //         caretPosition = i;
+        //         isDataChanged = true;
+        //         return;
+        //     }
+        // }
+    }
+
+
 };

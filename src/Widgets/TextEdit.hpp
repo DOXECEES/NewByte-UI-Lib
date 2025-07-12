@@ -19,6 +19,7 @@ namespace Widgets
         virtual void onClick() override;
         virtual void onButtonClicked(const wchar_t symbol, SpecialKeyCode specialCode = SpecialKeyCode::NONE) override;
         virtual void onSymbolButtonClicked(const wchar_t symbol);
+        virtual void onTimer() override;
 
         inline bool getIsDataChanged() const noexcept { return isDataChanged; }
         inline void resetIsDataChanged() noexcept { isDataChanged = false; }
@@ -26,17 +27,26 @@ namespace Widgets
         inline const std::wstring &getData() const noexcept { return data; }
         inline void setData(const std::wstring &data) noexcept { this->data = std::move(data); }
 
+        inline bool getIsCaretVisible() const noexcept { return isCaretVisible; }   
+
         inline const uint32_t getCaretPos() const noexcept { return caretPosition; }
         void decrementCaretPos() noexcept;
         void incrementCaretPos() noexcept;
 
         void decrementCaretPosOnWord() noexcept;
         void incrementCaretPosOnWord() noexcept;
+
+        void deleteChar() noexcept;
+        void deleteCharRight() noexcept;
+
+        void deleteWord() noexcept;
+
     private:
         std::wstring    data;
 
-        bool            isDataChanged = true; // only for renderer
-        uint32_t        caretPosition = 0;
+        bool            isDataChanged   = true; // only for renderer
+        bool            isCaretVisible  = true;
+        uint32_t        caretPosition   = 0;
     };
 };
 

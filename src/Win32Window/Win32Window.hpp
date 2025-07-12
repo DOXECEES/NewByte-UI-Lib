@@ -7,11 +7,16 @@
 #include "../WindowInterface/IWindow.hpp"
 #include "../Utils.hpp"
 
+
 namespace Win32Window
 {
     class Window : public WindowInterface::IWindow
     {
     public:
+
+        constexpr static uint32_t CARET_FLICKERING_TIME_MS = 500;
+
+
         Window();
         ~Window() 
         {
@@ -32,6 +37,27 @@ namespace Win32Window
         {
             switch(message)
             {
+                case WM_CREATE:
+                {
+                    // SetTimer - piece of shit
+                    PTP_TIMER timer = CreateThreadpoolTimer([](PTP_CALLBACK_INSTANCE Instance, PVOID Context, PTP_TIMER Timer){
+                        if(focusedWidget)
+                            focusedWidget->onTimer();
+
+                    }, nullptr, nullptr);
+
+                    FILETIME dueTime;
+
+                    ULONGLONG qwDueTime = -10000000LL;
+                    dueTime.dwHighDateTime = (DWORD)(qwDueTime >> 32);
+                    dueTime.dwLowDateTime = (DWORD)qwDueTime;
+
+                    SetThreadpoolTimer(timer, &dueTime, CARET_FLICKERING_TIME_MS, 0); 
+
+
+                    return 0;
+
+                }
                 case WM_PAINT:
                 {
                     renderer->render(this);
@@ -49,17 +75,25 @@ namespace Win32Window
                     {
                         captionButton.onClick(captionButtonsContainer.getPaintArea(), point);
                     }
-                    break;
+                    return 0;
                 }
-                // case WM_TIMER:
-                // {
-                //     if (wParam == 1)
-                //     {
-                //         caretVisible = !caretVisible;
-                //         InvalidateRect(hWnd, NULL, FALSE);
-                //     }
-                //     break;
-                // }
+                case WM_NCMOUSEMOVE:
+                {
+                    NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                    Utils::convertToWindowSpace(hWnd, point);
+                    for (auto& captionButton : captionButtonsContainer)
+                    {
+                        captionButton.hitTest(captionButtonsContainer.getPaintArea(), point);
+                    }
+                    return 0;
+                }
+                case WM_TIMER:
+                {
+                    if(focusedWidget != nullptr)
+                        focusedWidget->onTimer();
+                    InvalidateRect(hWnd, NULL, TRUE); 
+                    return 0;
+                }
                 case WM_LBUTTONDOWN:
                 {
                     NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
@@ -232,7 +266,7 @@ namespace Win32Window
             
         inline static LRESULT CALLBACK staticWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
-            Window *pThis = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWL_USERDATA));
+            Window *pThis = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
             
             if (message == WM_NCCREATE)
             {

@@ -14,7 +14,15 @@ void Renderer::Direct2dCaptionButtonRenderer::render(CaptionButtonsContainer *co
     {
         NbRect<int> rect = {paintArea.width - i->rect.width - i->rect.x, i->rect.y, i->rect.width, i->rect.height};
 
-        renderTarget->fillRectangle(rect, i->color);
+        if(i->isHovered)
+        {
+            renderTarget->fillRectangle(rect, i->hoverColor);
+        }
+        else
+        {
+            renderTarget->fillRectangle(rect, i->color);
+        }
+
         renderTarget->drawText(i->text, rect, NbColor(255, 255, 255));
     }
 }

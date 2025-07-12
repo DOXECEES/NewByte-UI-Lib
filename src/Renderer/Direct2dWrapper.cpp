@@ -18,6 +18,7 @@ D2D1_POINT_2F Direct2dUtils::toD2D1Point(const NbPoint<int> &point) noexcept
 
 Direct2dHandleRenderTarget Direct2dWrapper::createRenderTarget(const NbWindowHandle &handle, const NbSize<int> &size) noexcept
 {
+
     D2D1_SIZE_U renderTargetSize = D2D1::SizeU(size.width, size.height);
     D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties();
     D2D1_HWND_RENDER_TARGET_PROPERTIES hwndProps = D2D1::HwndRenderTargetProperties(handle.as<HWND>(), renderTargetSize);
@@ -28,8 +29,10 @@ Direct2dHandleRenderTarget Direct2dWrapper::createRenderTarget(const NbWindowHan
         return nullptr;
     }
 
+
     uint32_t dpi = GetDpiForWindow(handle.as<HWND>());
     renderTarget->SetDpi(dpi, dpi);
+
     return Direct2dHandleRenderTarget(renderTarget);
 }
 

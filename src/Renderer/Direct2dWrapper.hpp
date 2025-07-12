@@ -38,19 +38,25 @@ public:
     {
         this->renderTarget = renderTarget;
         IDWriteFactory* directFactory = Renderer::FactorySingleton::getDirectWriteFactory(); 
+
         if(textFormat == nullptr)
         {
 
-            HRESULT hr = directFactory->CreateTextFormat(L"Segoe UI", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 14, L"en-us", &textFormat);
+            wchar_t buf[8];
+            GetUserDefaultLocaleName(buf, 8);
+
+            HRESULT hr = directFactory->CreateTextFormat(L"Segoe UI", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 14.0f, buf, &textFormat);
             if (FAILED(hr))
             {
                 OutputDebugString(std::to_wstring(hr).c_str());
             }
-            
+
             textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
             textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
         }
+
+
     }
 
     ~Direct2dHandleRenderTarget()
@@ -186,7 +192,10 @@ public:
             break;
         }
 
-        renderTarget->DrawTextLayout(Direct2dUtils::toD2D1Point(NbPoint<int>(rect.x, rect.y)), textLayout, createSolidBrush(color));
+
+
+
+        renderTarget->DrawTextLayout(Direct2dUtils::toD2D1Point(NbPoint<int>(rect.x, rect.y)), textLayout, createSolidBrush(color),D2D1_DRAW_TEXT_OPTIONS_CLIP );
 
     }
 

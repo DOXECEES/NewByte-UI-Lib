@@ -14,6 +14,7 @@ namespace Win32Window
             throw std::runtime_error("Failed to register window class.");
         }
 
+
         state.size = {800, 600};
 
         HWND _handle = CreateWindow(L"NbWindowClass", L"NbWindow", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, state.size.width, state.size.height, nullptr, nullptr, nullptr, this);
@@ -30,6 +31,7 @@ namespace Win32Window
 
         // renderer
         renderer = new Renderer::Direct2dRenderer(this);
+
 
          std::vector<CaptionButton>  captionButtons =
         {

@@ -25,5 +25,7 @@ namespace Win32Window
         ::TranslateMessage(&winMsg.getMsg());
         ::DispatchMessage(&winMsg.getMsg());
 
+        
+
     }
 };

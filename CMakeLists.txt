@@ -1,7 +1,7 @@
 
 cmake_minimum_required(VERSION 3.25.0)
 
-project(NewByte_Engine)
+project(NewByte_UI_Lib)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 FILE(GLOB_RECURSE headers "src/*.h")
 FILE(GLOB_RECURSE sources "src/*.cpp")
 
-add_executable(${PROJECT_NAME} WIN32 
+add_library(${PROJECT_NAME} STATIC 
         src/main.cpp
         src/IWindow.cpp
         src/IWindow.hpp
@@ -38,6 +38,8 @@ add_executable(${PROJECT_NAME} WIN32
         src/Win32Window/Win32EventLoop.hpp
         src/Win32Window/Win32ModalWindow.cpp
         src/Win32Window/Win32ModalWindow.hpp
+        src/Win32Window/Win32ChildWindow.cpp
+        src/Win32Window/Win32ChildWindow.hpp
 
         src/WindowInterface/IWindow.cpp
         src/WindowInterface/IWindow.hpp

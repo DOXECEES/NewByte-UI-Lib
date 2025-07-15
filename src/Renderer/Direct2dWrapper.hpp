@@ -1,5 +1,5 @@
-#ifndef SRC_RENDERER_DIRECT2DWRAPPER_HPP
-#define SRC_RENDERER_DIRECT2DWRAPPER_HPP
+#ifndef NBUI_SRC_RENDERER_DIRECT2DWRAPPER_HPP
+#define NBUI_SRC_RENDERER_DIRECT2DWRAPPER_HPP
 
 #include "../Core.hpp"
 #include "../WindowInterface/WindowCore.hpp"

@@ -1,6 +1,6 @@
 
-#ifndef SRC_MAINWINDOW_HPP
-#define SRC_MAINWINDOW_HPP
+#ifndef NBUI_SRC_MAINWINDOW_HPP
+#define NBUI_SRC_MAINWINDOW_HPP
 
 #include <Windows.h>
 

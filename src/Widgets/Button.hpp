@@ -1,5 +1,5 @@
-#ifndef SRC_WIDGETS_BUTTON_HPP
-#define SRC_WIDGETS_BUTTON_HPP
+#ifndef NBUI_SRC_WIDGETS_BUTTON_HPP
+#define NBUI_SRC_WIDGETS_BUTTON_HPP
 
 #include "IWidget.hpp"
 

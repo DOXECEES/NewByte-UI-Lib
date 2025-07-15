@@ -16,6 +16,7 @@ namespace WindowInterface
     {
         size = newSize;
         clientSize = { size.width - frameSize.left - frameSize.right, size.height - frameSize.top - frameSize.bot };
+        isSizeChanged = true;
     }
 
     void WindowState::setTitle(const std::wstring &newTitle)
@@ -30,5 +31,10 @@ namespace WindowInterface
     void WindowState::setMinSize(const NbSize<int> &newMinSize)
     {
         minSize = newMinSize;
+    }
+
+    void WindowState::resetDirty()
+    {
+        isSizeChanged = false;
     }
 };

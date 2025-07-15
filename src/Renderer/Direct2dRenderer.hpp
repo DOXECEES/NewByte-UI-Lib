@@ -1,5 +1,5 @@
-#ifndef SRC_RENDERER_DIRECT2DRENDERER_HPP
-#define SRC_RENDERER_DIRECT2DRENDERER_HPP
+#ifndef NBUI_SRC_RENDERER_DIRECT2DRENDERER_HPP
+#define NBUI_SRC_RENDERER_DIRECT2DRENDERER_HPP
 
 #include "../WindowInterface/IWindowRenderer.hpp"
 #include "../WindowInterface/IWindow.hpp"

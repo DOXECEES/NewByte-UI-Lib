@@ -1,5 +1,5 @@
-#ifndef SRC_LAYOUT_HPP
-#define SRC_LAYOUT_HPP
+#ifndef NBUI_SRC_LAYOUT_HPP
+#define NBUI_SRC_LAYOUT_HPP
 
 #include "Core.hpp"
 
@@ -44,19 +44,25 @@ public:
         linkedWidgets.push_back(widget);
     }
 
+    void addLayout(Layout *layout)
+    {
+        linkedLayouts.push_back(layout);
+    }
+
     void setSpacing(const int spacing) noexcept
     {
         this->spacing = spacing;
     }
 
+    WindowInterface::IWindow*       window          = nullptr;
 protected:
 
     virtual void caclulateLayout() noexcept = 0;
 
     std::vector<Widgets::IWidget*>  linkedWidgets;
+    std::vector<Layout*>            linkedLayouts;
     int                             spacing         = 5;
 
-    WindowInterface::IWindow*       window          = nullptr;
 
 };
 
@@ -68,30 +74,107 @@ public:
 
     void caclulateLayout() noexcept override 
     {
+
         const NbRect<int>& clientRect = window->getClientRect();
-        int countOfWidgets = linkedWidgets.size();
 
-        int dx = clientRect.width / countOfWidgets;
-        int dy = clientRect.height / countOfWidgets;
+        std::vector<NbRect<int>> layoutRects;
+        layoutRects.reserve(linkedLayouts.size() + 1);
 
-        int currentIteration = 0;
-        for(auto& widget : linkedWidgets)
+        if(!linkedLayouts.empty())
         {
-            NbRect<int> rect = {
-                clientRect.x ,
-                clientRect.y + currentIteration * dy,
-                clientRect.width,
-                dy
-            };
+            int dxLayout = clientRect.width;
+            int dylayout = clientRect.height / (linkedLayouts.size() + 1);  // because parent layout is also counted
 
-            rect = applyPaddingToRect(rect, Padding());
+            for(int i = 0; i < linkedLayouts.size() + 1; i++)
+            {
+                NbRect<int> rect = {
+                    clientRect.x,
+                    clientRect.y + (i) * dylayout,
+                    dxLayout,
+                    dylayout
+                };
 
-            widget->setRect(rect);
-            currentIteration++;
+                layoutRects.push_back(rect);
+                if(i != 0)
+                    linkedLayouts[i - 1]->window->setClientRect(rect);
+            }
         }
+
+        //calculate parent layout widgets
+
+        if(!linkedWidgets.empty())
+        {
+            int countOfWidgets = linkedWidgets.size();
+
+            int dx = layoutRects[0].width / countOfWidgets;
+            int dy = layoutRects[0].height / countOfWidgets;
+
+            int currentIteration = 0;
+            for(auto& widget : linkedWidgets)
+            {
+                NbRect<int> rect = {
+                    layoutRects[0].x ,
+                    layoutRects[0].y + currentIteration * dy,
+                    layoutRects[0].width,
+                    dy
+                };
+
+                rect = applyPaddingToRect(rect, Padding());
+
+                widget->setRect(rect);
+                currentIteration++;
+            }
+        }
+
+        // other layouts widgets
+        for (int i = 1; i < linkedLayouts.size() + 1; i++)
+        {
+            if(linkedWidgets.empty()) continue;
+            int countOfWidgets = linkedWidgets.size();
+
+            int dx = layoutRects[i].width / countOfWidgets;
+            int dy = layoutRects[i].height / countOfWidgets;
+
+            int currentIteration = 0;
+            for(auto& widget : linkedWidgets)
+            {
+                NbRect<int> rect = {
+                    layoutRects[i].x ,
+                    layoutRects[i].y + currentIteration * dy,
+                    layoutRects[i].width,
+                    dy
+                };
+
+                rect = applyPaddingToRect(rect, Padding());
+
+                widget->setRect(rect);
+                currentIteration++;
+            }
+        }
+
+        // int countOfWidgets = linkedWidgets.size();
+
+        // int dx = clientRect.width / countOfWidgets;
+        // int dy = clientRect.height / countOfWidgets;
+
+        // int currentIteration = 0;
+        // for(auto& widget : linkedWidgets)
+        // {
+        //     NbRect<int> rect = {
+        //         clientRect.x ,
+        //         clientRect.y + currentIteration * dy,
+        //         clientRect.width,
+        //         dy
+        //     };
+
+        //     rect = applyPaddingToRect(rect, Padding());
+
+        //     widget->setRect(rect);
+        //     currentIteration++;
+        // }
     }
 
 };
 
 
-#endif
+#endif 

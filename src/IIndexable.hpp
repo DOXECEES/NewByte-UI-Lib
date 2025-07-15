@@ -1,5 +1,5 @@
-#ifndef SRC_IINDEXABLE_HPP
-#define SRC_IINDEXABLE_HPP
+#ifndef NBUI_SRC_IINDEXABLE_HPP
+#define NBUI_SRC_IINDEXABLE_HPP
 
 #include <queue>
 

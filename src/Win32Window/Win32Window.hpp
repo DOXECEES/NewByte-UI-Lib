@@ -1,5 +1,5 @@
-#ifndef SRC_WIN32WINDOW_WIN32WINDOW_HPP
-#define SRC_WIN32WINDOW_WIN32WINDOW_HPP
+#ifndef NBUI_SRC_WIN32WINDOW_WIN32WINDOW_HPP
+#define NBUI_SRC_WIN32WINDOW_WIN32WINDOW_HPP
 
 #include <Windows.h>
 #include <windowsx.h>
@@ -60,7 +60,11 @@ namespace Win32Window
                 }
                 case WM_PAINT:
                 {
+                    PAINTSTRUCT ps;
+                    HDC hdc = BeginPaint(hWnd, &ps);
                     renderer->render(this);
+                    EndPaint(hWnd, &ps);
+
                     return 0;
                 }
                 case WM_NCCALCSIZE:
@@ -75,7 +79,7 @@ namespace Win32Window
                     {
                         captionButton.onClick(captionButtonsContainer.getPaintArea(), point);
                     }
-                    return 0;
+                    return DefWindowProc(hWnd, message, wParam, lParam);
                 }
                 case WM_NCMOUSEMOVE:
                 {

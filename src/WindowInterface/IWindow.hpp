@@ -1,5 +1,5 @@
-#ifndef SRC_WINDOWINTERFACE_IWINDOW_HPP
-#define SRC_WINDOWINTERFACE_IWINDOW_HPP
+#ifndef NBUI_SRC_WINDOWINTERFACE_IWINDOW_HPP
+#define NBUI_SRC_WINDOWINTERFACE_IWINDOW_HPP
 
 #include <set>
 
@@ -14,6 +14,8 @@
 
 #include "../CaptionButtons.hpp"
 #include "../Widgets/IWidget.hpp"
+
+
 
 namespace WindowInterface
 {
@@ -45,6 +47,17 @@ namespace WindowInterface
 
         const WindowStyle& getStyle() const noexcept { return style; };
         const NbRect<int> getClientRect() const noexcept { return state.clientRect; };
+        void setClientRect(const NbRect<int>& rect) noexcept
+        { 
+            state.clientRect = rect;
+            state.setSize({rect.width, rect.height});
+            SetWindowPos(handle.as<HWND>(), nullptr, rect.x, rect.y, rect.width, rect.height, SWP_NOZORDER);
+        };
+
+        // state dirty flags
+        bool isSizeChanged() const noexcept { return state.isSizeChanged; };
+
+        void resetStateDirtyFlags() { state.resetDirty(); };
 
         CaptionButtonsContainer* getCaptionButtonsContainer() noexcept { return &captionButtonsContainer; };
         const std::vector<Widgets::IWidget*>& getWidgets() const noexcept { return widgets; };
@@ -67,5 +80,6 @@ namespace WindowInterface
     
     };
 };
+
 
 #endif

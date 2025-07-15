@@ -1,5 +1,5 @@
-#ifndef SRC_CORE_HPP
-#define SRC_CORE_HPP
+#ifndef NBUI_SRC_CORE_HPP
+#define NBUI_SRC_CORE_HPP
 
 #include <cstdint>
 #include <string>

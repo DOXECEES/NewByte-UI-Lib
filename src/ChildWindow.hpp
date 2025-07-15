@@ -1,5 +1,5 @@
-#ifndef SRC_CHILDWINDOW_HPP
-#define SRC_CHILDWINDOW_HPP
+#ifndef NBUI_SRC_CHILDWINDOW_HPP
+#define NBUI_SRC_CHILDWINDOW_HPP
 
 #include <Windows.h>
 

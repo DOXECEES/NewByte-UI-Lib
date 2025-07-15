@@ -8,7 +8,7 @@ namespace Win32Window
     WindowInterface::IPlatformMessage* Win32EventLoop::getNextMessage()
     {
         MSG msg = {};
-        if(!GetMessage(&msg, nullptr, 0, 0) )
+        if(!PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) )
         {
             return nullptr;
         }

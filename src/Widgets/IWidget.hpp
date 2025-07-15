@@ -1,5 +1,5 @@
-#ifndef SRC_WIDGETS_IWIDGET_HPP
-#define SRC_WIDGETS_IWIDGET_HPP
+#ifndef NBUI_SRC_WIDGETS_IWIDGET_HPP
+#define NBUI_SRC_WIDGETS_IWIDGET_HPP
 
 #include "../Core.hpp"
 #include "../IIndexable.hpp"

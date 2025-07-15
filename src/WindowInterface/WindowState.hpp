@@ -1,5 +1,5 @@
-#ifndef SRC_WINDOWINTERFACE_WINDOWSTATE_HPP
-#define SRC_WINDOWINTERFACE_WINDOWSTATE_HPP
+#ifndef NBUI_SRC_WINDOWINTERFACE_WINDOWSTATE_HPP
+#define NBUI_SRC_WINDOWINTERFACE_WINDOWSTATE_HPP
 
 #include "../Core.hpp"
 #include "WindowCore.hpp"
@@ -27,6 +27,8 @@ namespace WindowInterface
         void setMinSize(const NbSize<int>& newMinSize);
         void setFrameSize(const FrameSize& newFrameSize);
 
+        void resetDirty();
+
         // TODO: change to private
     public:
         NbColor         color       = { 45, 45, 45 };
@@ -44,6 +46,9 @@ namespace WindowInterface
         FrameSize       frameSize;
 
         bool            isMaximized = false;
+
+        //dirty flag //
+        bool isSizeChanged = true;
     };
 
 };

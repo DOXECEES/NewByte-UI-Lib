@@ -1,5 +1,5 @@
-#ifndef SRC_UTILS_HPP
-#define SRC_UTILS_HPP
+#ifndef NBUI_SRC_UTILS_HPP
+#define NBUI_SRC_UTILS_HPP
 
 #include <Windows.h>
 

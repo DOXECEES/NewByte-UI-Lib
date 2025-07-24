@@ -1,6 +1,7 @@
 #ifndef NBUI_SRC_CORE_HPP
 #define NBUI_SRC_CORE_HPP
 
+
 #include <cstdint>
 #include <string>
 #include <variant>
@@ -57,6 +58,16 @@ struct NbSize
     {
         return NbSize<T>(static_cast<T>((double)width * scale), static_cast<T>((double)height * scale));
     }
+
+    NbSize<T>& operator-=(const NbSize<T>& oth)
+    {
+        this->width -= oth.width;
+        this->height -= oth.height;
+        return *this;
+    }
+
+
+
 };
 
 
@@ -87,6 +98,7 @@ struct NbColor
 template<typename T>
 struct NbRect
 {
+    constexpr NbRect() = default;
 
     NbRect(const T x, const T y, const T width, const T height)
     : x(x)
@@ -101,7 +113,22 @@ struct NbRect
     T width     = {};
     T height    = {};
 
+    constexpr bool isEmpty() const { return width == 0 || height == 0; }
+    constexpr void scale(const float scaleFactor) 
+    {
+        x *= scaleFactor;
+        y *= scaleFactor;
+        width *= scaleFactor;
+        height *= scaleFactor;
+    }
 
+    constexpr void scale(const NbSize<float> scaleFactor)
+    {
+        x *= scaleFactor.width;
+        y *= scaleFactor.height;
+        width *= scaleFactor.width;
+        height *= scaleFactor.height;
+    }
 
 };
 

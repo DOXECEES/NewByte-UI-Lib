@@ -6,10 +6,7 @@ project(NewByte_UI_Lib)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-FILE(GLOB_RECURSE headers "src/*.h")
-FILE(GLOB_RECURSE sources "src/*.cpp")
-
-add_library(${PROJECT_NAME} STATIC 
+set (SRC 
         src/main.cpp
         src/IWindow.cpp
         src/IWindow.hpp
@@ -29,6 +26,10 @@ add_library(${PROJECT_NAME} STATIC
         src/Layout.hpp
         src/IIndexable.cpp
         src/IIndexable.hpp
+        src/DockManager.cpp
+        src/DockManager.hpp
+        src/DockTree.cpp
+        src/DockTree.hpp
 
 
 
@@ -83,7 +84,8 @@ add_library(${PROJECT_NAME} STATIC
         src/Widgets/TextEdit.hpp
 )
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${sources} ${headers})
+add_library(${PROJECT_NAME} STATIC ${SRC})
+
 
 
 if(MSVC)
@@ -95,3 +97,9 @@ if(WIN32)
     target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE _UNICODE)
     target_link_libraries(${PROJECT_NAME} PRIVATE user32 )
 endif()
+
+foreach(source IN LISTS SRC)
+  get_filename_component(source_path "${source}" PATH)
+  string(REPLACE "/" "\\" source_path_msvc "${source_path}")
+  source_group("${source_path_msvc}" FILES "${source}")
+endforeach()

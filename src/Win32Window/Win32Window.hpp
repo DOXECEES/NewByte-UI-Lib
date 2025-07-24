@@ -7,6 +7,7 @@
 #include "../WindowInterface/IWindow.hpp"
 #include "../Utils.hpp"
 
+#include "../DockManager.hpp"
 
 namespace Win32Window
 {
@@ -35,6 +36,8 @@ namespace Win32Window
 
         LRESULT wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
+            static Splitter* activeSplitter = nullptr;
+
             switch(message)
             {
                 case WM_CREATE:
@@ -113,16 +116,31 @@ namespace Win32Window
                             widget->onClick();
                         }
                     }
+
+                    for (auto& i : DockManager::splitterList)
+                    {
+                        if (i->hitTest(point)) activeSplitter = i;
+                    }
                     return 0;
                 }
                 case WM_MOUSEMOVE:
                 {
+                    static NbPoint<int> prevPoint = {};
+
                     NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
 
                     for(const auto& widget : widgets)
                     {
                         widget->setIsHover(widget->hitTest(point));
                     }
+
+                    if (activeSplitter)
+                    {
+                        activeSplitter->onMove({ point.x - prevPoint.x, point.y - prevPoint.y });
+                    }
+
+                    prevPoint = point;
+
                     return 0;
                 }
                 case WM_CHAR:
@@ -149,6 +167,7 @@ namespace Win32Window
                         focusedWidget->onButtonClicked(wParam);
                     }
                 
+                    activeSplitter = nullptr;
 
                     return 0;
                 }
@@ -177,6 +196,7 @@ namespace Win32Window
                 }
                 case WM_SIZE:
                 {
+                    //OutputDebugStringA("WM_SIZE\n");
                     const int borderRadius = style.getBorderRadius();
                     RECT rc;
                     GetClientRect(hWnd, &rc);

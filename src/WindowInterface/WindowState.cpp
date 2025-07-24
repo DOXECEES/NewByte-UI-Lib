@@ -15,8 +15,17 @@ namespace WindowInterface
     void WindowState::setSize(const NbSize<int> &newSize)
     {
         size = newSize;
-        clientSize = { size.width - frameSize.left - frameSize.right, size.height - frameSize.top - frameSize.bot };
         isSizeChanged = true;
+
+        if(size.width == 0 && size.height == 0)
+        {
+            return;
+        }
+        clientSize = { size.width - frameSize.left - frameSize.right, size.height - frameSize.top - frameSize.bot };
+
+        clientRect.width = clientSize.width;
+        clientRect.height = clientSize.height;
+
     }
 
     void WindowState::setTitle(const std::wstring &newTitle)
@@ -36,5 +45,16 @@ namespace WindowInterface
     void WindowState::resetDirty()
     {
         isSizeChanged = false;
+    }
+    
+    void WindowState::calculateClientSize()
+    {
+        clientSize  = { size.width - frameSize.left - frameSize.right
+                    , size.height - frameSize.top - frameSize.bot };
+    }
+
+    void WindowState::calculateClientRect()
+    {
+        clientRect = { 0, 0, clientSize.width, clientSize.height };
     }
 };

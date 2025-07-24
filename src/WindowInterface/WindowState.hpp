@@ -12,6 +12,9 @@ namespace WindowInterface
         int left    = 5;
         int top     = 35;
         int bot     = 5;
+    
+        bool isEmpty() const { return right == 0 && left == 0 && top == 0 && bot == 0; }
+
     };
 
     class WindowState
@@ -26,6 +29,9 @@ namespace WindowInterface
         void setFontColor(const NbColor& newFontColor);
         void setMinSize(const NbSize<int>& newMinSize);
         void setFrameSize(const FrameSize& newFrameSize);
+
+        void calculateClientSize();
+        void calculateClientRect();
 
         void resetDirty();
 

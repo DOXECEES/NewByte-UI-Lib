@@ -55,8 +55,8 @@ namespace Renderer
         // NbRect<int> botRightCorner = {windowSize.width - radius, windowSize.height - radius, radius, radius};
         // renderTarget.fillRectangle(botRightCorner, frameColor);
         //
-
-        renderTarget.drawText(window->getTitle(), {0, 0, windowSize.width, frameSize.top}, window->getFontColor());
+        if(!frameSize.isEmpty())
+            renderTarget.drawText(window->getTitle(), {0, 0, windowSize.width, frameSize.top}, window->getFontColor());
 
         captionButtonRenderer->render(window->getCaptionButtonsContainer());
 

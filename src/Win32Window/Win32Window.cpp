@@ -15,9 +15,10 @@ namespace Win32Window
         }
 
 
-        state.size = {800, 600};
+        state.setSize({800, 600});
 
-        HWND _handle = CreateWindow(L"NbWindowClass", L"NbWindow", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, state.size.width, state.size.height, nullptr, nullptr, nullptr, this);
+
+        HWND _handle = CreateWindow(L"NbWindowClass", L"NbWindow", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, state.size.width, state.size.height, nullptr, nullptr, nullptr, this);
         handle = NbWindowHandle::fromWinHandle(_handle);
         WindowInterface::WindowMapper::registerWindow(handle, this);
        

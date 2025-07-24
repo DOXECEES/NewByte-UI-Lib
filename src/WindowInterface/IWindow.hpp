@@ -44,16 +44,21 @@ namespace WindowInterface
         const std::wstring& getTitle() const noexcept { return state.title; };
         const NbColor& getFontColor() const noexcept { return state.fontColor; };
         const bool isMaximized() const noexcept { return state.isMaximized; };
+        const NbSize<int>& getMinSize() const noexcept { return state.minSize; };
 
         const WindowStyle& getStyle() const noexcept { return style; };
         const NbRect<int> getClientRect() const noexcept { return state.clientRect; };
         void setClientRect(const NbRect<int>& rect) noexcept
         { 
-            state.clientRect = rect;
             state.setSize({rect.width, rect.height});
-            SetWindowPos(handle.as<HWND>(), nullptr, rect.x, rect.y, rect.width, rect.height, SWP_NOZORDER);
+            state.clientRect = rect;
+            SetWindowPos(handle.as<HWND>(), nullptr, rect.x, rect.y, rect.width, rect.height, SWP_NOZORDER | SWP_NOACTIVATE);
+            InvalidateRect(handle.as<HWND>(), NULL, FALSE);
+            UpdateWindow(handle.as<HWND>());
         };
 
+        void setBackgroundColor(const NbColor& color) { state.color = color; };
+        void setTitle(std::wstring_view title) { state.title = title; }
         // state dirty flags
         bool isSizeChanged() const noexcept { return state.isSizeChanged; };
 

@@ -3,13 +3,17 @@
 
 #include "../WindowInterface/IWindow.hpp"
 
+#include "../DockManager.hpp"
+
+#include <windowsx.h>
+
 namespace Win32Window
 {
     using namespace WindowInterface;
 
     class ChildWindow : public IWindow
     {
-        public:
+    public:
         ChildWindow(IWindow *parentWindow);
 
         virtual void onSize(const NbSize<int>& newSize) override { };
@@ -17,16 +21,135 @@ namespace Win32Window
 
         const NbWindowHandle &getHandle() const noexcept { return handle; };
 
+        void addCaption() noexcept;
 
         LRESULT wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
+            static Splitter* activeSplitter = nullptr;
+
+            static NbPoint<int> dragOffset = {};
+            static bool dragging = false;
+
             switch(message)
             {
+                case WM_PAINT:
+                {
+                    PAINTSTRUCT ps;
+                    HDC hdc = BeginPaint(hWnd, &ps);
+                    renderer->render(this);
+                    EndPaint(hWnd, &ps);
+
+                    return 0;
+                } 
                 case WM_SIZE:
                 {
+                    OutputDebugString(L"SIZE");
                     state.setSize({ LOWORD(lParam), HIWORD(lParam) });
+                    if(renderer)
+                        renderer->resize(this);
+
+                    InvalidateRect(hWnd, NULL, FALSE);
+
                     return 0;
                 }
+                case WM_NCHITTEST:  // if's order important
+                {
+                    if(state.frameSize.isEmpty())
+                        return HTCLIENT;
+
+                    int x = GET_X_LPARAM(lParam);
+                    int y = GET_Y_LPARAM(lParam);
+
+                    POINT point = {x,y};
+
+                    ScreenToClient(hWnd, &point);
+                    
+                    constexpr int SIZE_TO_MOVE_ARROW = 10;
+
+                    if(point.x < SIZE_TO_MOVE_ARROW && point.y < SIZE_TO_MOVE_ARROW)
+                        return HTTOPLEFT;
+
+                    if (point.y < SIZE_TO_MOVE_ARROW)
+                        return HTTOP;
+                  
+                    RECT rc;
+                    GetClientRect(hWnd, &rc);
+                  
+                    if(point.y > rc.bottom - state.frameSize.bot && point.x < SIZE_TO_MOVE_ARROW)
+                        return HTBOTTOMLEFT;
+
+                    if(point.x > rc.right - state.frameSize.right && point.y > rc.bottom - state.frameSize.bot)
+                        return HTBOTTOMRIGHT;
+
+                    if (point.x < state.frameSize.left)
+                        return HTLEFT;
+
+                    if (point.x > rc.right - state.frameSize.right)
+                        return HTRIGHT;
+
+                    if (point.y < state.frameSize.bot) // same as bot 
+                        return HTTOP;
+
+                    if (point.y < state.frameSize.top)
+                        return HTCAPTION;
+
+                    if (point.y > rc.bottom - state.frameSize.bot)
+                        return HTBOTTOM;
+
+                    return HTCLIENT;
+                }
+                case WM_LBUTTONDOWN:
+                {
+                    SetCapture(hWnd);
+
+                    NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+                    POINT p = { point.x, point.y };
+                    MapWindowPoints(hWnd, GetParent(hWnd), &p, 1);
+                    NbPoint<int> pp = Utils::toNbPoint<int>(p);
+
+                    for (auto& i : DockManager::splitterList)
+                    {
+                        if (i->hitTest(pp))
+                        {
+                            activeSplitter = i;
+
+                            // Сохраняем точку захвата
+                            dragOffset.x = pp.x - i->rect.x;
+                            dragOffset.y = pp.y - i->rect.y;
+                            dragging = true;
+                            break;
+                        }
+                    }
+                    return 0;
+                }
+
+                case WM_MOUSEMOVE:
+                {
+                    if (activeSplitter && dragging)
+                    {
+                        NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+                        POINT p = { point.x, point.y };
+                        MapWindowPoints(hWnd, GetParent(hWnd), &p, 1);
+                        NbPoint<int> pp = Utils::toNbPoint<int>(p);
+
+                        // Рассчитываем смещение сплиттера исходя из позиций и сохранённого оффсета
+                        int shiftX = pp.x - dragOffset.x - activeSplitter->rect.x;
+                        int shiftY = pp.y - dragOffset.y - activeSplitter->rect.y;
+
+                        activeSplitter->onMove({ shiftX, shiftY });
+                    }
+                    return 0;
+                }
+
+                case WM_LBUTTONUP:
+                {
+                    ReleaseCapture();
+                    dragging = false;
+                    activeSplitter = nullptr;
+                    return 0;
+                }
+
+
             }
             return DefWindowProc(hWnd, message, wParam, lParam);
         }

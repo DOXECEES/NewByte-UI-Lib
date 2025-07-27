@@ -23,6 +23,9 @@ namespace Win32Window
 
         void addCaption() noexcept;
 
+        inline static Widgets::IWidget* focusedWidget = nullptr; // only one widget can have focus
+
+
         LRESULT wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             static Splitter* activeSplitter = nullptr;
@@ -43,10 +46,16 @@ namespace Win32Window
                 } 
                 case WM_SIZE:
                 {
-                    OutputDebugString(L"SIZE");
                     state.setSize({ LOWORD(lParam), HIWORD(lParam) });
+                    
+
                     if(renderer)
                         renderer->resize(this);
+
+                    for (auto& listener : stateChangedListeners)
+                    {
+                        listener->onSizeChanged(state.clientSize);
+                    }
 
                     InvalidateRect(hWnd, NULL, FALSE);
 
@@ -107,6 +116,18 @@ namespace Win32Window
                     MapWindowPoints(hWnd, GetParent(hWnd), &p, 1);
                     NbPoint<int> pp = Utils::toNbPoint<int>(p);
 
+                    for (const auto& widget : widgets)
+                    {
+                        if (widget->hitTest(point))
+                        {
+                            if (focusedWidget) focusedWidget->setUnfocused();
+
+                            focusedWidget = widget;
+                            focusedWidget->setFocused();
+                            widget->onClick();
+                        }
+                    }
+
                     for (auto& i : DockManager::splitterList)
                     {
                         if (i->hitTest(pp))
@@ -125,9 +146,15 @@ namespace Win32Window
 
                 case WM_MOUSEMOVE:
                 {
+                    NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+
+                    for (const auto& widget : widgets)
+                    {
+                        widget->setIsHover(widget->hitTest(point));
+                    }
+
                     if (activeSplitter && dragging)
                     {
-                        NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
                         POINT p = { point.x, point.y };
                         MapWindowPoints(hWnd, GetParent(hWnd), &p, 1);
                         NbPoint<int> pp = Utils::toNbPoint<int>(p);
@@ -140,9 +167,26 @@ namespace Win32Window
                     }
                     return 0;
                 }
+                case WM_KEYDOWN:
+                {
+                    if (!focusedWidget)
+                        return 0;
 
+                    if (GetAsyncKeyState(VK_CONTROL) & 0x8000)
+                    {
+                        focusedWidget->onButtonClicked(wParam, SpecialKeyCode::CTRL);
+                    }
+                    else
+                    {
+                        focusedWidget->onButtonClicked(wParam);
+                    }
+
+                    return 0;
+                }
                 case WM_LBUTTONUP:
                 {
+
+
                     ReleaseCapture();
                     dragging = false;
                     activeSplitter = nullptr;

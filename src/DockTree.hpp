@@ -36,7 +36,8 @@ public:
     {
         DockNode* newNode = new DockNode(nullptr, placement);
         newNode->type = NodeType::CONTAINER;
-        newNode->rect = rect;
+        
+        newNode->rect = { rect.x + 5, rect.y + 35, rect.width, rect.height };
         return newNode;
     }
 

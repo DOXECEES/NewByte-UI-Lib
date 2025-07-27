@@ -125,7 +125,9 @@ struct NbRect
     constexpr void scale(const NbSize<float> scaleFactor)
     {
         x *= scaleFactor.width;
+        x = trunc(x);
         y *= scaleFactor.height;
+        y = ceil(y);
         width *= scaleFactor.width;
         height *= scaleFactor.height;
     }

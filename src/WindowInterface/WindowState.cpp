@@ -55,6 +55,6 @@ namespace WindowInterface
 
     void WindowState::calculateClientRect()
     {
-        clientRect = { 0, 0, clientSize.width, clientSize.height };
+        clientRect = { frameSize.left, frameSize.top, clientSize.width, clientSize.height };
     }
 };

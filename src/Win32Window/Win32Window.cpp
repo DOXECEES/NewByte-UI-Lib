@@ -34,7 +34,7 @@ namespace Win32Window
         renderer = new Renderer::Direct2dRenderer(this);
 
 
-         std::vector<CaptionButton>  captionButtons =
+        std::vector<CaptionButton>  captionButtons =
         {
             { L"✕", 50, 35, {240, 7, 23} },
             { L"🗖", 30, 35 },

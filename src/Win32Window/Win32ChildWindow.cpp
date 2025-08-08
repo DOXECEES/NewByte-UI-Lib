@@ -3,6 +3,8 @@
 #include "../WindowInterface/WindowMapper.hpp"
 #include "../Renderer/Direct2dRenderer.hpp"
 
+
+
 namespace Win32Window
 {
     ChildWindow::ChildWindow(WindowInterface::IWindow* parentWindow)

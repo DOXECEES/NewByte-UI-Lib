@@ -80,6 +80,16 @@ namespace Win32Window
         UpdateWindow(handle.as<HWND>());
     }
 
+    void Window::hideCursor() noexcept
+    {
+        while (ShowCursor(false) > 0);
+    }
+
+    void Window::showCursor() noexcept
+    {
+        while (ShowCursor(true) < 0);
+    }
+
     bool Window::registerWindowClass()
     {
         WNDCLASSEX wcex;

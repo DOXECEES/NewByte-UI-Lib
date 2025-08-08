@@ -29,6 +29,9 @@ namespace Win32Window
 
         const NbWindowHandle &getHandle() const noexcept { return handle; };
 
+        static void hideCursor() noexcept;
+        static void showCursor() noexcept;
+
         inline static Widgets::IWidget *focusedWidget = nullptr; // only one widget can have focus
 
     private:
@@ -98,7 +101,7 @@ namespace Win32Window
                 {
                     if(focusedWidget != nullptr)
                         focusedWidget->onTimer();
-                    InvalidateRect(hWnd, NULL, TRUE); 
+                    InvalidateRect(hWnd, NULL, FALSE); 
                     return 0;
                 }
                 case WM_LBUTTONDOWN:
@@ -131,7 +134,10 @@ namespace Win32Window
 
                     for(const auto& widget : widgets)
                     {
-                        widget->setIsHover(widget->hitTest(point));
+                        if (widget->hitTest(point))
+                            widget->setHover();
+                        else
+                            widget->setDefault();
                     }
 
                     if (activeSplitter)

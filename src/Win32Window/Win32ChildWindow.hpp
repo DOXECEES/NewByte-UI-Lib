@@ -10,7 +10,7 @@
 namespace Win32Window
 {
     using namespace WindowInterface;
-
+    
     class ChildWindow : public IWindow
     {
     public:
@@ -32,7 +32,7 @@ namespace Win32Window
 
             static NbPoint<int> dragOffset = {};
             static bool dragging = false;
-
+            static bool clicked = true;
             switch(message)
             {
                 case WM_PAINT:
@@ -124,6 +124,7 @@ namespace Win32Window
 
                             focusedWidget = widget;
                             focusedWidget->setFocused();
+                            clicked = true;
                             widget->onClick();
                         }
                     }
@@ -134,7 +135,7 @@ namespace Win32Window
                         {
                             activeSplitter = i;
 
-                            // Сохраняем точку захвата
+                            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                             dragOffset.x = pp.x - i->rect.x;
                             dragOffset.y = pp.y - i->rect.y;
                             dragging = true;
@@ -148,22 +149,28 @@ namespace Win32Window
                 {
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
-                    for (const auto& widget : widgets)
-                    {
-                        widget->setIsHover(widget->hitTest(point));
-                    }
-
                     if (activeSplitter && dragging)
                     {
                         POINT p = { point.x, point.y };
                         MapWindowPoints(hWnd, GetParent(hWnd), &p, 1);
                         NbPoint<int> pp = Utils::toNbPoint<int>(p);
 
-                        // Рассчитываем смещение сплиттера исходя из позиций и сохранённого оффсета
+                        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                         int shiftX = pp.x - dragOffset.x - activeSplitter->rect.x;
                         int shiftY = pp.y - dragOffset.y - activeSplitter->rect.y;
 
                         activeSplitter->onMove({ shiftX, shiftY });
+                    }
+                    else
+                    {
+                        for (const auto& widget : widgets)
+                        {
+                            if (widget->hitTest(point))
+                                widget->setHover();
+                            else
+                                widget->setDefault();
+                        }
+                        InvalidateRect(hWnd, NULL, FALSE);
                     }
                     return 0;
                 }

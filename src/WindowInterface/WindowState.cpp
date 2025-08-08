@@ -46,9 +46,18 @@ namespace WindowInterface
     {
         isSizeChanged = false;
     }
-    
-    void WindowState::calculateClientSize()
+
+    void WindowState::setClientRect(const NbRect<int>& newRect)
     {
+        clientRect = {
+            5 + newRect.x,
+            35 + newRect.y,
+            newRect.width,
+            newRect.height
+        };
+    }
+
+    void WindowState::calculateClientSize() {
         clientSize  = { size.width - frameSize.left - frameSize.right
                     , size.height - frameSize.top - frameSize.bot };
     }

@@ -30,6 +30,8 @@ namespace WindowInterface
         void setMinSize(const NbSize<int>& newMinSize);
         void setFrameSize(const FrameSize& newFrameSize);
 
+        void setClientRect(const NbRect<int>& newRect);
+
         void calculateClientSize();
         void calculateClientRect();
 

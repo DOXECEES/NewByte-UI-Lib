@@ -4,15 +4,27 @@
 #include "../Core.hpp"
 #include "../IIndexable.hpp"
 
+#include "WidgetStyle.hpp"
+
 #include <functional>
 
 namespace Widgets
 {
+    enum class WidgetState
+    {
+        DEFAULT,
+        ACTIVE,
+        DISABLE,
+        HOVER,
+        FOCUS,
+    };
+
+
     class IWidget : public IIndexable
     {
     public:
     
-        IWidget(NbRect<int> rect) : rect(rect) {}
+        IWidget(const NbRect<int>& rect) : rect(rect) {}
         virtual ~IWidget() = default;
         virtual void onClick() 
         {
@@ -31,12 +43,16 @@ namespace Widgets
         inline const NbRect<int>& getRect() const { return rect; }
         inline void setRect(const NbRect<int> &rect) { this->rect = rect; };
 
-        inline const NbColor& getColor() const { return color; }
-        inline const NbColor& getHoverColor() const { return hoverColor; }
+        //inline const NbColor& getColor() const { return color; }
+        //inline const NbColor& getHoverColor() const { return hoverColor; }
         
-        inline const bool getIsHover() const { return isHover; }
-        inline void setIsHover(const bool isHover) { this->isHover = isHover; }
-
+        inline const WidgetStyle& getStyle() const noexcept { return style; }
+        inline WidgetState getState() const noexcept { return state; }
+        
+        inline void setHover() noexcept { state = WidgetState::HOVER; }
+        inline void setActive() noexcept { state = WidgetState::ACTIVE; }
+        inline void setDisable() noexcept { state = WidgetState::DISABLE; }
+        inline void setDefault() noexcept { state = WidgetState::DEFAULT; }
         virtual const char* getClassName() const = 0;
 
         inline void setOnClickCallback(const std::function<void()>& onClickCallback) { this->onClickCallback = onClickCallback; }
@@ -48,11 +64,16 @@ namespace Widgets
     protected:
 
         NbRect<int>             rect                = { 0, 0, 0, 0 };
-        NbColor                 color               = { 200, 200, 200 };
-        NbColor                 hoverColor          = { 255, 255, 255 };
+        //NbColor                 color               = { 30, 30, 30 };
+        //NbColor                 hoverColor          = { 51, 51, 51 };
+
+
 
         std::function<void()>   onClickCallback;
 
+        WidgetStyle             style;
+
+        WidgetState             state               = WidgetState::DEFAULT;
     // state
         bool                    isHover             = false;
         bool                    isFocused           = false;

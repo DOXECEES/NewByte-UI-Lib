@@ -122,6 +122,18 @@ struct NbRect
         height *= scaleFactor;
     }
 
+    constexpr void scaleX(const float scaleFactor) noexcept
+    {
+        x *= scaleFactor;
+        width *= scaleFactor;
+    }
+
+    constexpr void scaleY(const float scaleFactor) noexcept
+    {
+        y *= scaleFactor;
+        height *= scaleFactor;
+    }
+
     constexpr void scale(const NbSize<float> scaleFactor)
     {
         x *= scaleFactor.width;
@@ -130,6 +142,16 @@ struct NbRect
         y = ceil(y);
         width *= scaleFactor.width;
         height *= scaleFactor.height;
+    }
+
+    constexpr NbRect<float> toFloat() const
+    {
+        return NbRect<float>(
+            static_cast<float>(this->x),
+            static_cast<float>(this->y),
+            static_cast<float>(this->width),
+            static_cast<float>(this->height)
+        );
     }
 
 };

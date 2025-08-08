@@ -3,7 +3,8 @@
 
 #include "Direct2dWrapper.hpp"
 
-#include "../Widgets/IWidgetRenderer.hpp"
+#include "Widgets/IWidgetRenderer.hpp"
+#include "Widgets/TreeView.hpp"
 
 
 namespace Renderer
@@ -19,8 +20,13 @@ namespace Renderer
 
         void renderButton(IWidget* widget);
         void renderTextEdit(IWidget* widget);
+        void renderTreeView(IWidget* widget);
+
+
 
         void createTextLayoutForWidget(IWidget* widget, const std::wstring& data = L"");
+
+        void createTextLayoutForTreeView(Widgets::TreeView* treeView);
 
         Direct2dHandleRenderTarget* renderTarget = nullptr;
 

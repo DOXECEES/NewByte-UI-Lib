@@ -51,8 +51,8 @@ namespace WindowInterface
         void setClientRect(const NbRect<int>& rect) noexcept
         { 
             state.setSize({rect.width, rect.height});
-            state.clientRect = rect;
-            SetWindowPos(handle.as<HWND>(), nullptr, rect.x, rect.y, rect.width, rect.height, SWP_NOZORDER | SWP_NOACTIVATE);
+            state.setClientRect(rect);
+            SetWindowPos(handle.as<HWND>(), nullptr, state.clientRect.x, state.clientRect.y, state.clientRect.width, state.clientRect.height, SWP_NOZORDER | SWP_NOACTIVATE);
             InvalidateRect(handle.as<HWND>(), NULL, FALSE);
             UpdateWindow(handle.as<HWND>());
         };

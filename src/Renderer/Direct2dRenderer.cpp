@@ -58,6 +58,7 @@ namespace Renderer
         if(!frameSize.isEmpty())
             renderTarget.drawText(window->getTitle(), {0, 0, windowSize.width, frameSize.top}, window->getFontColor());
 
+        renderTarget.drawText(window->getTitle(), {0, 0, windowSize.width, windowSize.height}, window->getFontColor());
         captionButtonRenderer->render(window->getCaptionButtonsContainer());
 
         for(auto& widget : window->getWidgets())

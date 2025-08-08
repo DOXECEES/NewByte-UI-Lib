@@ -82,10 +82,18 @@ set (SRC
         src/Widgets/IWidgetRenderer.hpp
         src/Widgets/TextEdit.cpp
         src/Widgets/TextEdit.hpp
+        src/Widgets/TreeView.cpp
+        src/Widgets/TreeView.hpp
+        src/Widgets/WidgetStyle.cpp
+        src/Widgets/WidgetStyle.hpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${SRC})
 
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
+    ../Engine/src
+)
 
 
 if(MSVC)

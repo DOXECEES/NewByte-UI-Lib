@@ -123,12 +123,12 @@ public:
         , TreeNode(parent)
     {}
 
-    std::shared_ptr<DockNode> getChild(DockPlacement placement) const noexcept
+    std::shared_ptr<DockNode> getChild(DockPlacement placementParam) const noexcept
     {
-        if(childs[(size_t)placement] == nullptr)
+        if(childs[(size_t)placementParam] == nullptr)
             return nullptr;
 
-        return std::dynamic_pointer_cast<DockNode>(childs[(size_t)placement]);
+        return std::dynamic_pointer_cast<DockNode>(childs[(size_t)placementParam]);
     }
 
     DockPlacement getPlacement() const noexcept { return placement; }
@@ -142,30 +142,35 @@ public:
     virtual bool isContainer() const noexcept = 0;
     virtual bool isWindow() const noexcept = 0;
 
-    void calculate(DockPlacement placement) noexcept
+    void calculate(DockPlacement placementParam) noexcept
     {
-        float splitRatio = 0.0f;
+        NbSize<float> splitRatio = { 0.0f, 0.0f };
 
-        if(getChild(DockPlacement::CENTER))
+        if(std::shared_ptr<DockNode> children = getChild(DockPlacement::CENTER); children != nullptr)
         {
 
             if(getCurrentCountOfChilds() == 1)
             {
-                splitRatio = 1.0f;
-                getChild(placement)->setRect(rect);
+                splitRatio = { 1.0f, 1.0f };
+                std::shared_ptr<DockNode> children = getChild(placementParam);
+                if (children)
+                {
+                    children->setRect(rect);
+                }
+
                 return;
             }
 
-            splitRatio = 0.50f;
+            splitRatio = { 0.25f, 0.5f };
             
-            NbRect<int> centralRect = getChild(DockPlacement::CENTER)->getRect();
+            NbRect<int> centralRect = children->getRect();
             NbRect<int> insertRect = centralRect;
 
-            switch (placement)
+            switch (placementParam)
             {
             case DockPlacement::LEFT:
             {
-                insertRect.width *= splitRatio;
+                insertRect.width *= splitRatio.width;
                 centralRect.x += insertRect.width;
                 centralRect.width = centralRect.width - insertRect.width;
 
@@ -189,7 +194,7 @@ public:
             }
             case DockPlacement::RIGHT:
             {
-                centralRect.width *= splitRatio;
+                centralRect.width *= 1 - splitRatio.width;
                 insertRect.x += centralRect.width;
                 insertRect.width = insertRect.width - centralRect.width;
 
@@ -214,7 +219,7 @@ public:
             }
             case DockPlacement::BOT:
             {
-                centralRect.height *= splitRatio;
+                centralRect.height *= splitRatio.height;
                 insertRect.y += centralRect.height;
                 insertRect.height = insertRect.height - centralRect.height;
 
@@ -240,7 +245,7 @@ public:
             {
 
 
-                insertRect.height *= splitRatio;
+                insertRect.height *= splitRatio.height;
                 centralRect.y += insertRect.height;
                 centralRect.height = centralRect.height - insertRect.height;
 
@@ -268,14 +273,18 @@ public:
             
 
 
-            getChild(DockPlacement::CENTER)->setRect(centralRect);
-            getChild(placement)->setRect(insertRect);
+            children->setRect(centralRect);
+            std::shared_ptr<DockNode> insertChildren = getChild(placementParam);
+            if (insertChildren)
+            {
+                insertChildren->setRect(insertRect);
+            }
 
             
         }
         else
         {
-            splitRatio = 0.50f;
+            splitRatio = { 0.50f, 0.50f };
         }
         
     }
@@ -283,6 +292,7 @@ public:
 protected:
     NbRect<int>     rect      = {0, 0, 0, 0};
     DockPlacement   placement = DockPlacement::NONE;
+    
 
 };
 

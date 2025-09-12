@@ -6,6 +6,7 @@
 #include "Widgets/IWidgetRenderer.hpp"
 #include "Widgets/TreeView.hpp"
 
+#include "Debug.hpp"
 
 namespace Renderer
 {
@@ -21,8 +22,21 @@ namespace Renderer
         void renderButton(IWidget* widget);
         void renderTextEdit(IWidget* widget);
         void renderTreeView(IWidget* widget);
+        void renderLabel(IWidget* widget);
 
+        template<typename T>
+        T* castWidget(IWidget* widget) const noexcept
+        {
+            T* castWidget = dynamic_cast<T*>(widget);
 
+            if (!castWidget)
+            {
+                Debug::debug("The widget name is already registered or the type could not be cast.");
+                abort(); // temp 
+            }
+
+            return castWidget;
+        }
 
         void createTextLayoutForWidget(IWidget* widget, const std::wstring& data = L"");
 

@@ -11,15 +11,7 @@ CaptionButtonsContainer::CaptionButtonsContainer()
     :paintArea(0, 0, 0, 0)
 {
     buttons.reserve(3);
-
-    
 }
-
-CaptionButtonsContainer::~CaptionButtonsContainer()
-{
-    
-}
-
 
 void CaptionButtonsContainer::addButton(CaptionButton &button)
 {
@@ -28,9 +20,17 @@ void CaptionButtonsContainer::addButton(CaptionButton &button)
 }
 
 
+void CaptionButtonsContainer::resetState() const noexcept
+{
+    for (const CaptionButton& i : buttons)
+    {
+        i.isHovered = false;
+    }
+}
+
 void CaptionButtonsContainer::recalculateRect(CaptionButton &button, const size_t index)
 {
-    const int SPACING_BETWEEN_BUTTONS = 5;
+    const int SPACING_BETWEEN_BUTTONS = 0;
     int offset = 0;
 
     offset = std::accumulate(

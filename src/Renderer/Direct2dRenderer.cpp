@@ -1,3 +1,8 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
+
 #include "Direct2dRenderer.hpp"
 
 namespace Renderer 
@@ -10,7 +15,13 @@ namespace Renderer
 
     }
 
-    void Direct2dRenderer::render(WindowInterface::IWindow *window) 
+	Direct2dRenderer::~Direct2dRenderer()
+	{
+        delete captionButtonRenderer;
+        delete widgetRenderer;
+	}
+
+	void Direct2dRenderer::render(WindowInterface::IWindow* window)
     {
         const NbSize<int>& windowSize = window->getSize(); 
         const WindowInterface::WindowStyle& style = window->getStyle();
@@ -70,9 +81,6 @@ namespace Renderer
         {
             OutputDebugString(L"EndDraw failed\n");
         }
-
-
-
     }
     void Direct2dRenderer::resize(WindowInterface::IWindow *window)
     {

@@ -21,14 +21,12 @@ namespace Renderer
             Direct2dRenderer() = delete;
 
             Direct2dRenderer(WindowInterface::IWindow *window);
-            ~Direct2dRenderer() = default;
+            ~Direct2dRenderer();
             void render(WindowInterface::IWindow *window) override;
             void resize(WindowInterface::IWindow *window) override;
 
         private:
             Direct2dHandleRenderTarget renderTarget;
-
-
     };
 };
 

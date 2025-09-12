@@ -6,6 +6,8 @@
 #include <d2d1.h>
 #pragma comment(lib, "d2d1")
 
+#include <string>
+
 #include "Core.hpp"
 
 namespace Utils
@@ -50,19 +52,19 @@ namespace Utils
     D2D1::ColorF toD2D1Color(const NbColor &color) noexcept;
 
     template <typename T>
-    constexpr NbSize<T> toNbSize(const SIZE &size) noexcept
+    constexpr NbSize<T> toNbSize(const SIZE size) noexcept
     {
         return NbSize<T>(static_cast<T>(size.cx), static_cast<T>(size.cy));
     }
 
     template <typename T>
-    constexpr NbPoint<T> toNbPoint(const POINT &point) noexcept
+    constexpr NbPoint<T> toNbPoint(const POINT point) noexcept
     {
         return NbPoint<T>(static_cast<T>(point.x), static_cast<T>(point.y));
     }
 
     template <typename T>
-    constexpr NbRect<T> toNbRect(const RECT &rect) noexcept
+    constexpr NbRect<T> toNbRect(const RECT rect) noexcept
     {
         return NbRect<T>(
             static_cast<T>(rect.left),
@@ -73,7 +75,7 @@ namespace Utils
     }
 
      template <typename T>
-    constexpr NbRect<T> toNbRect(const D2D1_RECT_F &rect) noexcept
+    constexpr NbRect<T> toNbRect(const D2D1_RECT_F rect) noexcept
     {
         return NbRect<T>(
             static_cast<T>(rect.left),
@@ -82,6 +84,29 @@ namespace Utils
             static_cast<T>(rect.bottom - rect.top)
         );
     }
+
+
+    inline std::wstring toWstring(const std::string& str) noexcept
+    {
+        int size_needed = MultiByteToWideChar(CP_UTF8, 0,
+                        str.c_str(), (int)str.size(),
+                        nullptr, 0);
+
+        std::wstring wstr(size_needed, 0);
+        MultiByteToWideChar(CP_UTF8, 0,
+                            str.c_str(), (int)str.size(),
+                            &wstr[0], size_needed);
+
+        return wstr;
+    }
+
+    /// FUCK IT
+    // std::wstring toWstring(std::string_view strView) noexcept
+    // {
+    //     return toWstring(strView.);
+    // }
+
+
     
 
 };

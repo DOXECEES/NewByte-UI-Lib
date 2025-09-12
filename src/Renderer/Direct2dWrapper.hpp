@@ -31,6 +31,13 @@ enum class TextAlignment
     RIGHT
 };
 
+enum class ParagraphAlignment
+{
+    TOP,
+    BOTTOM,
+    CENTER,
+};
+
 class Direct2dHandleRenderTarget
 {
 public:
@@ -146,7 +153,11 @@ public:
     }
 
 
-    void drawText(const std::wstring& text, const NbRect<int>& rect, const NbColor& color, TextAlignment alignment = TextAlignment::CENTER) const noexcept
+    void drawText(const std::wstring& text,
+                    const NbRect<int>& rect,
+                    const NbColor& color,
+                    TextAlignment alignment = TextAlignment::CENTER,
+                    ParagraphAlignment paragraphAligment = ParagraphAlignment::CENTER) const noexcept
     {
         switch (alignment)
         {
@@ -162,6 +173,22 @@ public:
         default:
             break;
         }
+
+        switch (paragraphAligment)
+        {
+        case ParagraphAlignment::TOP:
+            textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+            break;
+        case ParagraphAlignment::BOTTOM:
+			textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+            break;
+        case ParagraphAlignment::CENTER:
+			textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+            break;
+        default:
+            break;
+        }
+
         renderTarget->DrawText(text.c_str(), static_cast<UINT32>(text.length()), textFormat, Direct2dUtils::toD2D1Rect(rect), createSolidBrush(color));
         //IDWriteTextLayout* textLayout = Direct2dWrapper::createTextLayout(text, textFormat);
         
@@ -191,9 +218,6 @@ public:
         default:
             break;
         }
-
-
-
 
         renderTarget->DrawTextLayout(Direct2dUtils::toD2D1Point(NbPoint<int>(rect.x, rect.y)), textLayout, createSolidBrush(color),D2D1_DRAW_TEXT_OPTIONS_CLIP );
 

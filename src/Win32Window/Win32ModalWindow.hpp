@@ -18,6 +18,8 @@ namespace Win32Window
         ~ModalWindow();
 
         void show() override;
+        void repaint() const noexcept override;
+
         void onSize(const NbSize<int>& newSize) override
         {
             OutputDebugString(L"Window resized\n");
@@ -42,7 +44,7 @@ namespace Win32Window
                
                 case WM_CLOSE:
                 {
-                    ShowWindow(hWnd, false);
+                    ShowWindow(hWnd, SW_HIDE);
 
                     return 0;
 
@@ -62,7 +64,7 @@ namespace Win32Window
 
                 case WM_DESTROY:
                 {        
-                    ShowWindow(hWnd, false);
+                    ShowWindow(hWnd, SW_HIDE);
                     //PostQuitMessage(0);
                     return 0;
                 }

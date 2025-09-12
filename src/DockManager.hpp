@@ -8,143 +8,52 @@
 class Splitter
 {
 public:
+	enum class Placement
+	{
+		LEFT = 0,
+		RIGHT = 1,
+		BOT = 2,
+		TOP = 3,
+		COUNT
+	};
 
-	Splitter() = delete;
+	[[nodiscard]] static Placement toSplitterPlacement(DockPlacement placement) noexcept;
 
-	Splitter(DockNode* node1, DockNode* node2)
-		: firstNode(node1)
-		, secondNode(node2)
-		, rect()
-	{}
+	enum class Orientation
+	{
+		HORIZONTAL = 0x01,
+		VERTICAL = 0x02,
+		ANY = 0x04,
+		COUNT
+	};
 
+	[[nodiscard]] static Placement getOpposite(Placement placement) noexcept;
+
+	Splitter()
+		: rect()
+	{
+
+	}
+
+	void linkNode(const std::shared_ptr<DockNode>& node) noexcept;
+	void recalculateRect() noexcept;
 	void onMove(const NbPoint<int>& shift)
 	{
-		// DockPlacement placement = firstNode->getPlacement();
-		// NbRect<int> firstRect = firstNode->window->getClientRect();
-		// NbRect<int> secondRect = secondNode->window->getClientRect();
-
-		// if (canMoveVertically(firstNode) && canMoveVertically(secondNode))
-		// {
-
-		// 	if (firstRect.x < secondRect.x)
-		// 	{
-		// 		int minWidth = 50;
-		// 		int newFirstWidth = firstRect.width + shift.x;
-		// 		int newSecondWidth = secondRect.width - shift.x;
-
-		// 		if (newFirstWidth < minWidth || newSecondWidth < minWidth)
-		// 			return;
-
-		// 		firstRect.width = newFirstWidth;
-
-		// 		secondRect.x += shift.x;
-		// 		secondRect.width = newSecondWidth;
-		// 	}
-		// 	else
-		// 	{
-		// 		int minWidth = 50;
-		// 		int newSecondWidth = secondRect.width + shift.x;
-		// 		int newFirstWidth = firstRect.width - shift.x;
-
-		// 		if (newFirstWidth < minWidth || newSecondWidth < minWidth)
-		// 			return;
-
-		// 		secondRect.width = newSecondWidth;
-
-		// 		firstRect.x += shift.x;
-		// 		firstRect.width = newFirstWidth;
-		// 	}
-
-		// 	firstNode->window->setClientRect(firstRect);
-		// 	secondNode->window->setClientRect(secondRect);
-		// 	update();
-
-		// }
-		// else if (canMoveHorizontlly(firstNode) && canMoveHorizontlly(secondNode))
-		// {
-		// 	if (firstRect.y < secondRect.y)
-		// 	{
-		// 		int minHeight = 50;
-		// 		int newFirstHeight = firstRect.height + shift.y;
-		// 		int newSecondHeight = secondRect.height - shift.y;
-
-		// 		if (newFirstHeight < minHeight || newSecondHeight < minHeight)
-		// 			return;
-
-		// 		firstRect.height = newFirstHeight;
-
-		// 		secondRect.y += shift.y;
-		// 		secondRect.height = newSecondHeight;
-		// 	}
-		// 	else
-		// 	{
-		// 		int minHeight = 50;
-		// 		int newFirstHeight = secondRect.height + shift.y;
-		// 		int newSecondHeight = firstRect.height - shift.y;
-
-		// 		if (newFirstHeight < minHeight || newSecondHeight < minHeight)
-		// 			return;
-
-		// 		secondRect.height = newSecondHeight;
-
-		// 		firstRect.y += shift.y;
-		// 		firstRect.height = newFirstHeight;
-		// 	}
-
-		// 	firstNode->window->setClientRect(firstRect);
-		// 	secondNode->window->setClientRect(secondRect);
-		// 	updateHorizontal();
-		// }
+		if(shift.x > 0)
+		{
+			rect.x += shift.x;
+			
+		}
 	}
 
 	void update()
 	{
-		// const NbRect<int>& firstRect = firstNode->window->getClientRect();
-		// const NbRect<int>& secondRect = secondNode->window->getClientRect();
-
-		// if (firstRect.x > secondRect.x)  // left - right
-		// {
-		// 	rect = {
-		// 	   secondRect.x + secondRect.width - 25,
-		// 	   secondRect.y,
-		// 	   50,
-		// 	   firstRect.height
-		// 	};
-		// }
-		// else
-		// {
-		// 	rect = {
-		// 		firstRect.x + firstRect.width - 25,
-		// 		firstRect.y,
-		// 		50,
-		// 		secondRect.height
-		// 	};
-		// }
+		
 	}
 
 	void updateHorizontal()
 	{
-		// const NbRect<int>& firstRect = firstNode->window->getClientRect();
-		// const NbRect<int>& secondRect = secondNode->window->getClientRect();
-
-		// if (firstRect.y > secondRect.y)  // bot - top
-		// {
-		// 	rect = {
-		// 	   secondRect.x,
-		// 	   secondRect.y + secondRect.height - 25,
-		// 	   secondRect.width,
-		// 	   50
-		// 	};
-		// }
-		// else // top - bot
-		// {
-		// 	rect = {
-		// 		firstRect.x,
-		// 		firstRect.y + firstRect.height - 25,
-		// 		firstRect.width,
-		// 		50
-		// 	};
-		// }
+		
 	}
 
 	bool hitTest(const NbPoint<int>& pos)
@@ -171,15 +80,130 @@ private:
 			|| placement == DockPlacement::BOT;
 	}
 
+	
+
 public:
 
 
 	NbRect<int> rect = {};
-
-	DockNode* firstNode = nullptr;
-	DockNode* secondNode = nullptr;
+	std::vector<std::shared_ptr<DockNode>> linkedNodes;
 
 };
+
+class SplitterContainer
+{
+public:
+
+	[[nodiscard]] std::shared_ptr<Splitter> createSplitterIfNotExists(Splitter::Placement placement) noexcept
+	{
+		const size_t index = static_cast<size_t>(Splitter::getOpposite(placement));
+		
+		if(!container[index])
+		{	
+			//container[index] = std::make_shared<Splitter>(placement); 
+		}
+
+		return container[index];
+	}
+
+private:
+
+	std::array<std::shared_ptr<Splitter>, static_cast<size_t>(Splitter::Placement::COUNT)> container;
+
+};
+
+class SplitterManager
+{
+public:
+	
+	SplitterManager() noexcept = default;
+
+	void addSplitter(const std::shared_ptr<DockNode>& parent, const std::shared_ptr<DockNode>& insert) noexcept
+	{
+		// Splitter::Orientation firstWindowOrientation = getSplitterOrientation(parent);
+		// Splitter::Orientation secondWindowOrientation = getSplitterOrientation();
+
+		// if(firstWindowOrientation != secondWindowOrientation
+		// 	&& firstWindowOrientation != Splitter::Orientation::ANY)
+		// {
+		// 	Debug::debug("Orientation mismatch");
+		// 	abort();
+		// }
+
+		Splitter::Placement placement = Splitter::toSplitterPlacement(insert->getPlacement());
+		Splitter::Placement oppositePlacement = Splitter::getOpposite(placement);
+		std::shared_ptr splitter = std::make_shared<Splitter>();
+
+		splitter->linkNode(insert);
+		std::shared_ptr<DockNode> child = parent->getChild(static_cast<DockPlacement>(oppositePlacement));
+		if(!child)
+		{
+			return;
+		}
+
+		splitter->linkNode(child);
+		splitterList.push_back(splitter);
+
+		//splitterList()	
+	}
+
+	void update(const NbPoint<int>& pos)
+	{
+		static NbPoint<int> prev = { 0, 0 };
+		for(auto& splitter : splitterList)
+		{
+			if(splitter->hitTest(pos))
+			{
+				splitter->onMove(pos - prev);
+			}
+		}
+		prev = pos;
+	}
+	
+private:
+	void calculateSplitterPosition(const std::shared_ptr<DockNode>& first
+								 , const std::shared_ptr<DockNode>& second
+								 , Splitter::Orientation orientation ) noexcept
+	{
+		switch(orientation)
+		{
+			case Splitter::Orientation::HORIZONTAL:
+			{
+
+				break;
+			}
+			case Splitter::Orientation::VERTICAL:
+			{
+				break;
+			}
+		}
+
+	}
+
+
+	Splitter::Orientation getSplitterOrientation(const std::shared_ptr<DockNode>& node) const noexcept
+	{
+		switch (node->getPlacement())
+		{
+		case DockPlacement::LEFT:
+		case DockPlacement::RIGHT:
+			return Splitter::Orientation::VERTICAL;
+		case DockPlacement::TOP:
+		case DockPlacement::BOT:
+			return Splitter::Orientation::HORIZONTAL;
+		case DockPlacement::CENTER:
+			return Splitter::Orientation::ANY;
+		}
+	}
+
+private:
+
+	std::vector<std::shared_ptr<Splitter>> splitterList;
+
+	//std::unordered_map<WindowInterface::IWindow*, SplitterContainer> splitterMap;
+
+};
+
 
 class DockManager
 {
@@ -196,10 +220,12 @@ public:
 
 	void rescaleNode(const std::shared_ptr<DockNode> &node, const NbSize<float> &scaleFactor);
 	DockTree* getTree() const noexcept { return tree; } 
-	void addSplitter(DockNode* parent, DockNode* node);
+	void addSplitter(const std::shared_ptr<DockNode>& insertedNode);
 
-	inline static std::vector<Splitter*>      splitterList;
+	//inline static std::vector<Splitter*>      splitterList;
 private:
+	SplitterManager 			splitterManager;
+
 	WindowInterface::IWindow* 	window 	= nullptr;
 	DockTree* 					tree 	= nullptr;
 };

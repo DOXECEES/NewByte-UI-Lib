@@ -64,6 +64,7 @@ namespace Win32Window
     ModalWindow::~ModalWindow()
     {
         WindowInterface::WindowMapper::unregisterWindow(handle);
+        delete renderer;
     }
 
     void ModalWindow::show()
@@ -72,7 +73,11 @@ namespace Win32Window
         UpdateWindow(handle.as<HWND>());
     }
 
-
+	void ModalWindow::repaint() const noexcept
+	{
+		InvalidateRect(handle.as<HWND>(), nullptr, TRUE);
+		UpdateWindow(handle.as<HWND>());
+	}
 
 
 

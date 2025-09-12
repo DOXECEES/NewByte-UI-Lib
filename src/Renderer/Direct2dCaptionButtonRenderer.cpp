@@ -1,3 +1,8 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
+
 #include "Direct2dCaptionButtonRenderer.hpp"
 
 
@@ -10,9 +15,14 @@ void Renderer::Direct2dCaptionButtonRenderer::render(CaptionButtonsContainer *co
 {
     auto reverseIterator = container->getButtons().rbegin();
     const NbRect<int>& paintArea = container->getPaintArea();
-    for(auto i = reverseIterator; i != container->getButtons().rend(); i++)
+    for(auto i = reverseIterator; i != container->getButtons().rend(); ++i)
     {
-        NbRect<int> rect = {paintArea.width - i->rect.width - i->rect.x, i->rect.y, i->rect.width, i->rect.height};
+        const NbRect<int>& localRect = i->rect;
+        NbRect<int> rect = {paintArea.width - localRect.width - i->rect.x
+                            , localRect.y
+                            , localRect.width
+                            , localRect.height
+        };
 
         if(i->isHovered)
         {

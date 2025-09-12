@@ -12,62 +12,13 @@ namespace Renderer
     class FactorySingleton
     {
         public:
-            static ID2D1Factory* getFactory()
-            {
-                
-                static ID2D1Factory* pFactory = nullptr;
-                if (!pFactory)
-                {
-                    D2D1_FACTORY_OPTIONS options = {};
-                    options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
-                    D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &pFactory);
-
-                }
-                return pFactory;
-            }
-
-            static void releaseFactory()
-            {
-                ID2D1Factory* pFactory = getFactory();
-                if (pFactory) pFactory->Release();
-            }
-
-            static IDWriteFactory* getDirectWriteFactory()
-            {
-                static IDWriteFactory* writeFactory = nullptr;
-                if (!writeFactory)
-                {
-                    HRESULT hr = DWriteCreateFactory(
-                        DWRITE_FACTORY_TYPE_SHARED,
-                        __uuidof(IDWriteFactory),
-                        reinterpret_cast<IUnknown**>(&writeFactory)
-                    );
-
-                    if(hr != S_OK)
-                    {
-                        return nullptr;
-                    }
-                }
-
-                return writeFactory;
-            }
+            static ID2D1Factory* getFactory() noexcept;
             
-            static ID2D1PathGeometry* getPathGeometry()
-            {
-                ID2D1Factory* factory = getFactory();
-                static ID2D1PathGeometry *pathGeometry = nullptr;
-                if(!pathGeometry)
-                {
-                    HRESULT hr = factory->CreatePathGeometry(&pathGeometry);
-                    
-                    if(hr != S_OK)
-                    {
-                        return nullptr;
-                    }
-                }
-                
-                return pathGeometry;
-            }
+            static void releaseFactory() noexcept;
+
+            static IDWriteFactory* getDirectWriteFactory() noexcept;
+            
+            static ID2D1PathGeometry* getPathGeometry() noexcept;
 
         private:
             FactorySingleton() = default;

@@ -1,13 +1,23 @@
 #ifndef NBUI_SRC_CORE_HPP
 #define NBUI_SRC_CORE_HPP
 
-
 #include <cstdint>
 #include <string>
 #include <variant>
 #include <stdexcept>
-
+#include <cmath>
+#include <sstream>
+#include <ostream>
 #define DCX_USESTYLE 0x00010000
+
+
+template<typename T>
+inline std::string toString(const T& val) noexcept
+{
+	std::ostringstream oss;
+	oss << val;
+	return oss.str();
+}
 
 enum class SpecialKeyCode
 {
@@ -24,9 +34,6 @@ inline void hash_combine(std::size_t& seed, const T& v)
     seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
 }
 
-
-
-
 template <typename T>
 struct NbPoint
 {
@@ -41,6 +48,16 @@ struct NbPoint
     NbPoint<T> scale(double scale)
     {
         return NbPoint<T>(static_cast<int>((double)x * scale), static_cast<int>((double)y * scale));
+    }
+
+    constexpr NbPoint<T> operator+(const NbPoint<T>& oth) const 
+    {
+        return NbPoint<T>(x + oth.x, y + oth.y); 
+    }
+
+    constexpr NbPoint<T> operator-(const NbPoint<T>& oth) const 
+    {
+        return NbPoint<T>(x - oth.x, y - oth.y); 
     }
 };
 
@@ -113,7 +130,8 @@ struct NbRect
     T width     = {};
     T height    = {};
 
-    constexpr bool isEmpty() const { return width == 0 || height == 0; }
+    constexpr bool isEmpty() const { return std::fabs(width) < std::numeric_limits<float>::epsilon()
+        || std::fabs(height) < std::numeric_limits<float>::epsilon(); }
     constexpr void scale(const float scaleFactor) 
     {
         x *= scaleFactor;
@@ -134,7 +152,7 @@ struct NbRect
         height *= scaleFactor;
     }
 
-    constexpr void scale(const NbSize<float> scaleFactor)
+    constexpr void scale(const NbSize<float>& scaleFactor)
     {
         x *= scaleFactor.width;
         x = trunc(x);

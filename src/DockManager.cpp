@@ -39,6 +39,9 @@ void DockManager::addWindow(WindowInterface::IWindow *parent, WindowInterface::I
     std::shared_ptr<DockNode> parentOfInsertedNode = tree->insert(parentNode, insertNode);
 
     update(parentOfInsertedNode, placement);
+
+    splitterManager.addSplitter(parentNode, insertNode);
+
 }
 
 void DockManager::update(const std::shared_ptr<DockNode>& parent, DockPlacement placement)
@@ -58,9 +61,9 @@ void DockManager::update(const std::shared_ptr<DockNode>& parent, DockPlacement 
 
         if(current->isWindow())
         {
-            std::shared_ptr<DockWindow> window = std::dynamic_pointer_cast<DockWindow>(current);
-            window->getWindow()->setClientRect(window->getRect());
-            Debug::debug(window->getWindow()->getTitle());
+            std::shared_ptr<DockWindow> currentWindow = std::dynamic_pointer_cast<DockWindow>(current);
+            currentWindow->getWindow()->setClientRect(currentWindow->getRect());
+            Debug::debug(currentWindow->getWindow()->getTitle());
         }
 
         auto childs = current->getChilds();
@@ -91,9 +94,9 @@ void DockManager::onSize(const NbRect<int>& newRect)
 
         if(current->isWindow())
         {
-            std::shared_ptr<DockWindow> window = std::dynamic_pointer_cast<DockWindow>(current);
-            window->getWindow()->setClientRect(window->getRect());
-            Debug::debug(window->getWindow()->getTitle());
+            std::shared_ptr<DockWindow> currentWindow = std::dynamic_pointer_cast<DockWindow>(current);
+            currentWindow->getWindow()->setClientRect(currentWindow->getRect());
+            Debug::debug(currentWindow->getWindow()->getTitle());
         }
 
         auto childs = current->getChilds();
@@ -148,9 +151,62 @@ void DockManager::rescaleNode(const std::shared_ptr<DockNode>& node, const NbSiz
 
 
 
-void DockManager::addSplitter(DockNode* parent, DockNode* node)
+void DockManager::addSplitter(const std::shared_ptr<DockNode>& insertedNode)
 {
+    std::shared_ptr<DockNode> parent = std::dynamic_pointer_cast<DockNode>(insertedNode->getParent());
 
+    for(const auto& child : parent->getChilds())
+    {
+        if(!child)
+        {
+            continue;
+        }
+
+        
+    }
+}
+
+// SPLITTER CLASS
+
+Splitter::Placement Splitter::toSplitterPlacement(DockPlacement placement) noexcept
+{
+    return static_cast<Splitter::Placement>(placement); 
+}
+
+[[nodiscard]] Splitter::Placement Splitter::getOpposite(Splitter::Placement placement) noexcept
+{
+    switch (placement)
+    {
+        case Placement::LEFT:
+            return Placement::RIGHT;
+        case Placement::RIGHT:
+            return Placement::LEFT;
+        case Placement::TOP:
+            return Placement::BOT;
+        case Placement::BOT:
+            return Placement::TOP;
+    }
 }
 
 
+
+void Splitter::linkNode(const std::shared_ptr<DockNode> &node) noexcept
+{
+    linkedNodes.push_back(node);
+    recalculateRect();
+}
+
+void Splitter::recalculateRect() noexcept
+{
+    for(const auto& node : linkedNodes)
+    {
+        const NbRect<int> nodeRect = node->getRect();
+        rect.x = (std::min)(rect.x, nodeRect.x);
+        rect.y = (std::min)(rect.y, nodeRect.y);
+        
+        rect.width += nodeRect.width;
+        rect.height += nodeRect.height;
+    }
+}
+
+//

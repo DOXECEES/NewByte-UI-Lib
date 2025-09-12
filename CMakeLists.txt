@@ -6,6 +6,8 @@ project(NewByte_UI_Lib)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+
+
 set (SRC 
         src/main.cpp
         src/IWindow.cpp
@@ -30,6 +32,7 @@ set (SRC
         src/DockManager.hpp
         src/DockTree.cpp
         src/DockTree.hpp
+        src/Signal.hpp
 
 
 
@@ -86,13 +89,17 @@ set (SRC
         src/Widgets/TreeView.hpp
         src/Widgets/WidgetStyle.cpp
         src/Widgets/WidgetStyle.hpp
+        src/Widgets/Label.cpp
+        src/Widgets/Label.hpp
 )
+
 
 add_library(${PROJECT_NAME} STATIC ${SRC})
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/src
     ../Engine/src
+    ../nbstl/src
 )
 
 
@@ -104,6 +111,7 @@ endif()
 if(WIN32)
     target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE _UNICODE)
     target_link_libraries(${PROJECT_NAME} PRIVATE user32 )
+    
 endif()
 
 foreach(source IN LISTS SRC)

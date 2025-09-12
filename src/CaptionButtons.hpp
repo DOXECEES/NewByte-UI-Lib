@@ -18,7 +18,7 @@ struct CaptionButton
 {
     static constexpr int DEFAULT_HEIGTH = 30;
     
-    CaptionButton(const std::wstring& text, const int width, const int height = 30, const NbColor& color = {105, 105, 105}, const NbColor& hoverColor = {105, 105, 105})
+    CaptionButton(const std::wstring& text, const int width, const int height = 30, const NbColor& color = { 45, 45, 45 }, const NbColor& hoverColor = { 181, 163, 163 })
         : text(text)
         , width(width)
         , height(height)
@@ -44,7 +44,7 @@ struct CaptionButton
     std::wstring            text;
     int                     width;
     int                     height              = DEFAULT_HEIGTH;
-    NbColor                 hoverColor;
+    NbColor                 hoverColor          = { 255, 255, 255 };
     NbColor                 color               = { 105, 105, 105 };
     mutable bool            isHovered           = false;
     
@@ -56,7 +56,7 @@ class CaptionButtonsContainer
 public:
 
     CaptionButtonsContainer();
-    ~CaptionButtonsContainer();
+    inline ~CaptionButtonsContainer() = default;
 
     void addButton(CaptionButton& button);
 
@@ -71,6 +71,7 @@ public:
     inline auto begin() const { return buttons.begin(); }
     inline auto end() const { return buttons.end(); }
 
+    void resetState() const noexcept;
 
 private:
     void recalculateRect(CaptionButton &button, const size_t index);

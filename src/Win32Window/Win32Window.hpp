@@ -19,13 +19,12 @@ namespace Win32Window
 
 
         Window();
-        ~Window() 
-        {
-            delete renderer;
-        };
+        ~Window();
+        
 
-        virtual void onSize(const NbSize<int>& newSize) override;
-        virtual void show() override;
+        void onSize(const NbSize<int>& newSize) override;
+        void show() override;
+        void repaint() const noexcept override;
 
         const NbWindowHandle &getHandle() const noexcept { return handle; };
 
@@ -39,7 +38,8 @@ namespace Win32Window
 
         LRESULT wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
-            static Splitter* activeSplitter = nullptr;
+            Splitter* activeSplitter = nullptr;
+            static bool isMouseTrack = false;
 
             switch(message)
             {
@@ -89,12 +89,32 @@ namespace Win32Window
                 }
                 case WM_NCMOUSEMOVE:
                 {
+					if (!isMouseTrack)
+					{
+						TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT) };
+						tme.dwFlags = TME_LEAVE | TME_NONCLIENT;
+						tme.hwndTrack = hWnd;
+                        
+                        if (TrackMouseEvent(&tme))
+                        {
+                            isMouseTrack = true;
+                        }
+					}
+
                     NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
                     Utils::convertToWindowSpace(hWnd, point);
                     for (auto& captionButton : captionButtonsContainer)
                     {
                         captionButton.hitTest(captionButtonsContainer.getPaintArea(), point);
+                        InvalidateRect(hWnd, NULL, FALSE);
                     }
+                    return 0;
+                }
+                case WM_NCMOUSELEAVE:
+                {
+                    isMouseTrack = false;
+                    captionButtonsContainer.resetState();
+                    InvalidateRect(hWnd, NULL, FALSE);
                     return 0;
                 }
                 case WM_TIMER:
@@ -118,12 +138,13 @@ namespace Win32Window
                             focusedWidget->setFocused();
                             widget->onClick();
                         }
+                        widget->hitTestClick(point);
                     }
 
-                    for (auto& i : DockManager::splitterList)
-                    {
-                        if (i->hitTest(point)) activeSplitter = i;
-                    }
+                    // for (auto& i : DockManager::splitterList)
+                    // {
+                    //     if (i->hitTest(point)) activeSplitter = i;
+                    // }
                     return 0;
                 }
                 case WM_MOUSEMOVE:
@@ -211,10 +232,10 @@ namespace Win32Window
                     {
                         state.isMaximized = true;
                         hRgn = CreateRoundRectRgn(0, 0, rc.right + state.frameSize.right, rc.bottom + state.frameSize.bot, 0, 0);
-
                     }
                     else
                     {
+                        state.isMaximized = false;
                         hRgn = CreateRoundRectRgn(0, 0, rc.right, rc.bottom, borderRadius, borderRadius);
                     }
 

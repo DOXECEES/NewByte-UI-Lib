@@ -34,12 +34,26 @@ namespace Win32Window
 
     }
 
-    void ChildWindow::show()
+	ChildWindow::~ChildWindow()
+	{
+        delete renderer;
+	}
+
+
+
+	void ChildWindow::show()
     {
         ShowWindow(handle.as<HWND>(), TRUE);
         UpdateWindow(handle.as<HWND>());
     }
-    void ChildWindow::addCaption() noexcept
+
+	void ChildWindow::repaint() const noexcept
+	{
+        InvalidateRect(handle.as<HWND>(), nullptr, TRUE);
+		UpdateWindow(handle.as<HWND>());
+	}
+
+	void ChildWindow::addCaption() noexcept
     {
         state.frameSize = FrameSize();
     }

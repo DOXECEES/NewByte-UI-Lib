@@ -15,9 +15,11 @@ namespace Win32Window
     {
     public:
         ChildWindow(IWindow *parentWindow);
+        ~ChildWindow();
 
-        virtual void onSize(const NbSize<int>& newSize) override { };
-        virtual void show() override;
+        void onSize(const NbSize<int>& newSize) override { };
+        void show() override;
+        void repaint() const noexcept override;
 
         const NbWindowHandle &getHandle() const noexcept { return handle; };
 
@@ -105,6 +107,7 @@ namespace Win32Window
                     if (point.y > rc.bottom - state.frameSize.bot)
                         return HTBOTTOM;
 
+                    LoadCursor(nullptr, IDC_ARROW);
                     return HTCLIENT;
                 }
                 case WM_LBUTTONDOWN:
@@ -127,21 +130,22 @@ namespace Win32Window
                             clicked = true;
                             widget->onClick();
                         }
+                        widget->hitTestClick(point);
                     }
 
-                    for (auto& i : DockManager::splitterList)
-                    {
-                        if (i->hitTest(pp))
-                        {
-                            activeSplitter = i;
+                    // for (auto& i : DockManager::splitterList)
+                    // {
+                    //     if (i->hitTest(pp))
+                    //     {
+                    //         activeSplitter = i;
 
-                            // ��������� ����� �������
-                            dragOffset.x = pp.x - i->rect.x;
-                            dragOffset.y = pp.y - i->rect.y;
-                            dragging = true;
-                            break;
-                        }
-                    }
+                    //         // ��������� ����� �������
+                    //         dragOffset.x = pp.x - i->rect.x;
+                    //         dragOffset.y = pp.y - i->rect.y;
+                    //         dragging = true;
+                    //         break;
+                    //     }
+                    // }
                     return 0;
                 }
 

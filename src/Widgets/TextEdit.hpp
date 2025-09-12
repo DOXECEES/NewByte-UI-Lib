@@ -10,10 +10,13 @@ namespace Widgets
     {
     public:
 
+        static constexpr const char* CLASS_NAME = "TextEdit";
+
+
         TextEdit(const NbRect<int>& rect) : IWidget(rect) {};
 
 
-        virtual const char* getClassName() const override { return "TextEdit"; }
+        virtual const char* getClassName() const override { return CLASS_NAME; }
         virtual bool hitTest(const NbPoint<int> &pos) override;
 
         virtual void onClick() override;
@@ -25,7 +28,7 @@ namespace Widgets
         inline void resetIsDataChanged() noexcept { isDataChanged = false; }
         
         inline const std::wstring &getData() const noexcept { return data; }
-        inline void setData(const std::wstring &data) noexcept { this->data = std::move(data); }
+        inline void setData(const std::wstring &data) noexcept { this->data = data; }
 
         inline bool getIsCaretVisible() const noexcept { return isCaretVisible; }   
 

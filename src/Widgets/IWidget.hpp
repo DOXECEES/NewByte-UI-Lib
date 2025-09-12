@@ -37,6 +37,7 @@ namespace Widgets
         virtual void onTimer() {};
 
         virtual bool hitTest(const NbPoint<int>& pos) = 0;
+        virtual bool hitTestClick(const NbPoint<int>& pos) noexcept { return false; } // temporary non abstractr
 
         inline void setSize(const NbSize<int>& newSize) { rect.width = newSize.width; rect.height = newSize.height; }
         
@@ -49,10 +50,10 @@ namespace Widgets
         inline const WidgetStyle& getStyle() const noexcept { return style; }
         inline WidgetState getState() const noexcept { return state; }
         
-        inline void setHover() noexcept { state = WidgetState::HOVER; }
-        inline void setActive() noexcept { state = WidgetState::ACTIVE; }
-        inline void setDisable() noexcept { state = WidgetState::DISABLE; }
-        inline void setDefault() noexcept { state = WidgetState::DEFAULT; }
+        inline void setHover() noexcept     { state = WidgetState::HOVER; }
+        inline void setActive() noexcept    { state = WidgetState::ACTIVE; }
+        inline void setDisable() noexcept   { state = WidgetState::DISABLE; }
+        inline void setDefault() noexcept   { state = WidgetState::DEFAULT; }
         virtual const char* getClassName() const = 0;
 
         inline void setOnClickCallback(const std::function<void()>& onClickCallback) { this->onClickCallback = onClickCallback; }

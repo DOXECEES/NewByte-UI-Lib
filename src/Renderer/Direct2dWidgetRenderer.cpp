@@ -1,13 +1,21 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
+
+#include "Core.hpp"
 #include "Direct2dWidgetRenderer.hpp"
 
 #include "Widgets/Button.hpp"
 #include "Widgets/TextEdit.hpp"
 #include "Widgets/TreeView.hpp"
+#include "Widgets/Label.hpp"
 #include "Direct2dGlobalWidgetMapper.hpp"
 
 #include "../Widgets/WidgetStyle.hpp"
 
 #include "../Utils.hpp"
+#include <Debug.hpp>
 
 #include <stack>
 
@@ -15,39 +23,44 @@ namespace Renderer
 {
     Direct2dWidgetRenderer::Direct2dWidgetRenderer(Direct2dHandleRenderTarget *renderTarget)
         :renderTarget(renderTarget)
-    {
+    {}
 
-    }
 
     void Direct2dWidgetRenderer::render(IWidget *widget)
     {
-
         const char *widgetName = widget->getClassName();
-        if(strncmp(widgetName, "Button", sizeof(widgetName) / sizeof(char)) == 0 )
+        size_t size = strlen(widgetName);
+
+        if(strncmp(widgetName, Button::CLASS_NAME, size) == 0 )
         {
             renderButton(widget);
         }
-        else if(strncmp(widgetName, "TextEdit", sizeof(widgetName) / sizeof(char)) == 0 )
+        else if(strncmp(widgetName, TextEdit::CLASS_NAME, size) == 0 )
         {
             renderTextEdit(widget);
         }
-        else if (strncmp(widgetName, "TreeView", sizeof(widgetName) / sizeof(char)) == 0)
+        else if (strncmp(widgetName, TreeView::CLASS_NAME, size) == 0)
         {
             renderTreeView(widget);
         }
+        else if(strncmp(widgetName, Label::CLASS_NAME, size) == 0 )
+        {
+            renderLabel(widget);
+        }
 
     }
+
+
     void Direct2dWidgetRenderer::renderButton(IWidget *widget)
     {
         using namespace Widgets;
-        Button *button = dynamic_cast<Button*>(widget);
+        Button* button = castWidget<Button>(widget);
 
         const WidgetStyle& style = button->getStyle();
         WidgetState state = button->getState();
         NbColor color;
         NbColor textColor;
 
-        
         switch (state)
         {
             case WidgetState::HOVER:
@@ -68,7 +81,6 @@ namespace Renderer
                 textColor = style.disableColor;
                 break;
             }
-
             default:
             {
                 color = style.baseColor;
@@ -80,17 +92,16 @@ namespace Renderer
         renderTarget->fillRectangle(button->getRect(), color);
         renderTarget->drawText(button->getText(), button->getRect(), textColor);
     }
+
+
     void Direct2dWidgetRenderer::renderTextEdit(IWidget *widget)
     {
-        Widgets::TextEdit *textEdit = dynamic_cast<Widgets::TextEdit*>(widget);
+        TextEdit* textEdit = castWidget<TextEdit>(widget);
         const NbRect<int> &widgetRect = textEdit->getRect();
 
         const WidgetStyle& style = textEdit->getStyle();
 
-        renderTarget->drawRectangle(widgetRect, style.baseColor);
-        
-        //renderTarget->drawText(textEdit->getData(), textEdit->getRect(), NbColor(255, 255, 255), TextAlignment::LEFT);
-        
+        renderTarget->drawRectangle(widgetRect, style.baseColor);        
 
         if(textEdit->getIsDataChanged())
         {
@@ -98,7 +109,7 @@ namespace Renderer
             textEdit->resetIsDataChanged();
         }
 
-        DWRITE_TEXT_METRICS textMetrics;
+        DWRITE_TEXT_METRICS textMetrics {};
 
         IDWriteTextLayout *textLayout = Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit);
         textLayout->GetMetrics(&textMetrics);
@@ -119,7 +130,6 @@ namespace Renderer
 
                 createTextLayoutForWidget(textEdit, temp);
             }
-
         }
 
         renderTarget->drawText(Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit), widgetRect, NbColor(255, 255, 255), TextAlignment::LEFT);
@@ -129,15 +139,15 @@ namespace Renderer
         {
             FLOAT caretX = 0.0f;
             FLOAT caretY = 0.0f;
-            DWRITE_HIT_TEST_METRICS hitTestMetrics;
+            DWRITE_HIT_TEST_METRICS hitTestMetrics {};
 
             HRESULT hr = Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit)->HitTestTextPosition(
                 static_cast<UINT32>(textEdit->getCaretPos()),
                 FALSE,
                 &caretX,
                 &caretY,
-                &hitTestMetrics);
-
+                &hitTestMetrics
+            );
 
             if (SUCCEEDED(hr))
             {
@@ -150,57 +160,91 @@ namespace Renderer
                 renderTarget->drawRectangle(Utils::toNbRect<int>(caretRect), NbColor(255, 0, 0));
             }
         }
-        
     }
+
     
     void Direct2dWidgetRenderer::renderTreeView(IWidget* widget)
     {
-
-        Widgets::TreeView* treeView = dynamic_cast<Widgets::TreeView*>(widget);
+        TreeView* treeView = castWidget<TreeView>(widget);
         const NbRect<int>& widgetRect = treeView->getRect();
 
         renderTarget->fillRectangle(widgetRect, treeView->getStyle().baseColor);
-        DockNode* root = treeView->getTree();
+        auto model = treeView->getModel();
+        if(model == nullptr) return;
+        int shift = 0;
+        const int shiftX = 10;
 
-        if (root == nullptr)
-            return;
+        size_t index = 0;
+        size_t rootDepth = 128;
 
+        model->forEach([this, &widgetRect, &model, &shift, &index, &treeView, &rootDepth](const ModelItem& item) {
+            
+            bool isParent = false;
 
-        struct NodeState
-        {
-            DockNode* node = nullptr;
-            int level = 0;
-        };
-
-        std::stack<NodeState> s;
-        int level = 0;
-        s.push({ root, level });
-
-        while (!s.empty())
-        {
-            NodeState curr = s.top();
-            s.pop();
-
-            //createTextLayoutForWidget()
-
-            for (int i = 0; i < 5; i++)
+            if (treeView->getItemState(item) == TreeView::ItemState::COLLAPSED)
             {
-                // if(curr.node->getChild(DockPlacement(i)))
-                // {
-                //     NodeState sta{ curr.node->getChild(DockPlacement(i)), curr.level + 1 };
-                //     s.push(sta);
-                // }
-
+                rootDepth = item.getDepth();
+                isParent = true;
             }
-        }
+			
+            if (rootDepth < item.getDepth() && isParent == false)
+            {
+				index++;
+                return;
+            }
+            
+           
+            std::string str = model->data(item);
+            std::wstring wstr = Utils::toWstring(str);
+            NbRect<int> wr = widgetRect;
+            wr.x += shiftX * item.getDepth();
+            wr.width -= shiftX * item.getDepth();
+            wr.y += shift;
+            wr.height = 20;
+            shift += 20;
+
+            if (index == treeView->getLastHitIndex())
+            {
+                renderTarget->drawRectangle({wr.x - int(shiftX * item.getDepth()),
+                                             wr.y,
+                                             wr.width + int(shiftX * item.getDepth()),
+                                             wr.height
+                    },
+                    { 255,167,133 });
+            }
+
+            if (index == treeView->getLastClickedIndex().getRaw())
+            {
+                renderTarget->fillRectangle({ wr.x - int(shiftX * item.getDepth()),
+                                             wr.y,
+                                             wr.width + int(shiftX * item.getDepth()),
+                                             wr.height
+                    },
+                    { 255,167,255 });
+            }
+            
+            renderTarget->drawText(wstr, wr, NbColor(255, 255, 255), TextAlignment::LEFT, ParagraphAlignment::TOP);
+            index++;
+        });
+    }
+
+    void Direct2dWidgetRenderer::renderLabel(IWidget *widget)
+    {
+        Label* label = castWidget<Label>(widget);
+        const NbRect<int>& widgetRect = label->getRect();
+        renderTarget->drawText(label->getText(), widgetRect, NbColor(255, 255, 255), TextAlignment::LEFT, ParagraphAlignment::TOP);
     }
 
     void Direct2dWidgetRenderer::createTextLayoutForWidget(IWidget *widget, const std::wstring& data)
     {
         static IDWriteFactory *factory = FactorySingleton::getDirectWriteFactory();
-        if(strncmp(widget->getClassName(), "TextEdit", sizeof(widget->getClassName()) / sizeof(char)) == 0)
+        const char* widgetName = widget->getClassName();
+        size_t size = strlen(widgetName);
+
+        if(strncmp(widgetName, TextEdit::CLASS_NAME, size) == 0)
         {
-            TextEdit* textEdit = dynamic_cast<Widgets::TextEdit*>(widget);
+            TextEdit* textEdit = castWidget<TextEdit>(widget);
+
             std::wstring newData;
             if (data.empty())
             {
@@ -208,14 +252,15 @@ namespace Renderer
             }
             else
             {
-                newData = std::move(data);
+                newData = data;
             }
 
             IDWriteTextLayout *textLayout = nullptr;
             IDWriteTextFormat *textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(textEdit);
             if(!textFormat)
             {
-                textFormat = Direct2dWrapper::createTextFormatForWidget(textEdit, L"Consolas");
+                LPCWSTR font = L"Consolas";
+                textFormat = Direct2dWrapper::createTextFormatForWidget(textEdit, font);
             }
 
             const NbRect<int> &rect = widget->getRect();
@@ -224,17 +269,18 @@ namespace Renderer
             textLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
             Direct2dGlobalWidgetMapper::addTextlayout(textEdit, textLayout);
         }
-        else if (strncmp(widget->getClassName(), "TreeView", sizeof(widget->getClassName()) / sizeof(char)) == 0)
+        else if (strncmp(widgetName, TreeView::CLASS_NAME, size) == 0)
         {
-            TreeView* treeView = dynamic_cast<Widgets::TreeView*>(widget);
+            TreeView* treeView = castWidget<TreeView>(widget);
 
             createTextLayoutForTreeView(treeView);
         }
     }
 
+
     void Direct2dWidgetRenderer::createTextLayoutForTreeView(TreeView* treeView)
     {
-        DockNode* root = treeView->getTree();
+        //DockNode* root = treeView->getTree();
 
         
     }

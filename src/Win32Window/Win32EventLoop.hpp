@@ -26,8 +26,8 @@ namespace Win32Window
     class Win32EventLoop : public WindowInterface::IEventLoop
     {
     public:
-        Win32EventLoop() {};
-        ~Win32EventLoop() {};
+        Win32EventLoop() = default;
+        ~Win32EventLoop() = default;
 
         virtual WindowInterface::IPlatformMessage* getNextMessage() override;
         //virtual void stop() override;

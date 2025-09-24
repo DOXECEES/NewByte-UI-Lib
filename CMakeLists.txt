@@ -6,6 +6,7 @@ project(NewByte_UI_Lib)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+add_subdirectory(../Common NbCommon_build)
 
 
 set (SRC 
@@ -33,6 +34,8 @@ set (SRC
         src/DockTree.cpp
         src/DockTree.hpp
         src/Signal.hpp
+        src/SubscribtionManager.cpp
+        src/SubscribtionManager.hpp
 
 
 
@@ -75,6 +78,12 @@ set (SRC
         src/Renderer/Direct2dWidgetRenderer.hpp
         src/Renderer/Direct2dGlobalWidgetMapper.cpp
         src/Renderer/Direct2dGlobalWidgetMapper.hpp
+        src/Renderer/Direct2dFont.cpp
+        src/Renderer/Direct2dFont.hpp
+        src/Renderer/Font.cpp
+        src/Renderer/Font.hpp
+        src/Renderer/GeometryFactory.cpp
+        src/Renderer/GeometryFactory.hpp
 
 
         src/Widgets/IWidget.cpp
@@ -91,6 +100,13 @@ set (SRC
         src/Widgets/WidgetStyle.hpp
         src/Widgets/Label.cpp
         src/Widgets/Label.hpp
+        src/Widgets/CheckBox.cpp
+        src/Widgets/CheckBox.hpp
+        src/Widgets/Indentations.cpp
+        src/Widgets/Indentations.hpp
+        src/Widgets/Theme.cpp
+        src/Widgets/Theme.hpp
+        
 )
 
 
@@ -110,7 +126,7 @@ endif()
 
 if(WIN32)
     target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE _UNICODE)
-    target_link_libraries(${PROJECT_NAME} PRIVATE user32 )
+    target_link_libraries(${PROJECT_NAME} PRIVATE user32 PUBLIC NbCommon)
     
 endif()
 

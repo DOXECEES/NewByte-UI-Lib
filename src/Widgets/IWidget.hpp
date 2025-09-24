@@ -3,6 +3,7 @@
 
 #include "../Core.hpp"
 #include "../IIndexable.hpp"
+#include "Signal.hpp"
 
 #include "WidgetStyle.hpp"
 
@@ -28,7 +29,7 @@ namespace Widgets
         virtual ~IWidget() = default;
         virtual void onClick() 
         {
-            if(onClickCallback == nullptr) return;
+            if(onClickCallback == nullptr || state == WidgetState::DISABLE) return;
             onClickCallback();
         };
 
@@ -39,10 +40,14 @@ namespace Widgets
         virtual bool hitTest(const NbPoint<int>& pos) = 0;
         virtual bool hitTestClick(const NbPoint<int>& pos) noexcept { return false; } // temporary non abstractr
 
-        inline void setSize(const NbSize<int>& newSize) { rect.width = newSize.width; rect.height = newSize.height; }
+        inline void setSize(const NbSize<int>& newSize) { rect.width = newSize.width; rect.height = newSize.height; isSizeChange = true; onSizeChangedSignal.emit(rect); }
         
         inline const NbRect<int>& getRect() const { return rect; }
-        inline void setRect(const NbRect<int> &rect) { this->rect = rect; };
+		inline void setRect(const NbRect<int>& rect) {
+			this->rect = rect;
+            isSizeChange = true;
+            onSizeChangedSignal.emit(rect);
+		};
 
         //inline const NbColor& getColor() const { return color; }
         //inline const NbColor& getHoverColor() const { return hoverColor; }
@@ -54,6 +59,13 @@ namespace Widgets
         inline void setActive() noexcept    { state = WidgetState::ACTIVE; }
         inline void setDisable() noexcept   { state = WidgetState::DISABLE; }
         inline void setDefault() noexcept   { state = WidgetState::DEFAULT; }
+
+        bool isHover() const noexcept;
+		bool isActive() const noexcept;
+		bool isDisable() const noexcept;
+		bool isDefault() const noexcept;
+
+
         virtual const char* getClassName() const = 0;
 
         inline void setOnClickCallback(const std::function<void()>& onClickCallback) { this->onClickCallback = onClickCallback; }
@@ -62,6 +74,9 @@ namespace Widgets
         inline void setFocused() noexcept { isFocused = true; }
         inline void setUnfocused() noexcept { isFocused = false; }
         
+    public:
+        Signal<void(const NbRect<int>&)> onSizeChangedSignal;
+
     protected:
 
         NbRect<int>             rect                = { 0, 0, 0, 0 };
@@ -76,9 +91,13 @@ namespace Widgets
 
         WidgetState             state               = WidgetState::DEFAULT;
     // state
-        bool                    isHover             = false;
+        bool                    isHover_             = false;
         bool                    isFocused           = false;
+    
+    public:
+        bool isSizeChange = true;
     };
+
 }
 
 #endif

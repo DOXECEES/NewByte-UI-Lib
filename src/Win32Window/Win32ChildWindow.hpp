@@ -169,6 +169,9 @@ namespace Win32Window
                     {
                         for (const auto& widget : widgets)
                         {
+                            if(widget->isDisable())
+                                continue;
+
                             if (widget->hitTest(point))
                                 widget->setHover();
                             else

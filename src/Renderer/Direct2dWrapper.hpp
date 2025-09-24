@@ -6,12 +6,15 @@
 #include "FactorySingleton.hpp"
 #include "../Utils.hpp"
 
+#include "Font.hpp"
+
 #include "Direct2dGlobalWidgetMapper.hpp"
 
 #include <unordered_map>
 
 #include <d2d1.h>
 #pragma comment(lib, "d2d1")
+#include <wrl.h>
 
 class Direct2dWrapper;
 
@@ -28,7 +31,8 @@ enum class TextAlignment
 {
     CENTER,
     LEFT,
-    RIGHT
+    RIGHT, 
+    JUSTIFY
 };
 
 enum class ParagraphAlignment
@@ -170,6 +174,8 @@ public:
         case TextAlignment::RIGHT:
             textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
             break;
+        case TextAlignment::JUSTIFY:
+            textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_JUSTIFIED);
         default:
             break;
         }
@@ -204,24 +210,50 @@ public:
 
     void drawText(IDWriteTextLayout* textLayout, const NbRect<int>& rect, const NbColor& color, TextAlignment alignment = TextAlignment::CENTER) const noexcept
     {
+        setAlignment(textLayout, alignment);
+
+        renderTarget->DrawTextLayout(Direct2dUtils::toD2D1Point(NbPoint<int>(rect.x, rect.y)), textLayout, createSolidBrush(color),D2D1_DRAW_TEXT_OPTIONS_CLIP );
+    }
+
+public:
+    void setAlignment(IDWriteTextFormat* format, TextAlignment alignment) const 
+    {
         switch (alignment)
         {
         case TextAlignment::CENTER:
-            textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
             break;
         case TextAlignment::LEFT:
-            textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
             break;
         case TextAlignment::RIGHT:
-            textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+            format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
             break;
         default:
             break;
         }
-
-        renderTarget->DrawTextLayout(Direct2dUtils::toD2D1Point(NbPoint<int>(rect.x, rect.y)), textLayout, createSolidBrush(color),D2D1_DRAW_TEXT_OPTIONS_CLIP );
-
     }
+
+    /*void setAlignment(IDWriteTextLayout* layout, TextAlignment alignment) 
+	{
+		switch (alignment)
+		{
+		case TextAlignment::CENTER:
+            layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+			break;
+		case TextAlignment::LEFT:
+            layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+			break;
+		case TextAlignment::RIGHT:
+            layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+			break;
+		default:
+			break;
+		}
+	}*/
+
+    
+
 
     void fillRectangle(const NbRect<int>& rect, const NbColor& color) const noexcept
     {
@@ -284,7 +316,7 @@ public:
     //static Direct2dTextFormat createTextFormat(const std::wstring& font) noexcept
     static ID2D1SolidColorBrush* createSolidColorBrush(const Direct2dHandleRenderTarget &renderTarget, const NbColor &color) noexcept;
     //static IDWriteTextLayout* createTextLayout(const std::wstring& text, IDWriteTextFormat* textFormat = nullptr);
-    static IDWriteTextFormat* createTextFormatForWidget(Widgets::IWidget* widget, const std::wstring& font) noexcept;
+    static Microsoft::WRL::ComPtr<IDWriteTextFormat> createTextFormatForWidget(Widgets::IWidget* widget, const Font& font) noexcept;
 
 private:
     inline static ID2D1Factory* factory = Renderer::FactorySingleton::getFactory();

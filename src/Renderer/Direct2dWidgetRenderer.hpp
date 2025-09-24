@@ -5,6 +5,7 @@
 
 #include "Widgets/IWidgetRenderer.hpp"
 #include "Widgets/TreeView.hpp"
+#include "Widgets/Label.hpp"
 
 #include "Debug.hpp"
 
@@ -23,6 +24,7 @@ namespace Renderer
         void renderTextEdit(IWidget* widget);
         void renderTreeView(IWidget* widget);
         void renderLabel(IWidget* widget);
+        void renderCheckBox(IWidget* widget);
 
         template<typename T>
         T* castWidget(IWidget* widget) const noexcept
@@ -41,7 +43,8 @@ namespace Renderer
         void createTextLayoutForWidget(IWidget* widget, const std::wstring& data = L"");
 
         void createTextLayoutForTreeView(Widgets::TreeView* treeView);
-
+        void createTextLayoutForLabel(Label* label) noexcept;
+        void createTextLayoutForLabelClipped(Label* label) noexcept;
         Direct2dHandleRenderTarget* renderTarget = nullptr;
 
     };

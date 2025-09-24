@@ -51,8 +51,10 @@ namespace Win32Window
                 }
                 case WM_SHOWWINDOW:
                 {
-                    if (wParam == true)
+                    if (static_cast<bool>(wParam) == true)
+                    {
                         EnableWindow(parent->getHandle().as<HWND>(), false);
+                    }
                     else
                     {
                         EnableWindow(parent->getHandle().as<HWND>(), TRUE);

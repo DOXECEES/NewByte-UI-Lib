@@ -12,7 +12,7 @@
 
 
 template<typename T>
-inline std::string toString(const T& val) noexcept
+inline std::string toStdString(const T& val) noexcept
 {
 	std::ostringstream oss;
 	oss << val;

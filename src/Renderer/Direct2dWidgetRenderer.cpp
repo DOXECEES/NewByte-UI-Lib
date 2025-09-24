@@ -2,7 +2,6 @@
 
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-
 #include "Core.hpp"
 #include "Direct2dWidgetRenderer.hpp"
 
@@ -10,7 +9,10 @@
 #include "Widgets/TextEdit.hpp"
 #include "Widgets/TreeView.hpp"
 #include "Widgets/Label.hpp"
+#include "Widgets/CheckBox.hpp"
 #include "Direct2dGlobalWidgetMapper.hpp"
+
+#include "GeometryFactory.hpp"
 
 #include "../Widgets/WidgetStyle.hpp"
 
@@ -47,6 +49,10 @@ namespace Renderer
         {
             renderLabel(widget);
         }
+        else if (strncmp(widgetName, CheckBox::CLASS_NAME, size) == 0)
+        {
+            renderCheckBox(widget);
+        }
 
     }
 
@@ -78,7 +84,7 @@ namespace Renderer
             case WidgetState::DISABLE:
             {
                 color = style.disableColor;
-                textColor = style.disableColor;
+                textColor = style.disableTextColor;
                 break;
             }
             default:
@@ -223,6 +229,7 @@ namespace Renderer
                     { 255,167,255 });
             }
             
+            
             renderTarget->drawText(wstr, wr, NbColor(255, 255, 255), TextAlignment::LEFT, ParagraphAlignment::TOP);
             index++;
         });
@@ -232,10 +239,125 @@ namespace Renderer
     {
         Label* label = castWidget<Label>(widget);
         const NbRect<int>& widgetRect = label->getRect();
-        renderTarget->drawText(label->getText(), widgetRect, NbColor(255, 255, 255), TextAlignment::LEFT, ParagraphAlignment::TOP);
+
+        Label::VTextAlign vTextAlign = label->getVTextAlign();
+		Label::HTextAlign hTextAlign = label->getHTextAlign();
+
+        if (label->getFont().isDirty() || label->isSizeChange)
+        {
+            if (label->hasEllipsis())
+            {
+                createTextLayoutForLabelClipped(label);
+            }
+            else
+            {
+                createTextLayoutForLabel(label);
+            }
+        }
+
+        
+
+
+        IDWriteTextLayout* textLayout =  Direct2dGlobalWidgetMapper::getTextLayoutByWidget(label);
+        
+        renderTarget->drawText(textLayout, widgetRect, NbColor(255, 255, 255), static_cast<TextAlignment>(vTextAlign));
+
     }
 
-    void Direct2dWidgetRenderer::createTextLayoutForWidget(IWidget *widget, const std::wstring& data)
+	void Direct2dWidgetRenderer::renderCheckBox(IWidget* widget)
+	{
+		using namespace Widgets;
+		CheckBox* checkBox = castWidget<CheckBox>(widget);
+
+		const WidgetStyle& style = checkBox->getStyle();
+		WidgetState state = checkBox->getState();
+		NbColor color;
+		NbColor textColor;
+
+		switch (state)
+		{
+		    case WidgetState::HOVER:
+		    {
+			    color = style.hoverColor;
+			    textColor = style.hoverTextColor;
+			    break;
+		    }
+		    case WidgetState::ACTIVE:
+		    {
+			    color = style.activeColor;
+			    textColor = style.activeTextColor;
+			    break;
+		    }
+		    case WidgetState::DISABLE:
+		    {
+			    color = style.disableColor;
+			    textColor = style.disableTextColor;
+			    break;
+		    }
+		    default:
+		    {
+			    color = style.baseColor;
+			    textColor = style.baseTextColor;
+			    break;
+		    }
+		}
+
+
+        // TODO: cache geometry & add to wrapper class
+        // smth like getArrowTextureForCheckBox
+        // mb add class figures
+
+        ID2D1PathGeometry* geometry;
+        ID2D1GeometrySink* sink;
+		HRESULT hr =  FactorySingleton::getFactory()->CreatePathGeometry(&geometry);
+         
+		if (SUCCEEDED(hr))
+		{
+			hr = geometry->Open(&sink);
+
+			if (SUCCEEDED(hr))
+			{
+                const NbRect<int>& boxRc = checkBox->getBoxRect();
+
+                auto vertex = GeometryFactory::create(ShapeType::CHECK_MARK, boxRc);
+
+				sink->BeginFigure(
+					D2D1::Point2F(vertex[0].x, vertex[0].y),
+					D2D1_FIGURE_BEGIN_FILLED
+				);
+
+                for(size_t i = 1; i < vertex.size(); ++i)
+                {
+					sink->AddLine(D2D1::Point2F(vertex[i].x, vertex[i].y));
+                }
+
+                sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+
+				hr = sink->Close();
+			}
+			SafeRelease(&sink);
+		}
+        
+        auto rt = renderTarget->getRawRenderTarget();
+		D2D1_COLOR_F cc = { 1.0f,0.0f,0.0f,1.0f };
+        ID2D1SolidColorBrush *c;
+		rt->CreateSolidColorBrush(cc, &c);
+
+
+
+		renderTarget->fillRectangle(checkBox->getRect(), color);
+        renderTarget->drawRectangle(checkBox->getBoxRect(), { 255,255,255 });
+        renderLabel(checkBox->getLabel());
+        
+        
+        if(checkBox->getIsChecked()) // some pice of @@
+            rt->FillGeometry(geometry, c);
+
+        SafeRelease(&geometry);
+
+	}
+
+	void Direct2dWidgetRenderer::createTextLayoutForWidget(IWidget* widget, const std::wstring& data)
     {
         static IDWriteFactory *factory = FactorySingleton::getDirectWriteFactory();
         const char* widgetName = widget->getClassName();
@@ -256,16 +378,17 @@ namespace Renderer
             }
 
             IDWriteTextLayout *textLayout = nullptr;
-            IDWriteTextFormat *textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(textEdit);
+            Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(textEdit);
+            
             if(!textFormat)
             {
-                LPCWSTR font = L"Consolas";
+                Font font;
                 textFormat = Direct2dWrapper::createTextFormatForWidget(textEdit, font);
             }
 
             const NbRect<int> &rect = widget->getRect();
 
-            factory->CreateTextLayout(newData.c_str(), newData.length(), textFormat, rect.width, rect.height, &textLayout);
+            factory->CreateTextLayout(newData.c_str(), newData.length(), textFormat.Get(), rect.width, rect.height, &textLayout);
             textLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
             Direct2dGlobalWidgetMapper::addTextlayout(textEdit, textLayout);
         }
@@ -274,6 +397,11 @@ namespace Renderer
             TreeView* treeView = castWidget<TreeView>(widget);
 
             createTextLayoutForTreeView(treeView);
+        }
+        else if (strncmp(widgetName, Label::CLASS_NAME, size) == 0)
+        {
+            Label* label = castWidget<Label>(widget);
+            createTextLayoutForLabel(label);
         }
     }
 
@@ -285,4 +413,57 @@ namespace Renderer
         
     }
     
+	void Direct2dWidgetRenderer::createTextLayoutForLabel(Label* label) noexcept
+	{
+		IDWriteTextLayout* textLayout = nullptr;
+		Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(label);
+        if (label->getFont().isDirty())
+        {
+			textFormat = Direct2dWrapper::createTextFormatForWidget(label, label->getFont());
+            label->getFont().clearDirty();
+        }
+
+		const NbRect<int>& rect = label->getRect();
+        const std::wstring& text = label->getText();
+
+		IDWriteFactory* factory = FactorySingleton::getDirectWriteFactory();
+		factory->CreateTextLayout(text.c_str(), text.length(), textFormat.Get(), rect.width, rect.height, &textLayout);
+		textLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+		Direct2dGlobalWidgetMapper::addTextlayout(label, textLayout);
+	}
+
+
+	void Direct2dWidgetRenderer::createTextLayoutForLabelClipped(Label* label) noexcept
+	{
+		IDWriteTextLayout* textLayout = nullptr;
+        Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(label);
+        if (!textFormat || label->getFont().isDirty())
+        {
+            Direct2dWrapper::createTextFormatForWidget(label, label->getFont());
+            textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(label);
+            label->getFont().clearDirty();
+        }
+
+		DWRITE_TRIMMING trimming = {};
+		trimming.granularity = DWRITE_TRIMMING_GRANULARITY_CHARACTER;
+		trimming.delimiter = 0;
+		trimming.delimiterCount = 0;
+
+		Microsoft::WRL::ComPtr<IDWriteInlineObject> inlineEllipsis;
+		IDWriteFactory* factory = FactorySingleton::getDirectWriteFactory();
+		factory->CreateEllipsisTrimmingSign(textFormat.Get(), &inlineEllipsis);
+
+		textFormat->SetTrimming(&trimming, inlineEllipsis.Get());
+        
+
+		const NbRect<int>& rect = label->getRect();
+		const std::wstring& text = label->getText();
+
+        //std::wstring trimmedText = text.substr(0, lastHitIndex) + L"...";
+
+		factory->CreateTextLayout(text.c_str(), text.length(), textFormat.Get(), rect.width, rect.height, &textLayout);
+		textLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+		Direct2dGlobalWidgetMapper::addTextlayout(label, textLayout);
+	}
+
 };

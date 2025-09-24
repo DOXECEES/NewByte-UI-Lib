@@ -5,6 +5,7 @@
 
 #include <d2d1.h>
 #pragma comment(lib, "d2d1")
+#include <wrl.h>
 
 #include "../Widgets/IWidget.hpp"
 
@@ -17,12 +18,12 @@ namespace Renderer
         static IDWriteTextLayout* getTextLayoutByWidget(Widgets::IWidget *widget) noexcept;
         static void addTextlayout(Widgets::IWidget* widget, IDWriteTextLayout* textLayout);
 
-        static IDWriteTextFormat* getTextFormatByWidget(Widgets::IWidget *widget) noexcept;
-        static void addTextFormat(Widgets::IWidget* widget, IDWriteTextFormat* textFormat) noexcept;
+        static Microsoft::WRL::ComPtr<IDWriteTextFormat> getTextFormatByWidget(Widgets::IWidget *widget) noexcept;
+        static void addTextFormat(Widgets::IWidget* widget, const Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat) noexcept;
 
     private:
         inline static std::unordered_map<int, IDWriteTextLayout *> textLayoutMapper;
-        inline static std::unordered_map<int, IDWriteTextFormat *> textFormatMapper;
+        inline static std::unordered_map<int, Microsoft::WRL::ComPtr<IDWriteTextFormat>> textFormatMapper;
     };
 
 };

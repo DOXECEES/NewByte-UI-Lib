@@ -6,6 +6,8 @@
 #include "Direct2dRenderer.hpp"
 #include "Direct2dWrapper.hpp"
 
+#include "Direct2dFont.hpp"
+
 D2D1_RECT_F Direct2dUtils::toD2D1Rect(const NbRect<int> &rect) noexcept
 {
     return D2D1::RectF(static_cast<float>(rect.x), static_cast<float>(rect.y), static_cast<float>(rect.x + rect.width), static_cast<float>(rect.y + rect.height));
@@ -56,13 +58,12 @@ ID2D1SolidColorBrush *Direct2dWrapper::createSolidColorBrush(const Direct2dHandl
     return renderTarget.createSolidBrush(color);
 }
 
-IDWriteTextFormat *Direct2dWrapper::createTextFormatForWidget(Widgets::IWidget* widget, const std::wstring &font) noexcept
+Microsoft::WRL::ComPtr<IDWriteTextFormat> Direct2dWrapper::createTextFormatForWidget(Widgets::IWidget* widget, const Font& font) noexcept
 {
     IDWriteFactory *directFactory = Renderer::FactorySingleton::getDirectWriteFactory();
-    IDWriteTextFormat *textFormat = nullptr;
-    directFactory->CreateTextFormat(font.c_str(), nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 32, L"en-us", &textFormat);
-    textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-    textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+    Direct2dFont directFont(font);
+    
+    Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat = directFont.getTextFormat();
     Renderer::Direct2dGlobalWidgetMapper::addTextFormat(widget, textFormat);
     return textFormat;
 }

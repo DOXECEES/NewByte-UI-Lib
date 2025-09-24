@@ -5,21 +5,11 @@
 
 #include "WindowInterface/IWindow.hpp"
 #include "Widgets/IWidget.hpp"
+#include "Widgets/Indentations.hpp"
 
 #include <vector>
 
-struct Padding
-{
-    int left    = 5;
-    int top     = 5;
-    int right   = 5;
-    int bottom  = 5;
-};
 
-NbRect<int> applyPaddingToRect(const NbRect<int>& rect, const Padding& padding)
-{
-    return NbRect<int>(rect.x + padding.left, rect.y + padding.top, rect.width - padding.left - padding.right, rect.height - padding.top - padding.bottom);
-}
 
 
 class Layout : WindowInterface::IWindowStateChangedListener

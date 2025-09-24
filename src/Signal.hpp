@@ -1,6 +1,10 @@
 #ifndef NBUI_SRC_SIGNAL_HPP
 #define NBUI_SRC_SIGNAL_HPP
 
+#include <functional>
+#include <vector>
+#include <utility>
+
 template<typename Signature>
 class Signal;
 
@@ -10,9 +14,15 @@ class Signal<Ret(Args...)>
 public:
 	using Callback = std::function<Ret(Args...)>;
 
-	void connect(Callback cb) {
+	void connect(Callback cb)
+	{
 		observers.push_back(std::move(cb));
 	}
+
+	void disconnectAll() noexcept {
+		observers.clear();
+	}
+
 
 	void emit(Args... args) {
 		for (auto& cb : observers)
@@ -59,6 +69,22 @@ void subscribe(Publisher& publisher,
 	Func&& func)
 {
 	check_signal(signal);
+	(publisher.*signal).connect(std::forward<Func>(func));
+}
+
+template<typename Publisher, typename... Args, typename Func>
+void subscribe(Publisher* publisher,
+	Signal<void(Args...)> Publisher::* signal,
+	Func&& func)
+{
+	(publisher->*signal).connect(std::forward<Func>(func));
+}
+
+template<typename Publisher, typename... Args, typename Func>
+void subscribe(Publisher& publisher,
+	Signal<void(Args...)> Publisher::* signal,
+	Func&& func)
+{
 	(publisher.*signal).connect(std::forward<Func>(func));
 }
 

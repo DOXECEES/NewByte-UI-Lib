@@ -20,7 +20,7 @@ namespace Widgets
 		virtual ~CheckBox() noexcept = default;
 
 		bool hitTest(const NbPoint<int>& pos) override;
-		bool hitTestClick(const NbPoint<int>& pos) noexcept; 
+		bool hitTestClick(const NbPoint<int>& pos) noexcept override; 
 
 		const char* getClassName() const noexcept override { return CLASS_NAME; }
 
@@ -32,6 +32,11 @@ namespace Widgets
 		Label* getLabel() const noexcept;
 
 		void setText(const std::wstring& text) const noexcept;
+
+		NbRect<int> getRequestedSize() const noexcept override;
+	
+		
+	
 
 
 	public:

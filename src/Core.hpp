@@ -130,8 +130,12 @@ struct NbRect
     T width     = {};
     T height    = {};
 
-    constexpr bool isEmpty() const { return std::fabs(width) < std::numeric_limits<float>::epsilon()
-        || std::fabs(height) < std::numeric_limits<float>::epsilon(); }
+    constexpr bool isEmpty() const
+    { 
+        return std::fabs(width) < std::numeric_limits<float>::epsilon()
+                || std::fabs(height) < std::numeric_limits<float>::epsilon();
+    }
+
     constexpr void scale(const float scaleFactor) 
     {
         x *= scaleFactor;
@@ -171,6 +175,13 @@ struct NbRect
             static_cast<float>(this->height)
         );
     }
+
+    constexpr bool isInside(const NbPoint<T>& point) const noexcept
+    {
+        return point.x >= this->x && point.x < this->x + this->width
+            && point.y >= this->y && point.y < this->y + this->height;
+    }
+
 
 };
 

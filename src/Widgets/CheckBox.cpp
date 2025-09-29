@@ -76,6 +76,22 @@ namespace Widgets
 		label->setText(text);
 	}
 
+	NbRect<int> CheckBox::getRequestedSize() const noexcept
+	{
+		NbRect<int> requestedRect;
+		const NbRect<int>& labelRect = label->getRect();
+		
+		requestedRect = {
+			0,
+			0,
+			200,
+			std::max(boxRect.height, labelRect.height)
+		};
+
+
+		return applyScaleOnlyPadding(requestedRect, Padding());
+	}
+
 };
 
 

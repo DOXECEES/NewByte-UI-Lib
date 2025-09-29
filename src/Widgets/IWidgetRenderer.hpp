@@ -9,6 +9,7 @@ namespace Widgets
     {
     public:
         virtual void render(IWidget* widget) = 0;
+        virtual void renderPopUp() noexcept = 0;
     };
 }
 

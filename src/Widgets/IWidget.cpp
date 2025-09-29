@@ -25,4 +25,9 @@ namespace Widgets
 		return state == WidgetState::DEFAULT;
 	}
 
+	NbRect<int> IWidget::getRequestedSize() const noexcept
+	{
+		return {};
+	}
+
 };

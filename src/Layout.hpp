@@ -62,29 +62,48 @@ class VBoxLayout : public Layout
 public:
     VBoxLayout(WindowInterface::IWindow *window) : Layout(window) {}
 
-    void caclulateLayout() noexcept override 
-    {
+	void caclulateLayout() noexcept override
+	{
+		if (linkedWidgets.empty()) return;
 
-        const NbRect<int>& clientRect = window->getClientRect();
+		auto clientRect = applyPaddingToRect(window->getClientRect(), Padding());
+		
+		int currentY = 5;
 
-        int countOfWidgets = linkedWidgets.size();
-        int dx = clientRect.width / countOfWidgets;
-        int dy = clientRect.height / countOfWidgets;
+		int fixedHeight = 0;
+		int flexibleCount = 0;
 
-        int currentIteration = 0;
-        for(auto& widget : linkedWidgets)
-        {
-            NbRect<int> rect = {
-                0,
-                currentIteration * dy,
-                clientRect.width,
-                dy
-            };
-            rect = applyPaddingToRect(rect, Padding());
-            widget->setRect(rect);
-            currentIteration++;
-        }
-    }
+		for (auto& widget : linkedWidgets)
+		{
+			if (!widget->getRequestedSize().isEmpty())
+				fixedHeight += widget->getRequestedSize().height;
+			else
+				flexibleCount++;
+		}
+
+		int remainingHeight = clientRect.height - fixedHeight;
+		int flexHeight = (flexibleCount > 0) ? remainingHeight / flexibleCount : 0;
+
+		for (auto& widget : linkedWidgets)
+		{
+			NbRect<int> rect;
+			if (!widget->getRequestedSize().isEmpty())
+			{
+				rect = widget->getRequestedSize();
+				rect.x += 5;
+				rect.y = currentY;
+				rect.width = clientRect.width;
+			}
+			else
+			{
+				rect = { 5, currentY, clientRect.width, flexHeight };
+			}
+
+			//rect = applyHeightOnlyPaddingToRect(rect, Padding());
+			widget->setRect(rect);
+			currentY += rect.height;
+		}
+	}
 
 };
 

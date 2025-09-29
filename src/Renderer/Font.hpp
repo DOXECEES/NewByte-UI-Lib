@@ -77,6 +77,6 @@ private:
 	FontStretch     stretch		= FontStretch::Normal;
 	float           size		= 14.0f;
 
-	mutable bool dirtyFlag				= true;
+	mutable bool dirtyFlag		= true;
 };
 #endif

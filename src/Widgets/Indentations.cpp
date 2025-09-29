@@ -19,3 +19,25 @@ NbRect<int> applyLeftTopPaddingToRect(const NbRect<int>& rect, const Padding& pa
 		rect.height
 	};
 }
+
+NbRect<int> applyScaleOnlyPadding(const NbRect<int>& rect, const Padding& padding) noexcept
+{
+	return {
+		rect.x,
+		rect.y,
+		rect.width + padding.left + padding.right,
+		rect.height + padding.top + padding.bottom
+	};
+
+}
+
+NbRect<int> applyHeightOnlyPaddingToRect(const NbRect<int>& rect, const Padding& padding) noexcept
+{
+	return {
+		rect.x,
+		rect.y,
+		rect.width,
+		rect.height - padding.bottom
+	};
+}
+

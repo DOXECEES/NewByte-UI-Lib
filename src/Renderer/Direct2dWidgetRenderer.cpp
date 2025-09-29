@@ -10,6 +10,8 @@
 #include "Widgets/TreeView.hpp"
 #include "Widgets/Label.hpp"
 #include "Widgets/CheckBox.hpp"
+#include "Widgets/ComboBox.hpp"
+
 #include "Direct2dGlobalWidgetMapper.hpp"
 
 #include "GeometryFactory.hpp"
@@ -53,7 +55,36 @@ namespace Renderer
         {
             renderCheckBox(widget);
         }
+        else if (strncmp(widgetName, ComboBox::CLASS_NAME, size) == 0)
+        {
+            renderComboBox(widget);
+        }
 
+    }
+
+
+    void Direct2dWidgetRenderer::renderPopUp() noexcept
+    {
+        while (!popupQueue.empty())
+        {
+            PopUpRenderParams params = popupQueue.front();
+            popupQueue.pop();
+            
+            renderTarget->fillRectangle(params.rect, { 23, 44, 55 });
+            
+            size_t index = 0;
+
+            for (const auto& i : params.items)
+            {
+                NbRect itemRect = params.rect;
+                itemRect.height =  20;
+                itemRect.x      += 5;
+                itemRect.width  -= 5;
+                itemRect.y      =  params.rect.y + (itemRect.height * index);
+                renderTarget->drawText(i.getText(), itemRect, {255,255,255}, TextAlignment::LEFT);
+                index++;
+            }
+        }
     }
 
 
@@ -67,33 +98,8 @@ namespace Renderer
         NbColor color;
         NbColor textColor;
 
-        switch (state)
-        {
-            case WidgetState::HOVER:
-            {
-                color = style.hoverColor;
-                textColor = style.hoverTextColor;
-                break;
-            }
-            case WidgetState::ACTIVE:
-            {
-                color = style.activeColor;
-                textColor = style.activeTextColor;
-                break;
-            }
-            case WidgetState::DISABLE:
-            {
-                color = style.disableColor;
-                textColor = style.disableTextColor;
-                break;
-            }
-            default:
-            {
-                color = style.baseColor;
-                textColor = style.baseTextColor;
-                break;
-            }
-        }
+        getWidgetThemeColorByState(button, color, textColor);
+
 
         renderTarget->fillRectangle(button->getRect(), color);
         renderTarget->drawText(button->getText(), button->getRect(), textColor);
@@ -235,6 +241,7 @@ namespace Renderer
         });
     }
 
+
     void Direct2dWidgetRenderer::renderLabel(IWidget *widget)
     {
         Label* label = castWidget<Label>(widget);
@@ -255,14 +262,13 @@ namespace Renderer
             }
         }
 
-        
-
 
         IDWriteTextLayout* textLayout =  Direct2dGlobalWidgetMapper::getTextLayoutByWidget(label);
         
         renderTarget->drawText(textLayout, widgetRect, NbColor(255, 255, 255), static_cast<TextAlignment>(vTextAlign));
 
     }
+
 
 	void Direct2dWidgetRenderer::renderCheckBox(IWidget* widget)
 	{
@@ -274,33 +280,7 @@ namespace Renderer
 		NbColor color;
 		NbColor textColor;
 
-		switch (state)
-		{
-		    case WidgetState::HOVER:
-		    {
-			    color = style.hoverColor;
-			    textColor = style.hoverTextColor;
-			    break;
-		    }
-		    case WidgetState::ACTIVE:
-		    {
-			    color = style.activeColor;
-			    textColor = style.activeTextColor;
-			    break;
-		    }
-		    case WidgetState::DISABLE:
-		    {
-			    color = style.disableColor;
-			    textColor = style.disableTextColor;
-			    break;
-		    }
-		    default:
-		    {
-			    color = style.baseColor;
-			    textColor = style.baseTextColor;
-			    break;
-		    }
-		}
+        getWidgetThemeColorByState(checkBox, color, textColor);
 
 
         // TODO: cache geometry & add to wrapper class
@@ -357,7 +337,95 @@ namespace Renderer
 
 	}
 
-	void Direct2dWidgetRenderer::createTextLayoutForWidget(IWidget* widget, const std::wstring& data)
+
+	void Direct2dWidgetRenderer::renderComboBox(IWidget* widget)
+	{
+		using namespace Widgets;
+		ComboBox* comboBox = castWidget<ComboBox>(widget);
+
+		const WidgetStyle& style = comboBox->getStyle();
+        const NbRect<int>& selectedItemRect = comboBox->getSelectedItemRect();
+        WidgetState state = comboBox->getState();
+		NbColor color;
+		NbColor textColor;
+		
+        getWidgetThemeColorByState(comboBox, color, textColor);
+
+        renderTarget->fillRectangle(comboBox->getButtonRect(), {128,128,128});
+        renderTarget->fillRectangle(comboBox->getSelectedItemRect(), color);
+
+        if (comboBox->getComboState() == ComboBox::ComboState::EXPANDED)
+        {
+            addWidgetPopUpToQueue(comboBox);
+        }
+	}
+
+
+    void Direct2dWidgetRenderer::getWidgetThemeColorByState(IWidget* widget, NbColor& color, NbColor& textColor) const noexcept
+    {
+        const WidgetStyle& style = widget->getStyle();
+
+        switch (widget->getState())
+        {
+            case WidgetState::HOVER:
+            {
+                color = style.hoverColor;
+                textColor = style.hoverTextColor;
+                break;
+            }
+            case WidgetState::ACTIVE:
+            {
+                color = style.activeColor;
+                textColor = style.activeTextColor;
+                break;
+            }
+            case WidgetState::DISABLE:
+            {
+                color = style.disableColor;
+                textColor = style.disableTextColor;
+                break;
+            }
+            default:
+            {
+                color = style.baseColor;
+                textColor = style.baseTextColor;
+                break;
+            }
+        }
+    }
+
+
+    void Direct2dWidgetRenderer::addWidgetPopUpToQueue(IWidget* widget) noexcept
+    {
+        const char* widgetName = widget->getClassName();
+        size_t size = strlen(widgetName);
+
+        if (strncmp(widgetName, ComboBox::CLASS_NAME, size) == 0)
+        {
+            ComboBox* comboBox = castWidget<ComboBox>(widget);
+
+            size_t dropdownListSize = comboBox->getSize();
+
+            const NbRect<int>& selectedItemRect = comboBox->getSelectedItemRect();
+
+            NbRect<int> dropdownRect = {
+                selectedItemRect.x,
+                selectedItemRect.y + selectedItemRect.height,
+                selectedItemRect.width + 20,
+                selectedItemRect.height * static_cast<int>(dropdownListSize) + 5
+            };
+
+            PopUpRenderParams params = {
+                dropdownRect,
+                comboBox->getAllItems()
+            };
+            
+            popupQueue.push(params);
+        }
+    }
+
+
+    void Direct2dWidgetRenderer::createTextLayoutForWidget(IWidget* widget, const std::wstring& data)
     {
         static IDWriteFactory *factory = FactorySingleton::getDirectWriteFactory();
         const char* widgetName = widget->getClassName();
@@ -412,6 +480,7 @@ namespace Renderer
 
         
     }
+
     
 	void Direct2dWidgetRenderer::createTextLayoutForLabel(Label* label) noexcept
 	{
@@ -423,7 +492,7 @@ namespace Renderer
             label->getFont().clearDirty();
         }
 
-		const NbRect<int>& rect = label->getRect();
+        const NbRect<int>& rect = label->getRect();
         const std::wstring& text = label->getText();
 
 		IDWriteFactory* factory = FactorySingleton::getDirectWriteFactory();

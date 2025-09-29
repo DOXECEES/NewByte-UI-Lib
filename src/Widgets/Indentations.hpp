@@ -13,5 +13,7 @@ struct Padding
 
 NbRect<int> applyPaddingToRect(const NbRect<int>& rect, const Padding& padding) noexcept;
 NbRect<int> applyLeftTopPaddingToRect(const NbRect<int>& rect, const Padding& padding) noexcept;
+NbRect<int> applyScaleOnlyPadding(const NbRect<int>& rect, const Padding& padding) noexcept;
+NbRect<int> applyHeightOnlyPaddingToRect(const NbRect<int>& rect, const Padding& padding) noexcept;
 
 #endif

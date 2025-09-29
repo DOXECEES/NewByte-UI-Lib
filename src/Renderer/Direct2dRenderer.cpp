@@ -75,6 +75,8 @@ namespace Renderer
         for(auto& widget : window->getWidgets())
             widgetRenderer->render(widget);
 
+        widgetRenderer->renderPopUp();
+
         HRESULT hr = renderTarget.endDraw();
 
         if (FAILED(hr))
@@ -82,6 +84,7 @@ namespace Renderer
             OutputDebugString(L"EndDraw failed\n");
         }
     }
+
     void Direct2dRenderer::resize(WindowInterface::IWindow *window)
     {
         renderTarget.resize(window->getSize());

@@ -106,7 +106,10 @@ set (SRC
         src/Widgets/Indentations.hpp
         src/Widgets/Theme.cpp
         src/Widgets/Theme.hpp
-        
+        src/Widgets/ComboBox.cpp
+        src/Widgets/ComboBox.hpp
+        src/Widgets/IPopUp.cpp
+        src/Widgets/IPopUp.hpp
 )
 
 

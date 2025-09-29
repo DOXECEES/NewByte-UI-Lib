@@ -73,6 +73,8 @@ namespace Widgets
         inline bool getIsFocused() const noexcept { return isFocused; }
         inline void setFocused() noexcept { isFocused = true; }
         inline void setUnfocused() noexcept { isFocused = false; }
+
+        virtual NbRect<int> getRequestedSize() const noexcept;
         
     public:
         Signal<void(const NbRect<int>&)> onSizeChangedSignal;

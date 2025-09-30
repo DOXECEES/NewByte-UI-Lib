@@ -32,7 +32,14 @@ public:
     {
         window->linkWidget(widget);
         linkedWidgets.push_back(widget);
-    }
+		
+		for (const auto& i : widget->getChildrens())
+		{
+			window->linkWidget(i);
+
+		}
+	
+	}
 
     void addLayout(Layout *layout)
     {

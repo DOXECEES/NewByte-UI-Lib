@@ -5,6 +5,8 @@
 #include "../IIndexable.hpp"
 #include "Signal.hpp"
 
+#include "Core/ZIndex.hpp"
+
 #include "WidgetStyle.hpp"
 
 #include <functional>
@@ -25,7 +27,9 @@ namespace Widgets
     {
     public:
     
-        IWidget(const NbRect<int>& rect) : rect(rect) {}
+        IWidget(const NbRect<int>& rect, const uint16_t zIndexOrder = 0) 
+            : rect(rect)
+            , zIndex(Core::ZIndex::ZType::WIDGET, zIndexOrder) {}
         virtual ~IWidget() = default;
         virtual void onClick() 
         {
@@ -75,17 +79,22 @@ namespace Widgets
         inline void setUnfocused() noexcept { isFocused = false; }
 
         virtual NbRect<int> getRequestedSize() const noexcept;
+
+        void addChildrenWidget(IWidget* widget) noexcept;
+        NB_NODISCARD const std::vector<IWidget*>& getChildrens() const noexcept;
+        
         
     public:
         Signal<void(const NbRect<int>&)> onSizeChangedSignal;
 
     protected:
 
+        std::vector<IWidget*>   childrens;
         NbRect<int>             rect                = { 0, 0, 0, 0 };
         //NbColor                 color               = { 30, 30, 30 };
         //NbColor                 hoverColor          = { 51, 51, 51 };
 
-
+        Core::ZIndex            zIndex;
 
         std::function<void()>   onClickCallback;
 

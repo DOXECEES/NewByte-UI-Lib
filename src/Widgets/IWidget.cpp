@@ -30,4 +30,14 @@ namespace Widgets
 		return {};
 	}
 
+	void IWidget::addChildrenWidget(IWidget* widget) noexcept
+	{
+		childrens.push_back(widget);
+	}
+
+	const std::vector<IWidget*>& IWidget::getChildrens() const noexcept
+	{
+		return childrens;
+	}
+
 };

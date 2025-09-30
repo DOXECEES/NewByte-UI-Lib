@@ -6,7 +6,9 @@ namespace Widgets
 {
 	ComboBox::ComboBox() noexcept
 		: IWidget({})
+		, dropdownList(std::make_unique<DropdownList>())
 	{
+		this->addChildrenWidget(dropdownList.get());
 		subscribe(static_cast<IWidget*>(this), &IWidget::onSizeChangedSignal, [this](const NbRect<int>& rc)
 		{
 			Padding p;
@@ -25,6 +27,12 @@ namespace Widgets
 				20
 			};
 
+			dropdownList->setRect({
+				rc.x,
+				rc.y + 20,
+				rc.width,
+				20 * static_cast<int>(dropdownList->size())
+			});
 			//selectedItemRect = applyLeftTopPaddingToRect(selectedItemRect, p);
 			//buttonRect = applyLeftTopPaddingToRect(buttonRect, p);
 
@@ -58,9 +66,14 @@ namespace Widgets
 		return selectedItemRect;
 	}
 
+	const NbRect<int>& ComboBox::getDropdownRect() const noexcept
+	{
+		return dropdownList->getRect();
+	}
+
 	void ComboBox::addItem(const ListItem& item) noexcept
 	{
-		dropdownList.add(item);
+		dropdownList->add(item);
 	}
 
 	NB_NODISCARD ComboBox::ComboState ComboBox::getComboState() const noexcept
@@ -70,12 +83,12 @@ namespace Widgets
 
 	NB_NODISCARD size_t ComboBox::getSize() const noexcept
 	{
-		return dropdownList.size();
+		return dropdownList->size();
 	}
 
 	const std::vector<ListItem>& ComboBox::getAllItems() const noexcept
 	{
-		return dropdownList.getAllItems();
+		return dropdownList->getAllItems();
 	}
 
 	NbRect<int> ComboBox::getRequestedSize() const noexcept
@@ -128,20 +141,41 @@ namespace Widgets
 
 	}
 
+	DropdownList::DropdownList() noexcept
+		: IWidget({}, 1)
+	{
+	
+	}
+
 	void DropdownList::add(ListItem item) noexcept
 	{
 		itemList.push_back(item);
+		rect = {
+			rect.x,
+			rect.y,
+			rect.width,
+			20 * static_cast<int>(itemList.size())
+		};
 	}
 
 	NB_NODISCARD size_t DropdownList::size() const noexcept
 	{
-		//return 4;
 		return itemList.size();
 	}
 
 	NB_NODISCARD const std::vector<ListItem>& DropdownList::getAllItems() const noexcept
 	{
 		return itemList;
+	}
+
+	bool DropdownList::hitTest(const NbPoint<int>& pos)
+	{
+		return rect.isInside(pos);
+	}
+
+	const char* DropdownList::getClassName() const
+	{
+		return CLASS_NAME;
 	}
 	
 

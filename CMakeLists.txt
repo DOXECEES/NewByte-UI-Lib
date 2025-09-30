@@ -110,6 +110,9 @@ set (SRC
         src/Widgets/ComboBox.hpp
         src/Widgets/IPopUp.cpp
         src/Widgets/IPopUp.hpp
+
+        src/Core/ZIndex.cpp
+        src/Core/ZIndex.hpp
 )
 
 

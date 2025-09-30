@@ -75,15 +75,15 @@ namespace Utils
     }
 
      template <typename T>
-    constexpr NbRect<T> toNbRect(const D2D1_RECT_F rect) noexcept
-    {
+     constexpr NbRect<T> toNbRect(const D2D1_RECT_F rect) noexcept
+     {
         return NbRect<T>(
             static_cast<T>(rect.left),
             static_cast<T>(rect.top),
             static_cast<T>(rect.right - rect.left),
             static_cast<T>(rect.bottom - rect.top)
         );
-    }
+     }
 
 
     inline std::wstring toWstring(const std::string& str) noexcept
@@ -108,6 +108,8 @@ namespace Utils
 
 
     
+
+
 
 };
 

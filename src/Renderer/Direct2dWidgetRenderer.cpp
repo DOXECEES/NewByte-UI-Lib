@@ -65,18 +65,33 @@ namespace Renderer
 
     void Direct2dWidgetRenderer::renderPopUp() noexcept
     {
+        // 00 - 
+        // 01 - 
+        // 10 - 
+        // 11 - 
+
+        // ascending order //
+
+        // store of layers 
+        // main             - 0 no overlap
+        // default widget   - 1 no overlap
+        // popups           - 2 overlap
+        // menu | dropdowns - 3 no overlap
+        // look for 2 HI-bits
+        // other actual z buffer value in category
+
         while (!popupQueue.empty())
         {
             PopUpRenderParams params = popupQueue.front();
             popupQueue.pop();
             
-            renderTarget->fillRectangle(params.rect, { 23, 44, 55 });
+            renderTarget->fillRectangle(params.rect, params.color);
             
             size_t index = 0;
 
             for (const auto& i : params.items)
             {
-                NbRect itemRect = params.rect;
+                NbRect itemRect =  params.rect;
                 itemRect.height =  20;
                 itemRect.x      += 5;
                 itemRect.width  -= 5;
@@ -391,36 +406,6 @@ namespace Renderer
                 textColor = style.baseTextColor;
                 break;
             }
-        }
-    }
-
-
-    void Direct2dWidgetRenderer::addWidgetPopUpToQueue(IWidget* widget) noexcept
-    {
-        const char* widgetName = widget->getClassName();
-        size_t size = strlen(widgetName);
-
-        if (strncmp(widgetName, ComboBox::CLASS_NAME, size) == 0)
-        {
-            ComboBox* comboBox = castWidget<ComboBox>(widget);
-
-            size_t dropdownListSize = comboBox->getSize();
-
-            const NbRect<int>& selectedItemRect = comboBox->getSelectedItemRect();
-
-            NbRect<int> dropdownRect = {
-                selectedItemRect.x,
-                selectedItemRect.y + selectedItemRect.height,
-                selectedItemRect.width + 20,
-                selectedItemRect.height * static_cast<int>(dropdownListSize) + 5
-            };
-
-            PopUpRenderParams params = {
-                dropdownRect,
-                comboBox->getAllItems()
-            };
-            
-            popupQueue.push(params);
         }
     }
 

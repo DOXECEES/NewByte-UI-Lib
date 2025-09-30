@@ -19,14 +19,30 @@ namespace Widgets
 		std::wstring	text;
 	};
 
-	class DropdownList
+	class DropdownList : public IWidget
 	{
+		
 	public:
-		DropdownList() noexcept = default;
+
+		static constexpr const char* CLASS_NAME = "ComboBoxDropDownList";
+
+		DropdownList() noexcept;
+		~DropdownList() noexcept = default;
+
+		DropdownList(const DropdownList&) = delete;
+		DropdownList& operator=(const DropdownList&) = delete;
+
+		DropdownList(DropdownList&&) noexcept = default;
+		DropdownList& operator=(DropdownList&&) noexcept = default;
+
 
 		void add(ListItem item) noexcept;
 		NB_NODISCARD size_t size() const noexcept;
 		NB_NODISCARD const std::vector<ListItem>& getAllItems() const noexcept;
+
+		bool hitTest(const NbPoint<int>& pos) override;
+		const char* getClassName() const override;
+
 
 	private:
 		std::vector<ListItem> itemList = {
@@ -35,8 +51,6 @@ namespace Widgets
 			{L"Whatsup"},
 			{L"Sup"}
 		};
-
-
 	};
 
 	class ComboBox : public IWidget
@@ -61,6 +75,7 @@ namespace Widgets
 
 		NB_NODISCARD const NbRect<int>& getButtonRect() const noexcept;
 		NB_NODISCARD const NbRect<int>& getSelectedItemRect() const noexcept;
+		NB_NODISCARD const NbRect<int>& getDropdownRect() const noexcept;
 
 		void addItem(const ListItem& item) noexcept;
 
@@ -77,13 +92,13 @@ namespace Widgets
 		void toggleComboState() noexcept;
 
 	private:
-		NbRect<int>		buttonRect;
-		NbRect<int>		selectedItemRect;
+		NbRect<int>						buttonRect;
+		NbRect<int>						selectedItemRect;
 
-		DropdownList	dropdownList;
-		ComboState		comboBoxState = ComboState::COLLAPSED;
+		std::unique_ptr<DropdownList>	dropdownList;
+		ComboState						comboBoxState = ComboState::COLLAPSED;
 	
-		inline static ComboBox* openedComboBox = nullptr;
+		inline static ComboBox*			openedComboBox = nullptr;
 	
 	};
 

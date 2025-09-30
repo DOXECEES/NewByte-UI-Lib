@@ -26,8 +26,9 @@ namespace Renderer
 
         struct PopUpRenderParams
         {
-            NbRect<int> rect;
-            std::vector<ListItem> items;
+            NbRect<int>             rect;
+            std::vector<ListItem>   items;
+            NbColor                 color;
         };
 
         void renderButton(IWidget* widget);
@@ -55,7 +56,41 @@ namespace Renderer
         // textColor - OUT
         void getWidgetThemeColorByState(IWidget* widget, NbColor& color, NbColor& textColor) const noexcept;
 
-        void addWidgetPopUpToQueue(IWidget* widget) noexcept;
+        void addWidgetPopUpToQueue(IWidget* widget) noexcept
+        {
+            const char* widgetName = widget->getClassName();
+            size_t size = strlen(widgetName);
+
+            if (strncmp(widgetName, ComboBox::CLASS_NAME, size) == 0)
+            {
+                ComboBox* comboBox = castWidget<ComboBox>(widget);
+
+                size_t dropdownListSize = comboBox->getSize();
+
+                const NbRect<int>& selectedItemRect = comboBox->getSelectedItemRect();
+                const NbRect<int>& dropdownRect = comboBox->getDropdownRect();
+                /*NbRect<int> dropdownRect = {
+                selectedItemRect.x,
+                selectedItemRect.y + selectedItemRect.height,
+                selectedItemRect.width + 20,
+                selectedItemRect.height * static_cast<int>(dropdownListSize) + 5
+                };*/
+
+                NbColor color = { 23, 44, 55 };
+                if (comboBox->getChildrens()[0]->isHover())
+                {
+                    color = { 123, 44, 55 };
+                }
+
+                PopUpRenderParams params = {
+                    dropdownRect,
+                    comboBox->getAllItems(),
+                    color
+                };
+
+                popupQueue.push(params);
+            }
+        }
 
         void createTextLayoutForWidget(IWidget* widget, const std::wstring& data = L"");
 

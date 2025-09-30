@@ -27,7 +27,6 @@ namespace Win32Window
 
         inline static Widgets::IWidget* focusedWidget = nullptr; // only one widget can have focus
 
-
         LRESULT wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             static Splitter* activeSplitter = nullptr;
@@ -51,8 +50,10 @@ namespace Win32Window
                     state.setSize({ LOWORD(lParam), HIWORD(lParam) });
                     
 
-                    if(renderer)
+                    if (renderer)
+                    {
                         renderer->resize(this);
+                    }
 
                     for (auto& listener : stateChangedListeners)
                     {

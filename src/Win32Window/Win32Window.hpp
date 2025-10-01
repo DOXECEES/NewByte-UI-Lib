@@ -306,6 +306,14 @@ namespace Win32Window
                 {
                     return TRUE; // remove white frame around window
                 }
+                case WM_SETCURSOR:
+                {
+                    if (LOWORD(lParam) == HTCLIENT) {
+                        SetCursor(LoadCursor(NULL, IDC_ARROW));
+                        return TRUE; // <- сказал системе "я сам поставил курсор"
+                    }
+                    return DefWindowProc(hWnd, message, wParam, lParam);
+                }
                 case WM_DESTROY:
                 {
                     PostQuitMessage(0);

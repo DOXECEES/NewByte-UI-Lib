@@ -39,10 +39,9 @@ namespace Win32Window
         delete renderer;
 	}
 
-
-
 	void ChildWindow::show()
     {
+        notifyAllListeners();
         ShowWindow(handle.as<HWND>(), TRUE);
         UpdateWindow(handle.as<HWND>());
     }

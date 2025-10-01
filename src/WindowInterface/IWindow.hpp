@@ -71,7 +71,8 @@ namespace WindowInterface
         void linkWidget(Widgets::IWidget* widget) { widgets.push_back(widget); };
         void addStateChangedListener(IWindowStateChangedListener* listener) { stateChangedListeners.insert(listener); };
         void removeStateChangedListener(IWindowStateChangedListener* listener) { stateChangedListeners.erase(listener); };
-
+        
+        void notifyAllListeners() noexcept;
 
     protected:
         NbWindowHandle                              handle;

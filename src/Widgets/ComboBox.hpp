@@ -24,7 +24,8 @@ namespace Widgets
 		
 	public:
 
-		static constexpr const char* CLASS_NAME = "ComboBoxDropDownList";
+		static constexpr const char* CLASS_NAME					= "ComboBoxDropDownList";
+		static constexpr int		 SIZE_OF_ELEMENT_IN_PIXEL	= 20;
 
 		DropdownList() noexcept;
 		~DropdownList() noexcept = default;
@@ -41,16 +42,22 @@ namespace Widgets
 		NB_NODISCARD const std::vector<ListItem>& getAllItems() const noexcept;
 
 		bool hitTest(const NbPoint<int>& pos) override;
+		NB_NODISCARD size_t hitTestElement(const NbPoint<int>& pos) const noexcept;
 		const char* getClassName() const override;
 
+		void setHoverForElement(const size_t hoverIndex) noexcept;
+		NB_NODISCARD size_t getHoverElementIndex() const noexcept;
+		NB_NODISCARD NbRect<int> getHoverElementRect() const noexcept;
 
 	private:
-		std::vector<ListItem> itemList = {
+		std::vector<ListItem>	itemList = {
 			{L"Hello"},
 			{L"HI" },
 			{L"Whatsup"},
 			{L"Sup"}
 		};
+
+		size_t					hoverElement = 0;
 	};
 
 	class ComboBox : public IWidget
@@ -63,7 +70,10 @@ namespace Widgets
 			COLLAPSED,
 		};
 
-		static constexpr const char* CLASS_NAME = "ComboBox";
+		static constexpr const char*	CLASS_NAME									= "ComboBox";
+		static constexpr int			HEIGHT_OF_SELECTED_ITEM_ELEMENT_IN_PIXEL	= 20;
+		static constexpr int			WIDTH_OF_BUTTON_ELEMENT_IN_PIXEL			= 20;
+		static constexpr int			HEIGHT_OF_BUTTON_ELEMENT_IN_PIXEL			= 20;
 
 		ComboBox() noexcept;
 		~ComboBox() noexcept = default;

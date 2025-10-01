@@ -26,9 +26,11 @@ namespace Renderer
 
         struct PopUpRenderParams
         {
-            NbRect<int>             rect;
-            std::vector<ListItem>   items;
-            NbColor                 color;
+            NbRect<int>                 rect;
+            std::vector<ListItem>       items;
+            NbColor                     color;
+            std::vector<NbRect<int>>    addictionalRects;
+            std::vector<NbColor>        addictionalColors;
         };
 
         void renderButton(IWidget* widget);
@@ -69,23 +71,25 @@ namespace Renderer
 
                 const NbRect<int>& selectedItemRect = comboBox->getSelectedItemRect();
                 const NbRect<int>& dropdownRect = comboBox->getDropdownRect();
-                /*NbRect<int> dropdownRect = {
-                selectedItemRect.x,
-                selectedItemRect.y + selectedItemRect.height,
-                selectedItemRect.width + 20,
-                selectedItemRect.height * static_cast<int>(dropdownListSize) + 5
-                };*/
-
+                
                 NbColor color = { 23, 44, 55 };
+                std::vector<NbRect<int>> addictionalRect;
+                std::vector<NbColor> addictionalColor;
+
                 if (comboBox->getChildrens()[0]->isHover())
                 {
-                    color = { 123, 44, 55 };
+                    color = { 23, 44, 55 };
+                    addictionalRect.push_back(dynamic_cast<DropdownList*>(comboBox->getChildrens()[0])->getHoverElementRect());
+                    addictionalColor.push_back({ 128,92,64 });
+                    
                 }
 
                 PopUpRenderParams params = {
                     dropdownRect,
                     comboBox->getAllItems(),
-                    color
+                    color,
+                    addictionalRect,
+                    addictionalColor
                 };
 
                 popupQueue.push(params);

@@ -86,6 +86,10 @@ namespace Renderer
             popupQueue.pop();
             
             renderTarget->fillRectangle(params.rect, params.color);
+            if (!params.addictionalRects.empty())
+            {
+                renderTarget->fillRectangle(params.addictionalRects[0], params.addictionalColors[0]);
+            }
             
             size_t index = 0;
 
@@ -99,6 +103,8 @@ namespace Renderer
                 renderTarget->drawText(i.getText(), itemRect, {255,255,255}, TextAlignment::LEFT);
                 index++;
             }
+
+            
         }
     }
 

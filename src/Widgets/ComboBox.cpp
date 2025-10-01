@@ -16,26 +16,23 @@ namespace Widgets
 			selectedItemRect = {
 				rc.x,
 				rc.y,
-				rc.width - 20,
-				20,
+				rc.width - WIDTH_OF_BUTTON_ELEMENT_IN_PIXEL,
+				HEIGHT_OF_SELECTED_ITEM_ELEMENT_IN_PIXEL,
 			};
 
 			buttonRect = {
 				rc.x + selectedItemRect.width,
 				rc.y,
-				20,
-				20
+				WIDTH_OF_BUTTON_ELEMENT_IN_PIXEL,
+				HEIGHT_OF_BUTTON_ELEMENT_IN_PIXEL
 			};
 
 			dropdownList->setRect({
 				rc.x,
-				rc.y + 20,
+				rc.y + HEIGHT_OF_BUTTON_ELEMENT_IN_PIXEL,
 				rc.width,
-				20 * static_cast<int>(dropdownList->size())
+				DropdownList::SIZE_OF_ELEMENT_IN_PIXEL * static_cast<int>(dropdownList->size())
 			});
-			//selectedItemRect = applyLeftTopPaddingToRect(selectedItemRect, p);
-			//buttonRect = applyLeftTopPaddingToRect(buttonRect, p);
-
 		});
 	}
 
@@ -98,7 +95,7 @@ namespace Widgets
 		requestedRect = {
 			0,
 			0,
-			200,
+			rect.width,
 			std::max(selectedItemRect.height, buttonRect.height)
 		};
 
@@ -154,7 +151,7 @@ namespace Widgets
 			rect.x,
 			rect.y,
 			rect.width,
-			20 * static_cast<int>(itemList.size())
+			SIZE_OF_ELEMENT_IN_PIXEL * static_cast<int>(itemList.size())
 		};
 	}
 
@@ -170,18 +167,51 @@ namespace Widgets
 
 	bool DropdownList::hitTest(const NbPoint<int>& pos)
 	{
-		return rect.isInside(pos);
+		bool flag = rect.isInside(pos);
+		if (flag)
+		{
+			size_t elementIndex = hitTestElement(pos);
+			setHoverForElement(elementIndex);
+		}
+		return flag;
+	}
+
+	size_t DropdownList::hitTestElement(const NbPoint<int>& pos) const noexcept
+	{
+		return (pos.y - rect.y) / SIZE_OF_ELEMENT_IN_PIXEL;
 	}
 
 	const char* DropdownList::getClassName() const
 	{
 		return CLASS_NAME;
 	}
+
+	size_t DropdownList::getHoverElementIndex() const noexcept
+	{
+		return hoverElement;
+	}
+
+	NbRect<int> DropdownList::getHoverElementRect() const noexcept
+	{
+		return {
+			rect.x,
+			rect.y + SIZE_OF_ELEMENT_IN_PIXEL * static_cast<int>(hoverElement),
+			rect.width,
+			SIZE_OF_ELEMENT_IN_PIXEL
+		};
+	}
+
+
+	void DropdownList::setHoverForElement(const size_t hoverIndex) noexcept
+	{
+		hoverElement = hoverIndex;
+	}
 	
 
 	ListItem::ListItem(std::wstring_view str) noexcept
 		: text(str)
 	{}
+
 
 	NB_NODISCARD const std::wstring& ListItem::getText() const noexcept
 	{

@@ -42,6 +42,7 @@ namespace Widgets
 		NB_NODISCARD const std::vector<ListItem>& getAllItems() const noexcept;
 
 		bool hitTest(const NbPoint<int>& pos) override;
+		bool hitTestClick(const NbPoint<int>& pos) noexcept override;
 		NB_NODISCARD size_t hitTestElement(const NbPoint<int>& pos) const noexcept;
 		const char* getClassName() const override;
 

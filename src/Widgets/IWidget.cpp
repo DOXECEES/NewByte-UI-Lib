@@ -2,6 +2,16 @@
 
 namespace Widgets
 {
+	void IWidget::hide() noexcept
+	{
+		isHide_ = true;
+	}
+
+	void IWidget::show() noexcept
+	{
+		isHide_ = false;
+	}
+
 	bool IWidget::isHover() const noexcept
 	{
 		return state == WidgetState::HOVER;
@@ -25,6 +35,11 @@ namespace Widgets
 		return state == WidgetState::DEFAULT;
 	}
 
+	bool IWidget::isHide() const noexcept
+	{
+		return isHide_;
+	}
+
 	NbRect<int> IWidget::getRequestedSize() const noexcept
 	{
 		return {};
@@ -38,6 +53,11 @@ namespace Widgets
 	const std::vector<IWidget*>& IWidget::getChildrens() const noexcept
 	{
 		return childrens;
+	}
+
+	const Core::ZIndex& IWidget::getZIndex() const noexcept
+	{
+		return zIndex;
 	}
 
 };

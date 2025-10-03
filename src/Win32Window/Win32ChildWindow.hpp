@@ -6,6 +6,7 @@
 #include "../DockManager.hpp"
 
 #include <windowsx.h>
+#include <algorithm>
 
 namespace Win32Window
 {
@@ -120,9 +121,13 @@ namespace Win32Window
                     MapWindowPoints(hWnd, GetParent(hWnd), &p, 1);
                     NbPoint<int> pp = Utils::toNbPoint<int>(p);
 
+                    std::sort(widgets.begin(), widgets.end(), [](Widgets::IWidget* widget1, Widgets::IWidget* widget2) -> bool {
+                        return widget1->getZIndex() > widget2->getZIndex();
+                    });
+
                     for (const auto& widget : widgets)
                     {
-                        if (widget->hitTest(point))
+                        if (!widget->isHide() && widget->hitTest(point))
                         {
                             if (focusedWidget) focusedWidget->setUnfocused();
 
@@ -130,8 +135,17 @@ namespace Win32Window
                             focusedWidget->setFocused();
                             clicked = true;
                             widget->onClick();
+                            break;
                         }
-                        widget->hitTestClick(point);
+                    }
+
+                    for (const auto& widget : widgets)
+                    {
+                        
+                        if (!widget->isHide() && widget->hitTestClick(point))
+                        {
+                            break;
+                        }
                     }
 
                     // for (auto& i : DockManager::splitterList)
@@ -168,15 +182,21 @@ namespace Win32Window
                     }
                     else
                     {
+                        bool isHoveredSet = false;
                         for (const auto& widget : widgets)
                         {
                             if(widget->isDisable())
                                 continue;
 
-                            if (widget->hitTest(point))
+                            if (!isHoveredSet && widget->hitTest(point))
+                            {
                                 widget->setHover();
+                                isHoveredSet = true;
+                            }
                             else
+                            {
                                 widget->setDefault();
+                            }
                         }
                         InvalidateRect(hWnd, NULL, FALSE);
                     }

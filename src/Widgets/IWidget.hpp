@@ -59,6 +59,9 @@ namespace Widgets
         inline const WidgetStyle& getStyle() const noexcept { return style; }
         inline WidgetState getState() const noexcept { return state; }
         
+        void show() noexcept;
+        void hide() noexcept;
+
         inline void setHover() noexcept     { state = WidgetState::HOVER; }
         inline void setActive() noexcept    { state = WidgetState::ACTIVE; }
         inline void setDisable() noexcept   { state = WidgetState::DISABLE; }
@@ -68,7 +71,7 @@ namespace Widgets
 		bool isActive() const noexcept;
 		bool isDisable() const noexcept;
 		bool isDefault() const noexcept;
-
+        bool isHide() const noexcept;
 
         virtual const char* getClassName() const = 0;
 
@@ -83,6 +86,7 @@ namespace Widgets
         void addChildrenWidget(IWidget* widget) noexcept;
         NB_NODISCARD const std::vector<IWidget*>& getChildrens() const noexcept;
         
+        NB_NODISCARD const Core::ZIndex& getZIndex() const noexcept;
         
     public:
         Signal<void(const NbRect<int>&)> onSizeChangedSignal;
@@ -102,8 +106,9 @@ namespace Widgets
 
         WidgetState             state               = WidgetState::DEFAULT;
     // state
-        bool                    isHover_             = false;
+        bool                    isHover_            = false;
         bool                    isFocused           = false;
+        bool                    isHide_             = false;
     
     public:
         bool isSizeChange = true;

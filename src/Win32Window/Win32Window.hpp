@@ -308,9 +308,10 @@ namespace Win32Window
                 }
                 case WM_SETCURSOR:
                 {
-                    if (LOWORD(lParam) == HTCLIENT) {
+                    if (LOWORD(lParam) == HTCLIENT)
+                    {
                         SetCursor(LoadCursor(NULL, IDC_ARROW));
-                        return TRUE; // <- сказал системе "я сам поставил курсор"
+                        return TRUE; 
                     }
                     return DefWindowProc(hWnd, message, wParam, lParam);
                 }

@@ -124,11 +124,13 @@ namespace Widgets
 		{
 			case ComboState::EXPANDED:
 			{
+				dropdownList->hide();
 				comboBoxState = ComboState::COLLAPSED;
 				break;
 			}
 			case ComboState::COLLAPSED:
 			{
+				dropdownList->show();
 				comboBoxState = ComboState::EXPANDED;
 				break;
 			}
@@ -174,6 +176,11 @@ namespace Widgets
 			setHoverForElement(elementIndex);
 		}
 		return flag;
+	}
+
+	bool DropdownList::hitTestClick(const NbPoint<int>& pos) noexcept
+	{
+		return rect.isInside(pos);
 	}
 
 	size_t DropdownList::hitTestElement(const NbPoint<int>& pos) const noexcept

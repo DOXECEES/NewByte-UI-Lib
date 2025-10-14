@@ -53,14 +53,14 @@ Direct2dHandleRenderTarget Direct2dWrapper::createRenderTarget(const NbWindowHan
 //     return Direct2dTextFormat(textFormat);
 // }
 
-ID2D1SolidColorBrush *Direct2dWrapper::createSolidColorBrush(const Direct2dHandleRenderTarget &renderTarget, const NbColor &color) noexcept
+Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> Direct2dWrapper::createSolidColorBrush(const Direct2dHandleRenderTarget &renderTarget, const NbColor &color) noexcept
 {
     return renderTarget.createSolidBrush(color);
 }
 
 Microsoft::WRL::ComPtr<IDWriteTextFormat> Direct2dWrapper::createTextFormatForWidget(Widgets::IWidget* widget, const Font& font) noexcept
 {
-    IDWriteFactory *directFactory = Renderer::FactorySingleton::getDirectWriteFactory();
+    Microsoft::WRL::ComPtr<IDWriteFactory> directFactory = Renderer::FactorySingleton::getDirectWriteFactory();
     Direct2dFont directFont(font);
     
     Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat = directFont.getTextFormat();

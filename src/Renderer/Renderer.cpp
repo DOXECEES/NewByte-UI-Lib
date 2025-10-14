@@ -7,6 +7,10 @@
 
 namespace Renderer
 {
+    Renderer::~Renderer()
+    {
+        FactorySingleton::releaseFactory();
+    }
 
     ID2D1HwndRenderTarget *Renderer::createHwndRenderTarget(HWND handle, const NbSize<int> &size) const noexcept
     {
@@ -23,10 +27,5 @@ namespace Renderer
         return renderTarget;
     }
 
-    ID2D1SolidColorBrush *Renderer::createSolidColorBrush(ID2D1HwndRenderTarget *renderTarget, const NbColor &color) const noexcept
-    {
-        ID2D1SolidColorBrush* brush = nullptr;
-        renderTarget->CreateSolidColorBrush(D2D1::ColorF(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a/255.0f), &brush);
-        return brush;
-    }
+     
 };

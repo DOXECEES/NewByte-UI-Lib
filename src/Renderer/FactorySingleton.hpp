@@ -7,16 +7,18 @@
 #include <dwrite.h>
 #pragma comment(lib, "dwrite")
 
+#include <wrl.h>
+
 namespace Renderer
 {
     class FactorySingleton
     {
         public:
-            static ID2D1Factory* getFactory() noexcept;
+            static Microsoft::WRL::ComPtr<ID2D1Factory> getFactory() noexcept;
             
             static void releaseFactory() noexcept;
 
-            static IDWriteFactory* getDirectWriteFactory() noexcept;
+            static Microsoft::WRL::ComPtr<IDWriteFactory> getDirectWriteFactory() noexcept;
             
             static ID2D1PathGeometry* getPathGeometry() noexcept;
 

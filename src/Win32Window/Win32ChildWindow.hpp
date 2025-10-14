@@ -25,6 +25,7 @@ namespace Win32Window
         const NbWindowHandle &getHandle() const noexcept { return handle; };
 
         void addCaption() noexcept;
+        void setRenderable(bool flag) noexcept;
 
         inline static Widgets::IWidget* focusedWidget = nullptr; // only one widget can have focus
 
@@ -40,6 +41,14 @@ namespace Win32Window
                 case WM_PAINT:
                 {
                     PAINTSTRUCT ps;
+
+                    if (!isRenderable)
+                    {
+                        HDC hdc = BeginPaint(hWnd, &ps);
+                        EndPaint(hWnd, &ps);
+                        return 0;
+                    }
+
                     HDC hdc = BeginPaint(hWnd, &ps);
                     renderer->render(this);
                     EndPaint(hWnd, &ps);
@@ -251,6 +260,9 @@ namespace Win32Window
 
                     
         }
+    private:
+        bool isRenderable = true;
+
     };
 };
 

@@ -56,4 +56,9 @@ namespace Win32Window
     {
         state.frameSize = FrameSize();
     }
+
+    void ChildWindow::setRenderable(bool flag) noexcept
+    {
+        isRenderable = flag;
+    }
 }

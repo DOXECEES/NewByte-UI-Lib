@@ -5,7 +5,7 @@
 Direct2dFont::Direct2dFont(const Font& fontParam) noexcept
 	: font(fontParam)
 {
-	IDWriteFactory* directFactory = Renderer::FactorySingleton::getDirectWriteFactory();
+	Microsoft::WRL::ComPtr<IDWriteFactory> directFactory = Renderer::FactorySingleton::getDirectWriteFactory();
 	
 	directFactory->CreateTextFormat(
 		font.getName().c_str(),

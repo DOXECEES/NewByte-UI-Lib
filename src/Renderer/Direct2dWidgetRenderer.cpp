@@ -341,8 +341,8 @@ namespace Renderer
         
         auto rt = renderTarget->getRawRenderTarget();
 		D2D1_COLOR_F cc = { 1.0f,0.0f,0.0f,1.0f };
-        ID2D1SolidColorBrush *c;
-		rt->CreateSolidColorBrush(cc, &c);
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> c;
+		rt->CreateSolidColorBrush(cc, c.GetAddressOf());
 
 
 
@@ -352,7 +352,7 @@ namespace Renderer
         
         
         if(checkBox->getIsChecked()) // some pice of @@
-            rt->FillGeometry(geometry, c);
+            rt->FillGeometry(geometry, c.Get());
 
         SafeRelease(&geometry);
 
@@ -418,7 +418,7 @@ namespace Renderer
 
     void Direct2dWidgetRenderer::createTextLayoutForWidget(IWidget* widget, const std::wstring& data)
     {
-        static IDWriteFactory *factory = FactorySingleton::getDirectWriteFactory();
+        static Microsoft::WRL::ComPtr<IDWriteFactory> factory = FactorySingleton::getDirectWriteFactory();
         const char* widgetName = widget->getClassName();
         size_t size = strlen(widgetName);
 
@@ -486,7 +486,7 @@ namespace Renderer
         const NbRect<int>& rect = label->getRect();
         const std::wstring& text = label->getText();
 
-		IDWriteFactory* factory = FactorySingleton::getDirectWriteFactory();
+        Microsoft::WRL::ComPtr<IDWriteFactory> factory = FactorySingleton::getDirectWriteFactory();
 		factory->CreateTextLayout(text.c_str(), text.length(), textFormat.Get(), rect.width, rect.height, &textLayout);
 		textLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 		Direct2dGlobalWidgetMapper::addTextlayout(label, textLayout);
@@ -510,7 +510,7 @@ namespace Renderer
 		trimming.delimiterCount = 0;
 
 		Microsoft::WRL::ComPtr<IDWriteInlineObject> inlineEllipsis;
-		IDWriteFactory* factory = FactorySingleton::getDirectWriteFactory();
+        Microsoft::WRL::ComPtr<IDWriteFactory> factory = FactorySingleton::getDirectWriteFactory();
 		factory->CreateEllipsisTrimmingSign(textFormat.Get(), &inlineEllipsis);
 
 		textFormat->SetTrimming(&trimming, inlineEllipsis.Get());

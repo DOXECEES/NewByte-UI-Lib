@@ -31,7 +31,7 @@ namespace Widgets
 
 		onItemClickSignal.emit(lastClickedIndex);
 		return false;  // some piece of shit 
-						 // need refactoring
+					   // need refactoring
 	}
 
 	size_t TreeView::hitElement(const NbPoint<int>& pos) const noexcept
@@ -85,8 +85,9 @@ namespace Widgets
 
 	void TreeView::setItemState(const ModelIndex& index, ItemState state) noexcept
 	{
-		const ModelItem& item = model->findByIndex(index);
-		stateMap[&item] = state;
+		std::optional<std::reference_wrapper<const ModelItem>> item = model->findByIndex(index);
+		stateMap[&item->get()] = state;
+		calculateVisibleForce();
 	}
 
 	size_t TreeView::getMaxCountOfItems() const noexcept
@@ -151,7 +152,7 @@ namespace Widgets
 		return countOfVisibleChildrens;
 	}
 
-	const Widgets::ModelItem& ITreeModel::findByIndex(const ModelIndex& index) noexcept
+	std::optional<std::reference_wrapper<const Widgets::ModelItem>> ITreeModel::findByIndex(const ModelIndex& index) noexcept
 	{
 		size_t rawIndex = index.getRaw();
 		size_t localIndex = 0;
@@ -166,7 +167,12 @@ namespace Widgets
 			localIndex++;
 		});
 
-		return *ptrItem;
+		if (!ptrItem)
+		{
+			return std::nullopt;
+		}
+
+		return std::cref(*ptrItem);
 	}
 
 	size_t ITreeModel::getSize() noexcept
@@ -186,7 +192,7 @@ namespace Widgets
 		size = 0;
 		forEach([this](const ModelItem& item) {
 			size++;
-			});
+		});
 	}
 
 };

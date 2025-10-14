@@ -8,12 +8,12 @@
 #include <vector>
 #include <memory>
 #include <functional>
+#include <optional>
 
 namespace Widgets
 {
 	class ModelItem;
 	class ModelIndex;
-
 }
 
 // Define hash specialization early
@@ -138,7 +138,7 @@ namespace Widgets
 
 		virtual void forEach(std::function<void(const ModelItem&)> func) noexcept 	= 0;
 
-		const ModelItem& findByIndex(const ModelIndex& index) noexcept;
+		std::optional<std::reference_wrapper<const ModelItem>> findByIndex(const ModelIndex& index) noexcept;
 
 		size_t getSize() noexcept;
 

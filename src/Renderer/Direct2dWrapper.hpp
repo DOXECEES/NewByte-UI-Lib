@@ -48,7 +48,7 @@ public:
     Direct2dHandleRenderTarget(ID2D1HwndRenderTarget *renderTarget)
     {
         this->renderTarget = renderTarget;
-        IDWriteFactory* directFactory = Renderer::FactorySingleton::getDirectWriteFactory(); 
+        Microsoft::WRL::ComPtr<IDWriteFactory> directFactory = Renderer::FactorySingleton::getDirectWriteFactory(); 
 
         if(textFormat == nullptr)
         {
@@ -74,7 +74,7 @@ public:
     {
         for (auto &color : colorMap)
         {
-            SafeRelease(&color.second);
+            //SafeRelease(&color.second);
         }
         SafeRelease(&renderTarget);
         SafeRelease(&textFormat);
@@ -104,22 +104,24 @@ public:
 
     void drawRectangle(const NbRect<int>& rect, const NbColor& color, const float strokeWidth = 1.0f) const noexcept
     {
-        ID2D1SolidColorBrush *brush = createSolidBrush(color);
-        renderTarget->DrawRectangle(Direct2dUtils::toD2D1Rect(rect), brush, strokeWidth);
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
+        renderTarget->DrawRectangle(Direct2dUtils::toD2D1Rect(rect), brush.Get(), strokeWidth);
     }
 
     void drawRoundedRectangle(const NbRect<int>& rect, const int radius, const NbColor& color, const float strokeWidth = 1.0f) const noexcept
     {
-        ID2D1SolidColorBrush *brush = createSolidBrush(color);
-        ID2D1SolidColorBrush *pStrokeBrush = createSolidBrush({ 0, 0, 0 });
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> pStrokeBrush = createSolidBrush({ 0, 0, 0 });
 
         const D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
             Direct2dUtils::toD2D1Rect(rect),
             radius,
             radius
         );
+        
+        
 
-        renderTarget->FillRoundedRectangle(&roundedRect, brush);
+        renderTarget->FillRoundedRectangle(&roundedRect, brush.Get());
         //renderTarget->DrawRoundedRectangle(&roundedRect, pStrokeBrush, 75.0f);
 
         //renderTarget->DrawRoundedRectangle(roundedRect, brush, strokeWidth, nullptr);
@@ -151,9 +153,9 @@ public:
         sink->Close();
         sink->Release();
 
-        ID2D1Brush* brush = createSolidBrush(color);
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
 
-        renderTarget->DrawGeometry(pathGeometry, brush, 2.0f);
+        renderTarget->DrawGeometry(pathGeometry, brush.Get(), 2.0f);
     }
 
 
@@ -195,7 +197,7 @@ public:
             break;
         }
 
-        renderTarget->DrawText(text.c_str(), static_cast<UINT32>(text.length()), textFormat, Direct2dUtils::toD2D1Rect(rect), createSolidBrush(color));
+        renderTarget->DrawText(text.c_str(), static_cast<UINT32>(text.length()), textFormat, Direct2dUtils::toD2D1Rect(rect), createSolidBrush(color).Get());
         //IDWriteTextLayout* textLayout = Direct2dWrapper::createTextLayout(text, textFormat);
         
         //IDWriteFactory *writeFactory = Renderer::FactorySingleton::getDirectWriteFactory();
@@ -212,7 +214,7 @@ public:
     {
         setAlignment(textLayout, alignment);
 
-        renderTarget->DrawTextLayout(Direct2dUtils::toD2D1Point(NbPoint<int>(rect.x, rect.y)), textLayout, createSolidBrush(color),D2D1_DRAW_TEXT_OPTIONS_CLIP );
+        renderTarget->DrawTextLayout(Direct2dUtils::toD2D1Point(NbPoint<int>(rect.x, rect.y)), textLayout, createSolidBrush(color).Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
     }
 
 public:
@@ -257,19 +259,20 @@ public:
 
     void fillRectangle(const NbRect<int>& rect, const NbColor& color) const noexcept
     {
-        ID2D1SolidColorBrush *brush = createSolidBrush(color);
-        renderTarget->FillRectangle(Direct2dUtils::toD2D1Rect(rect), brush);
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
+        renderTarget->FillRectangle(Direct2dUtils::toD2D1Rect(rect), brush.Get());
     }
 
-    ID2D1SolidColorBrush *createSolidBrush(const NbColor &color) const noexcept
+    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> createSolidBrush(const NbColor &color) const noexcept
     {
+
         if (colorMap.find(color) != colorMap.end())
         {
             return colorMap.at(color);
         }
 
-        ID2D1SolidColorBrush *brush = nullptr;
-        renderTarget->CreateSolidColorBrush(Utils::toD2D1Color(color), &brush);
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = nullptr;
+        renderTarget->CreateSolidColorBrush(Utils::toD2D1Color(color), brush.GetAddressOf());
         colorMap[color] = brush;
         return brush;
     }
@@ -280,9 +283,9 @@ public:
     }
 
 private:
-    ID2D1HwndRenderTarget*                                      renderTarget = nullptr;
-    mutable std::unordered_map<NbColor, ID2D1SolidColorBrush*>  colorMap;
-    IDWriteTextFormat*                                          textFormat = nullptr;
+    ID2D1HwndRenderTarget*                                                              renderTarget = nullptr;
+    mutable std::unordered_map<NbColor, Microsoft::WRL::ComPtr<ID2D1SolidColorBrush>>   colorMap;
+    IDWriteTextFormat*                                                                  textFormat = nullptr;
 };
 
 
@@ -314,12 +317,12 @@ class Direct2dWrapper
 public:
     static Direct2dHandleRenderTarget createRenderTarget(const NbWindowHandle &handle, const NbSize<int> &size) noexcept;
     //static Direct2dTextFormat createTextFormat(const std::wstring& font) noexcept
-    static ID2D1SolidColorBrush* createSolidColorBrush(const Direct2dHandleRenderTarget &renderTarget, const NbColor &color) noexcept;
+    static Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> createSolidColorBrush(const Direct2dHandleRenderTarget &renderTarget, const NbColor &color) noexcept;
     //static IDWriteTextLayout* createTextLayout(const std::wstring& text, IDWriteTextFormat* textFormat = nullptr);
     static Microsoft::WRL::ComPtr<IDWriteTextFormat> createTextFormatForWidget(Widgets::IWidget* widget, const Font& font) noexcept;
 
 private:
-    inline static ID2D1Factory* factory = Renderer::FactorySingleton::getFactory();
+    inline static Microsoft::WRL::ComPtr<ID2D1Factory> factory = Renderer::FactorySingleton::getFactory();
 };
 
 #endif

@@ -15,12 +15,12 @@ namespace Renderer
     {
         public:
             Renderer() = default;
+            ~Renderer();
             ID2D1HwndRenderTarget* createHwndRenderTarget(HWND hwnd, const NbSize<int>& size) const noexcept;
-            ID2D1SolidColorBrush* createSolidColorBrush(ID2D1HwndRenderTarget* renderTarget, const NbColor& color) const noexcept;
 
 
         private:
-            ID2D1Factory* pFactory = FactorySingleton::getFactory();
+            Microsoft::WRL::ComPtr<ID2D1Factory> pFactory = FactorySingleton::getFactory();
     };
 };
 

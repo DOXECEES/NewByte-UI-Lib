@@ -11,18 +11,11 @@ add_subdirectory(../Common NbCommon_build)
 
 set (SRC 
         src/main.cpp
-        src/IWindow.cpp
-        src/IWindow.hpp
+        
         src/Core.cpp
         src/Core.hpp
-        src/MainWindow.cpp
-        src/MainWindow.hpp
         src/Utils.cpp
         src/Utils.hpp
-        src/DoceTree.cpp
-        src/DoceTree.hpp
-        src/ChildWindow.cpp
-        src/ChildWindow.hpp
         src/CaptionButtons.cpp
         src/CaptionButtons.hpp
         src/Layout.cpp

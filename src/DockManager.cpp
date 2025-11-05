@@ -7,6 +7,53 @@
 #include <queue>
 #include <stack>
 
+#include "Utils/Windows/WindowPositionQueue.hpp"
+
+static inline NbRect<int> sanitizeRectForWindow(const NbRect<int>& desired, const NbRect<int>& parentRect) noexcept
+{
+    NbRect<int> r = desired;
+
+    // Минимальные разрешённые размеры (подбирай под проект)
+    constexpr int kMinWidth = 24;
+    constexpr int kMinHeight = 24;
+
+    if (r.width < kMinWidth)  r.width = kMinWidth;
+    if (r.height < kMinHeight) r.height = kMinHeight;
+
+    // Корректируем x/y чтобы левый/верхний угол был внутри parent
+    if (r.x < parentRect.x) r.x = parentRect.x;
+    if (r.y < parentRect.y) r.y = parentRect.y;
+
+    // Ограничиваем по правой/нижней границе
+    const int maxW = parentRect.x + parentRect.width - r.x;
+    const int maxH = parentRect.y + parentRect.height - r.y;
+
+    if (r.width > maxW)  r.width = std::max(0, maxW);
+    if (r.height > maxH) r.height = std::max(0, maxH);
+
+    // Если после ограничений размеры уменьшились ниже минимума — сдвинем влево/вверх при возможности
+    if (r.width < kMinWidth)
+    {
+        // постараемся сдвинуть влево так, чтобы вместиться
+        int needed = kMinWidth - r.width;
+        int shift = std::min(needed, r.x - parentRect.x);
+        r.x -= shift;
+        r.width += shift;
+        if (r.width < kMinWidth) r.width = kMinWidth; // последняя защита
+    }
+    if (r.height < kMinHeight)
+    {
+        int needed = kMinHeight - r.height;
+        int shift = std::min(needed, r.y - parentRect.y);
+        r.y -= shift;
+        r.height += shift;
+        if (r.height < kMinHeight) r.height = kMinHeight;
+    }
+
+    return r;
+}
+
+
 DockManager::DockManager(WindowInterface::IWindow *window)
     : window(window)
     , tree(new DockTree(window->getClientRect()))
@@ -40,8 +87,6 @@ void DockManager::addWindow(WindowInterface::IWindow *parent, WindowInterface::I
 
     update(parentOfInsertedNode, placement);
 
-    splitterManager.addSplitter(parentNode, insertNode);
-
 }
 
 void DockManager::update(const std::shared_ptr<DockNode>& parent, DockPlacement placement)
@@ -53,13 +98,13 @@ void DockManager::update(const std::shared_ptr<DockNode>& parent, DockPlacement 
 
     std::stack<std::shared_ptr<DockNode>> nodes;
     nodes.push(tree->getRoot());
-    
-    while(!nodes.empty())
+
+    while (!nodes.empty())
     {
         std::shared_ptr<DockNode> current = nodes.top();
         nodes.pop();
 
-        if(current->isWindow())
+        if (current->isWindow())
         {
             std::shared_ptr<DockWindow> currentWindow = std::dynamic_pointer_cast<DockWindow>(current);
             currentWindow->getWindow()->setClientRect(currentWindow->getRect());
@@ -76,62 +121,78 @@ void DockManager::update(const std::shared_ptr<DockNode>& parent, DockPlacement 
         }
     }
 }
+// добавь в DockManager.h приватное поле:
+NbRect<int> lastRootRect = { 0,0,0,0 };
 
+// ------------------------------------------------------------------
+// onSize — вызывается из WM_SIZE
+// ------------------------------------------------------------------
 void DockManager::onSize(const NbRect<int>& newRect)
 {
-    const NbRect<int> parentRect = tree->getRoot()->getRect();
-    const NbSize<float> scaleFactor = { (float)newRect.width / (float)parentRect.width, (float)newRect.height / (float)parentRect.height };
-    //tree->rect = newRect;
-    rescale(scaleFactor);
+    auto root = tree->getRoot();
+    if (!root) return;
 
-    std::stack<std::shared_ptr<DockNode>> nodes;
-    nodes.push(tree->getRoot());
-    
-    while(!nodes.empty())
+    root->setRect(newRect);
+    root->calculate(DockPlacement::CENTER); // рекалькуляция всего дерева
+
+    Utils::Windows::WindowPosQueue queue;
+    queue.begin(0);
+
+    std::queue<std::shared_ptr<DockNode>> nodes;
+    nodes.push(root);
+
+    constexpr int kCaptionHeight = 35;
+
+    while (!nodes.empty())
     {
-        std::shared_ptr<DockNode> current = nodes.top();
+        auto current = nodes.front();
         nodes.pop();
 
-        if(current->isWindow())
+        if (current->isWindow())
         {
-            std::shared_ptr<DockWindow> currentWindow = std::dynamic_pointer_cast<DockWindow>(current);
-            currentWindow->getWindow()->setClientRect(currentWindow->getRect());
-            Debug::debug(currentWindow->getWindow()->getTitle());
+            auto winNode = std::dynamic_pointer_cast<DockWindow>(current);
+            NbRect<int> rc = winNode->getRect();
+
+            // Ограничиваем rect родителем
+            rc = sanitizeRectForWindow(rc, newRect);
+
+            // Конвертируем в клиентскую область
+            rc.y += kCaptionHeight;
+            rc.height -= kCaptionHeight;
+            rc.height = std::max(0, rc.height);
+
+            winNode->getWindow()->setClientRect(rc);
+            queue.push(winNode->getWindow()->getHandle(), rc);
         }
 
-        auto childs = current->getChilds();
-        for (const auto& i : childs)
-        {
-            if (i)
-            {
-                nodes.push(std::dynamic_pointer_cast<DockNode>(i));
-            }
-        }
+        for (auto& c : current->getChilds())
+            if (c) nodes.push(std::static_pointer_cast<DockNode>(c));
     }
-    // for (auto& i : splitterList)
-    // {
-    //     i->update();
-    // }
+
+    queue.apply();
 }
 
 
-void DockManager::rescale(const NbSize<float>& scaleFactor)
-{
-    if (!tree->getRoot()) return; 
 
-    rescaleNode(tree->getRoot(), scaleFactor);
-}
 
-void DockManager::rescaleNode(const std::shared_ptr<DockNode>& node, const NbSize<float>& scaleFactor)
+
+
+// ------------------------------------------------------------------
+// Новый метод — использует текущие (старые) rect внутри узлов как исходные.
+// Это устраняет накопление ошибок при многократных ресайзах.
+// ------------------------------------------------------------------
+void DockManager::rescaleNodeUsingOldRects(const std::shared_ptr<DockNode>& node, const NbSize<float>& scaleFactor)
 {
     if (!node) return;
 
-    NbRect<int> origRect = node->getRect();
+    // Важное: берем origRect до изменения (node->getRect() возвращает "старый" rect,
+    // потому что мы ещё его не меняли в этом onSize)
+    const NbRect<int> origRect = node->getRect();
 
-    NbRect<int> newRect = { };
+    NbRect<int> newRect;
     newRect.x = static_cast<int>(std::lround(origRect.x * scaleFactor.width));
     newRect.y = static_cast<int>(std::lround(origRect.y * scaleFactor.height));
-    newRect.width  = static_cast<int>(std::lround(origRect.width * scaleFactor.width));
+    newRect.width = static_cast<int>(std::lround(origRect.width * scaleFactor.width));
     newRect.height = static_cast<int>(std::lround(origRect.height * scaleFactor.height));
 
     node->setRect(newRect);
@@ -143,7 +204,7 @@ void DockManager::rescaleNode(const std::shared_ptr<DockNode>& node, const NbSiz
             if (child)
             {
                 auto c = std::static_pointer_cast<DockNode>(child);
-                rescaleNode(c, scaleFactor);
+                rescaleNodeUsingOldRects(c, scaleFactor);
             }
         }
     }
@@ -151,62 +212,5 @@ void DockManager::rescaleNode(const std::shared_ptr<DockNode>& node, const NbSiz
 
 
 
-void DockManager::addSplitter(const std::shared_ptr<DockNode>& insertedNode)
-{
-    std::shared_ptr<DockNode> parent = std::dynamic_pointer_cast<DockNode>(insertedNode->getParent());
-
-    for(const auto& child : parent->getChilds())
-    {
-        if(!child)
-        {
-            continue;
-        }
-
-        
-    }
-}
-
-// SPLITTER CLASS
-
-Splitter::Placement Splitter::toSplitterPlacement(DockPlacement placement) noexcept
-{
-    return static_cast<Splitter::Placement>(placement); 
-}
-
-[[nodiscard]] Splitter::Placement Splitter::getOpposite(Splitter::Placement placement) noexcept
-{
-    switch (placement)
-    {
-        case Placement::LEFT:
-            return Placement::RIGHT;
-        case Placement::RIGHT:
-            return Placement::LEFT;
-        case Placement::TOP:
-            return Placement::BOT;
-        case Placement::BOT:
-            return Placement::TOP;
-    }
-}
 
 
-
-void Splitter::linkNode(const std::shared_ptr<DockNode> &node) noexcept
-{
-    linkedNodes.push_back(node);
-    recalculateRect();
-}
-
-void Splitter::recalculateRect() noexcept
-{
-    for(const auto& node : linkedNodes)
-    {
-        const NbRect<int> nodeRect = node->getRect();
-        rect.x = (std::min)(rect.x, nodeRect.x);
-        rect.y = (std::min)(rect.y, nodeRect.y);
-        
-        rect.width += nodeRect.width;
-        rect.height += nodeRect.height;
-    }
-}
-
-//

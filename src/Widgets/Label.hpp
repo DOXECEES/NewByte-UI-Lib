@@ -65,6 +65,7 @@ namespace Widgets
         
     public:
         Signal<void(TextWrap)> onWrapChanged;
+        Signal<void(const std::wstring&)> onTextChanged;
 
     private:
         std::wstring    text;

@@ -16,9 +16,9 @@
 #include "../Widgets/IWidget.hpp"
 
 
-
 namespace WindowInterface
 {
+
     class IWindowStateChangedListener
     {
     public:
@@ -53,9 +53,6 @@ namespace WindowInterface
         { 
             state.setSize({rect.width, rect.height});
             state.setClientRect(rect);
-            SetWindowPos(handle.as<HWND>(), nullptr, state.clientRect.x, state.clientRect.y, state.clientRect.width, state.clientRect.height, SWP_NOZORDER | SWP_NOACTIVATE);
-            InvalidateRect(handle.as<HWND>(), NULL, FALSE);
-            UpdateWindow(handle.as<HWND>());
         };
 
         void setBackgroundColor(const NbColor& color) { state.color = color; };

@@ -1,6 +1,6 @@
 #ifndef NBUI_SRC_CORE_HPP
 #define NBUI_SRC_CORE_HPP
-
+#define NOMINMAX
 #include <cstdint>
 #include <string>
 #include <variant>
@@ -81,6 +81,17 @@ struct NbSize
         this->width -= oth.width;
         this->height -= oth.height;
         return *this;
+    }
+
+    bool isEmpty() const
+    {
+        return width == 0 || height == 0;
+	}
+
+    bool operator==(const NbSize<T>& other) const
+    {
+        return width == other.width &&
+            height == other.height;
     }
 
 

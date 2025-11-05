@@ -115,12 +115,38 @@ namespace Renderer
         Button* button = castWidget<Button>(widget);
 
         const WidgetStyle& style = button->getStyle();
+        const ButtonStyle& buttonStyle = button->getButtonStyle();
         WidgetState state = button->getState();
         NbColor color;
         NbColor textColor;
 
-        getWidgetThemeColorByState(button, color, textColor);
-
+        switch (widget->getState())
+        {
+            case WidgetState::HOVER:
+            {
+                color = buttonStyle.hoverColor;
+                textColor = buttonStyle.hoverTextColor;
+                break;
+            }
+            case WidgetState::ACTIVE:
+            {
+                color = buttonStyle.activeColor;
+                textColor = buttonStyle.activeTextColor;
+                break;
+            }
+            case WidgetState::DISABLE:
+            {
+                color = buttonStyle.disableColor;
+                textColor = buttonStyle.disableTextColor;
+                break;
+            }
+            default:
+            {
+                color = buttonStyle.baseColor;
+                textColor = buttonStyle.baseTextColor;
+                break;
+            }
+        }
 
         renderTarget->fillRectangle(button->getRect(), color);
         renderTarget->drawText(button->getText(), button->getRect(), textColor);
@@ -158,7 +184,7 @@ namespace Renderer
 
                 int halfOfRectWidth = widgetRect.width / 2;
 
-                int startOfString = max(0, caretPos - halfOfRectWidth);
+                int startOfString = std::max(0, caretPos - halfOfRectWidth);
                 std::wstring temp = textEdit->getData().substr(startOfString, halfOfRectWidth * 2);
 
                 createTextLayoutForWidget(textEdit, temp);
@@ -198,69 +224,89 @@ namespace Renderer
     
     void Direct2dWidgetRenderer::renderTreeView(IWidget* widget)
     {
+        using namespace Widgets;
+
         TreeView* treeView = castWidget<TreeView>(widget);
+        const WidgetStyle& style = treeView->getStyle();
         const NbRect<int>& widgetRect = treeView->getRect();
-
+        const TreeViewStyle& treeViewStyle = treeView->getTreeViewStyle();
         renderTarget->fillRectangle(widgetRect, treeView->getStyle().baseColor);
-        auto model = treeView->getModel();
-        if(model == nullptr) return;
-        int shift = 0;
-        const int shiftX = 10;
 
-        size_t index = 0;
-        size_t rootDepth = 128;
+        std::shared_ptr<ITreeModel> model = treeView->getModel();
+        if (!model)
+        {
+            return;
+        }
 
-        model->forEach([this, &widgetRect, &model, &shift, &index, &treeView, &rootDepth](const ModelItem& item) {
-            
-            bool isParent = false;
+        const int itemHeight = static_cast<int>(TreeView::HEIGHT_OF_ITEM_IN_PIXEL);
+        const int indent = 12;
 
-            if (treeView->getItemState(item) == TreeView::ItemState::COLLAPSED)
+        int y = widgetRect.y;
+        size_t visibleCount = treeView->getVisibleCount();
+
+        for (size_t i = 0; i < visibleCount; ++i)
+        {
+            const ModelItem* item = treeView->getVisibleItem(i);
+            if (!item)
             {
-                rootDepth = item.getDepth();
-                isParent = true;
-            }
-			
-            if (rootDepth < item.getDepth() && isParent == false)
-            {
-				index++;
-                return;
-            }
-            
-           
-            std::string str = model->data(item);
-            std::wstring wstr = Utils::toWstring(str);
-            NbRect<int> wr = widgetRect;
-            wr.x += shiftX * item.getDepth();
-            wr.width -= shiftX * item.getDepth();
-            wr.y += shift;
-            wr.height = 20;
-            shift += 20;
-
-            if (index == treeView->getLastHitIndex())
-            {
-                renderTarget->drawRectangle({wr.x - int(shiftX * item.getDepth()),
-                                             wr.y,
-                                             wr.width + int(shiftX * item.getDepth()),
-                                             wr.height
-                    },
-                    { 255,167,133 });
+                continue;
             }
 
-            if (index == treeView->getLastClickedIndex().getRaw())
+            NbRect<int> itemRect = {
+                widgetRect.x + indent * static_cast<int>(item->getDepth()) + 15,
+                y,
+                widgetRect.width - indent * static_cast<int>(item->getDepth()) - 15,
+                itemHeight
+            };
+
+            NbRect<int> itemFullRect = {
+                widgetRect.x,
+                y,
+                widgetRect.width,
+                itemHeight
+            };
+
+
+            const nbstl::Uuid uuid = item->getUuid();
+            const bool expanded = treeView->isItemExpanded(ModelIndex(uuid));
+            const bool selected = treeView->isItemSelected(ModelIndex(uuid));
+
+            
+            if (selected)
             {
-                renderTarget->fillRectangle({ wr.x - int(shiftX * item.getDepth()),
-                                             wr.y,
-                                             wr.width + int(shiftX * item.getDepth()),
-                                             wr.height
-                    },
-                    { 255,167,255 });
+                renderTarget->fillRectangle(itemFullRect, treeViewStyle.selectionColor);
             }
-            
-            
-            renderTarget->drawText(wstr, wr, NbColor(255, 255, 255), TextAlignment::LEFT, ParagraphAlignment::TOP);
-            index++;
-        });
+            else if (treeView->getLastClickIndex().isValid() &&
+                treeView->getLastClickIndex().getUuid() == uuid)
+            {
+                renderTarget->fillRectangle(itemFullRect, treeViewStyle.clickColor);
+            }
+            else if (treeView->getLastHitIndex().getUuid() == item->getUuid())
+            {
+                renderTarget->fillRectangle(itemFullRect, treeViewStyle.hoverSelectionColor);
+            }
+
+            if (!item->children.empty())
+            {
+                NbRect<int> box = { itemRect.x - indent + 2, itemRect.y + 6, 8, 8 };
+                renderTarget->drawRectangle(box, treeViewStyle.buttonColor);
+
+                if (!expanded)
+                {
+                    renderTarget->drawLine({ box.x + 4, box.y + 2 }, { box.x + 4, box.y + 6 }, treeViewStyle.inButtonColor); // вертикаль
+                }
+                renderTarget->drawLine({ box.x + 2, box.y + 4 }, { box.x + 6, box.y + 4 }, treeViewStyle.inButtonColor); // горизонталь
+            }
+
+            // Текст
+            std::wstring text = Utils::toWstring(model->data(*item));
+            renderTarget->drawText(text, itemRect, style.baseTextColor,
+                TextAlignment::LEFT, ParagraphAlignment::TOP);
+
+            y += itemHeight;
+        }
     }
+
 
 
     void Direct2dWidgetRenderer::renderLabel(IWidget *widget)

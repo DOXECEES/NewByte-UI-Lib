@@ -9,7 +9,8 @@ namespace Widgets
 		: IWidget({})
 		, label(std::make_unique<Label>())
 	{
-		
+		sizePolicy.horizontal = SizePolicy::EXPANDING;
+		sizePolicy.vertical = SizePolicy::FIXED;
 		label->setVTextAlign(Label::VTextAlign::LEFT);
 		label->setHTextAlign(Label::HTextAlign::CENTER);
 

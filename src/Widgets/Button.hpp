@@ -3,6 +3,9 @@
 
 #include "IWidget.hpp"
 
+#include "WidgetStyle.hpp"
+#include "Theme.hpp"
+
 namespace Widgets
 {
     class Button : public IWidget
@@ -16,12 +19,15 @@ namespace Widgets
         bool hitTest(const NbPoint<int>& pos) override;
 
         virtual const char* getClassName() const override { return CLASS_NAME; }
+        NB_NODISCARD const ButtonStyle& getButtonStyle() const noexcept;
 
         inline void setText(const std::wstring& text) noexcept { this->text = text; }
         inline const std::wstring& getText() const noexcept { return text; }
     
     private:
-        std::wstring text;
+        std::wstring    text;
+
+        ButtonStyle     buttonStyle = ThemeManager::getCurrent().buttonStyle;
         
     };
 }

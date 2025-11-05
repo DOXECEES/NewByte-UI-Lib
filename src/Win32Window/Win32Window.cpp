@@ -24,6 +24,7 @@ namespace Win32Window
        
         LONG style = GetWindowLong(handle.as<HWND>(), GWL_STYLE);
         style &= ~(WS_CAPTION);
+        style &= ~(CS_HREDRAW | CS_VREDRAW);
         SetWindowLong(handle.as<HWND>(), GWL_STYLE, style);
 
         SetWindowPos(handle.as<HWND>(), nullptr, 0, 0, 0, 0,
@@ -72,7 +73,6 @@ namespace Win32Window
 
 	void Window::onSize(const NbSize<int>& newSize)
     {
-        OutputDebugString(L"Window resized\n");
         state.setSize(newSize);
 
         captionButtonsContainer.setPaintArea(NbRect<int>(0, 0, state.size.width, state.size.height));

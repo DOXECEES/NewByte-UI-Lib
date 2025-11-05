@@ -6,8 +6,10 @@
 #include "Signal.hpp"
 
 #include "Core/ZIndex.hpp"
+#include "WidgetSizePolicy.hpp"
 
 #include "WidgetStyle.hpp"
+#include "Theme.hpp"
 
 #include <functional>
 
@@ -87,11 +89,23 @@ namespace Widgets
         NB_NODISCARD const std::vector<IWidget*>& getChildrens() const noexcept;
         
         NB_NODISCARD const Core::ZIndex& getZIndex() const noexcept;
+
+        NB_NODISCARD void setSizePolicy(SizePolicy horiz, SizePolicy vert) noexcept
+        {
+            sizePolicy.horizontal = horiz;
+            sizePolicy.vertical = vert;
+        }
+
+        NB_NODISCARD const WidgetSizePolicy& getSizePolicy() const noexcept
+        {
+            return sizePolicy;
+        }
         
     public:
         Signal<void(const NbRect<int>&)> onSizeChangedSignal;
 
     protected:
+
 
         std::vector<IWidget*>   childrens;
         NbRect<int>             rect                = { 0, 0, 0, 0 };
@@ -102,8 +116,8 @@ namespace Widgets
 
         std::function<void()>   onClickCallback;
 
-        WidgetStyle             style;
-
+        WidgetStyle             style               = ThemeManager::getCurrent().widgetStyle;
+        WidgetSizePolicy        sizePolicy          = { SizePolicy::EXPANDING, SizePolicy::EXPANDING };
         WidgetState             state               = WidgetState::DEFAULT;
     // state
         bool                    isHover_            = false;

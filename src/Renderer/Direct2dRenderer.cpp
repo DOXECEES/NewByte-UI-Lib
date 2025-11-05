@@ -57,14 +57,22 @@ namespace Renderer
         //
 
         // corners
+        if (radius != 0)
+        {
 
-        NbPoint<int> start = {windowSize.width, windowSize.height - radius};
-        NbPoint<int> end = {windowSize.width - radius, windowSize.height};
+        }
+        else
+        {
+            
+        }
+
+        //NbPoint<int> start = {windowSize.width, windowSize.height - radius};
+        //NbPoint<int> end = {windowSize.width - radius, windowSize.height};
         //renderTarget.drawArc(start, end, radius, frameColor);
         
 
-        // NbRect<int> botRightCorner = {windowSize.width - radius, windowSize.height - radius, radius, radius};
-        // renderTarget.fillRectangle(botRightCorner, frameColor);
+        //NbRect<int> botRightCorner = {windowSize.width - radius, windowSize.height - radius, radius, radius};
+        //renderTarget.fillRectangle(botRightCorner, frameColor);
         //
         if(!frameSize.isEmpty())
             renderTarget.drawText(window->getTitle(), {0, 0, windowSize.width, frameSize.top}, window->getFontColor());

@@ -158,6 +158,11 @@ public:
         renderTarget->DrawGeometry(pathGeometry, brush.Get(), 2.0f);
     }
 
+    void drawLine(const NbPoint<int>& p1, const NbPoint<int>& p2, const NbColor& color) const noexcept
+    {
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
+        renderTarget->DrawLine(Direct2dUtils::toD2D1Point(p1), Direct2dUtils::toD2D1Point(p2), brush.Get());
+    }
 
     void drawText(const std::wstring& text,
                     const NbRect<int>& rect,
@@ -265,7 +270,6 @@ public:
 
     Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> createSolidBrush(const NbColor &color) const noexcept
     {
-
         if (colorMap.find(color) != colorMap.end())
         {
             return colorMap.at(color);
@@ -277,15 +281,51 @@ public:
         return brush;
     }
 
+    /*Microsoft::WRL::ComPtr<ID2D1LinearGradientBrush> createLinearGradientBrush(const NbColor& color1, const NbColor& color2) const noexcept
+    {
+        if (linearGradientColorMap.find(color) != linearGradientColorMap.end())
+        {
+            return linearGradientColorMap.at(color);
+        }
+
+        Microsoft::WRL::ComPtr<ID2D1LinearGradientBrush> brush = nullptr;
+        D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES props;
+        props.startPoint = { 0.0f, 0.0f };
+        props.endPoint = { 1.0f, 1.0f };
+        
+        D2D1_GRADIENT_STOP stop1[] =
+        {
+            {
+                0.0f,
+                Direct2dUtils::toD2D1Color(color1)
+            },
+            {
+                1.0f,
+                Direct2dUtils::toD2D1Color(color2)
+            }
+        };
+
+        Microsoft::WRL::ComPtr<ID2D1GradientStopCollection> collection;
+        renderTarget->CreateGradientStopCollection(stop1, _countof(stop1), collection.GetAddressOf());
+
+        
+      
+        renderTarget->CreateLinearGradientBrush(props, collection.Get(), brush.GetAddressOf());
+        
+        linearGradientColorMap[color] = brush;
+        return brush;
+    }*/
+
     ID2D1HwndRenderTarget *getRawRenderTarget() const noexcept
     {
         return renderTarget;
     }
 
 private:
-    ID2D1HwndRenderTarget*                                                              renderTarget = nullptr;
-    mutable std::unordered_map<NbColor, Microsoft::WRL::ComPtr<ID2D1SolidColorBrush>>   colorMap;
-    IDWriteTextFormat*                                                                  textFormat = nullptr;
+    ID2D1HwndRenderTarget*                                                                  renderTarget = nullptr;
+    mutable std::unordered_map<NbColor, Microsoft::WRL::ComPtr<ID2D1SolidColorBrush>>       colorMap;
+    mutable std::unordered_map <NbColor, Microsoft::WRL::ComPtr<ID2D1LinearGradientBrush>>  linearGradientColorMap;
+    IDWriteTextFormat*                                                                      textFormat = nullptr;
 };
 
 

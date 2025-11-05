@@ -103,13 +103,23 @@ set (SRC
         src/Widgets/ComboBox.hpp
         src/Widgets/IPopUp.cpp
         src/Widgets/IPopUp.hpp
+        src/Widgets/SpinBox.cpp
+        src/Widgets/SpinBox.hpp
+        src/Widgets/WidgetSizePolicy.cpp
+        src/Widgets/WidgetSizePolicy.hpp
+        src/Widgets/SideBar.cpp
+        src/Widgets/SideBar.hpp
+        src/Widgets/ILayoutable.hpp
+
+        src/Utils/Windows/WindowPositionQueue.cpp
+        src/Utils/Windows/WindowPositionQueue.hpp
 
         src/Core/ZIndex.cpp
         src/Core/ZIndex.hpp
 )
 
 
-add_library(${PROJECT_NAME} STATIC ${SRC})
+add_library(${PROJECT_NAME} STATIC ${SRC} "src/Widgets/SpinBox.cpp" "src/Widgets/WidgetSizePolicy.cpp" "src/Widgets/SideBar.cpp" "src/Utils/Windows/WindowPositionQueue.cpp")
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/src

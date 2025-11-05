@@ -9,6 +9,10 @@
 
 #include "../DockManager.hpp"
 
+#include "Signal.hpp"
+
+#include "Utils/Windows/WindowPositionQueue.hpp"
+
 namespace Win32Window
 {
     class Window : public WindowInterface::IWindow
@@ -33,12 +37,14 @@ namespace Win32Window
 
         inline static Widgets::IWidget *focusedWidget = nullptr; // only one widget can have focus
 
+    public:
+        Signal<void(const NbRect<int>&)> onRectChanged;
+
     private:
         bool registerWindowClass();
 
         LRESULT wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
-            Splitter* activeSplitter = nullptr;
             static bool isMouseTrack = false;
 
             switch(message)
@@ -161,10 +167,7 @@ namespace Win32Window
                             widget->setDefault();
                     }
 
-                    if (activeSplitter)
-                    {
-                        activeSplitter->onMove({ point.x - prevPoint.x, point.y - prevPoint.y });
-                    }
+                    
 
                     prevPoint = point;
 
@@ -194,7 +197,6 @@ namespace Win32Window
                         focusedWidget->onButtonClicked(wParam);
                     }
                 
-                    activeSplitter = nullptr;
 
                     return 0;
                 }
@@ -221,13 +223,17 @@ namespace Win32Window
 
                     return 0; 
                 }
+                case WM_ERASEBKGND:
+                {
+                    return TRUE;
+                }
                 case WM_SIZE:
                 {
                     //OutputDebugStringA("WM_SIZE\n");
                     const int borderRadius = style.getBorderRadius();
-                    RECT rc;
-                    GetClientRect(hWnd, &rc);
-                    HRGN hRgn;
+                    RECT rect;
+                    GetClientRect(hWnd, &rect);
+                    /*HRGN hRgn;
                     if(IsMaximized(hWnd))
                     {
                         state.isMaximized = true;
@@ -240,22 +246,22 @@ namespace Win32Window
                     }
 
                     SetWindowRgn(hWnd, hRgn, TRUE);
-                    DeleteObject(hRgn);
-
+                    DeleteObject(hRgn);*/
+                    
                     onSize({LOWORD(lParam), HIWORD(lParam)});
-
-                    RECT rect;
-                    GetClientRect(hWnd, &rect);
                 
                     state.clientRect = NbRect<int>(rect.left + state.frameSize.left
                         , rect.top + state.frameSize.top
                         , rect.right - rect.left - state.frameSize.left - state.frameSize.right
                         , rect.bottom - rect.top - state.frameSize.top - state.frameSize.bot);
+                    
+                    onRectChanged.emit(state.clientRect);
 
                     for(auto& listener : stateChangedListeners)
                     {
                         listener->onSizeChanged(state.clientSize);
                     }
+                    //RedrawWindow(hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
                     
                     return 0;
                 }

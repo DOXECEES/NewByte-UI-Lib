@@ -29,9 +29,13 @@ namespace Win32Window
 
         inline static Widgets::IWidget* focusedWidget = nullptr; // only one widget can have focus
 
+    public:
+        Signal<void(const NbSize<int>&)> onSizeChanged;
+
+
+
         LRESULT wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
-            static Splitter* activeSplitter = nullptr;
 
             static NbPoint<int> dragOffset = {};
             static bool dragging = false;
@@ -57,7 +61,10 @@ namespace Win32Window
                 } 
                 case WM_SIZE:
                 {
-                    state.setSize({ LOWORD(lParam), HIWORD(lParam) });
+                    int xSize = LOWORD(lParam);
+                    int ySize = HIWORD(lParam);
+
+                    state.setSize({xSize, ySize});
                     
 
                     if (renderer)
@@ -65,6 +72,7 @@ namespace Win32Window
                         renderer->resize(this);
                     }
 
+                    onSizeChanged.emit(state.size);
                     for (auto& listener : stateChangedListeners)
                     {
                         listener->onSizeChanged(state.clientSize);
@@ -177,19 +185,7 @@ namespace Win32Window
                 {
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
-                    if (activeSplitter && dragging)
-                    {
-                        POINT p = { point.x, point.y };
-                        MapWindowPoints(hWnd, GetParent(hWnd), &p, 1);
-                        NbPoint<int> pp = Utils::toNbPoint<int>(p);
-
-                        // ������������ �������� ��������� ������ �� ������� � ������������ �������
-                        int shiftX = pp.x - dragOffset.x - activeSplitter->rect.x;
-                        int shiftY = pp.y - dragOffset.y - activeSplitter->rect.y;
-
-                        activeSplitter->onMove({ shiftX, shiftY });
-                    }
-                    else
+                    
                     {
                         bool isHoveredSet = false;
                         for (const auto& widget : widgets)
@@ -229,11 +225,15 @@ namespace Win32Window
                 }
                 case WM_LBUTTONUP:
                 {
-
-
                     ReleaseCapture();
                     dragging = false;
-                    activeSplitter = nullptr;
+                    return 0;
+                }
+                case WM_GETMINMAXINFO:
+                {
+                    LPMINMAXINFO mmi = (LPMINMAXINFO)lParam;
+                    mmi->ptMinTrackSize.x = state.minSize.width;
+                    mmi->ptMinTrackSize.y = state.minSize.height;
                     return 0;
                 }
 

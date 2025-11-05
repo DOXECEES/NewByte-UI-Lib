@@ -52,8 +52,8 @@ namespace WindowInterface
         clientRect = {
             5 + newRect.x,
             35 + newRect.y,
-            newRect.width,
-            newRect.height
+            newRect.width - 5,
+            newRect.height - 35
         };
     }
 

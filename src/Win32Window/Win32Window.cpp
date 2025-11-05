@@ -18,7 +18,7 @@ namespace Win32Window
         state.setSize({800, 600});
 
 
-        HWND _handle = CreateWindow(L"NbWindowClass", L"NbWindow", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, state.size.width, state.size.height, nullptr, nullptr, nullptr, this);
+        HWND _handle = CreateWindowEx(0,L"NbWindowClass", L"NbWindow", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, state.size.width, state.size.height, nullptr, nullptr, nullptr, this);
         handle = NbWindowHandle::fromWinHandle(_handle);
         WindowInterface::WindowMapper::registerWindow(handle, this);
        
@@ -26,6 +26,8 @@ namespace Win32Window
         style &= ~(WS_CAPTION);
         style &= ~(CS_HREDRAW | CS_VREDRAW);
         SetWindowLong(handle.as<HWND>(), GWL_STYLE, style);
+        SetWindowLongPtr(handle.as<HWND>(), GWL_STYLE, GetWindowLongPtr(handle.as<HWND>(), GWL_STYLE) | WS_CLIPCHILDREN);
+
 
         SetWindowPos(handle.as<HWND>(), nullptr, 0, 0, 0, 0,
                  SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
@@ -87,7 +89,7 @@ namespace Win32Window
 
 	void Window::repaint() const noexcept
 	{
-		InvalidateRect(handle.as<HWND>(), nullptr, TRUE);
+		InvalidateRect(handle.as<HWND>(), nullptr, FALSE);
 		UpdateWindow(handle.as<HWND>());
 	}
 
@@ -105,7 +107,7 @@ namespace Win32Window
     {
         WNDCLASSEX wcex;
         wcex.cbSize = sizeof(WNDCLASSEX);
-        wcex.style = CS_HREDRAW | CS_VREDRAW;
+        wcex.style = CS_OWNDC;
         wcex.lpfnWndProc = staticWndProc;
         wcex.cbClsExtra = 0;
         wcex.cbWndExtra = 0;

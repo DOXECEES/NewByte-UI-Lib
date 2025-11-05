@@ -47,6 +47,9 @@ namespace WindowInterface
         const bool isMaximized() const noexcept { return state.isMaximized; };
         const NbSize<int>& getMinSize() const noexcept { return state.minSize; };
 
+        const int getWidth() const noexcept { return state.clientSize.width; }
+        const int getHeight() const noexcept { return state.clientSize.height; }
+
         const WindowStyle& getStyle() const noexcept { return style; };
         const NbRect<int> getClientRect() const noexcept { return state.clientRect; };
         void setClientRect(const NbRect<int>& rect) noexcept

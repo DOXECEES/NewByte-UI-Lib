@@ -38,7 +38,7 @@ namespace Win32Window
         else
         {
             parentHandle = parentWindow->getHandle().as<HWND>();
-            windowStyle = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+            windowStyle = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS;
             NbRect parentClientRect = parentWindow->getClientRect();
             state.setSize({ 400, 300 });
             state.setMinSize({ 0,0 });

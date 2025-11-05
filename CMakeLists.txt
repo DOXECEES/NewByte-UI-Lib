@@ -29,6 +29,7 @@ set (SRC
         src/Signal.hpp
         src/SubscribtionManager.cpp
         src/SubscribtionManager.hpp
+        src/TempDocking.hpp
 
 
 

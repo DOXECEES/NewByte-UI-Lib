@@ -1,4 +1,4 @@
-#ifndef NBUI_SRC_WIN32WINDOW_WIN32WINDOW_HPP
+﻿#ifndef NBUI_SRC_WIN32WINDOW_WIN32WINDOW_HPP
 #define NBUI_SRC_WIN32WINDOW_WIN32WINDOW_HPP
 
 #include <Windows.h>
@@ -7,7 +7,6 @@
 #include "../WindowInterface/IWindow.hpp"
 #include "../Utils.hpp"
 
-#include "../DockManager.hpp"
 
 #include "Signal.hpp"
 
@@ -39,6 +38,7 @@ namespace Win32Window
 
     public:
         Signal<void(const NbRect<int>&)> onRectChanged;
+        Signal<void(const NbRect<int>&)> onSizeEnd;
 
     private:
         bool registerWindowClass();
@@ -83,6 +83,11 @@ namespace Win32Window
                 {
                     return 0;
                 }
+                case WM_EXITSIZEMOVE:
+                {
+                    onSizeEnd.emit(state.clientRect);
+                    return 0;
+                }
                 case WM_NCLBUTTONDOWN:
                 {
                     NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
@@ -106,13 +111,23 @@ namespace Win32Window
                             isMouseTrack = true;
                         }
 					}
+                    bool needInvalidate = false;
 
                     NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
                     Utils::convertToWindowSpace(hWnd, point);
                     for (auto& captionButton : captionButtonsContainer)
                     {
+                        bool prev = captionButton.getIsHovered();
                         captionButton.hitTest(captionButtonsContainer.getPaintArea(), point);
+                        if (captionButton.getIsHovered() != prev)
+                        {
+                            needInvalidate = true;
+                        }
                         InvalidateRect(hWnd, NULL, FALSE);
+
+                    }
+                    if (needInvalidate)
+                    {
                     }
                     return 0;
                 }
@@ -229,24 +244,10 @@ namespace Win32Window
                 }
                 case WM_SIZE:
                 {
-                    //OutputDebugStringA("WM_SIZE\n");
                     const int borderRadius = style.getBorderRadius();
                     RECT rect;
                     GetClientRect(hWnd, &rect);
-                    /*HRGN hRgn;
-                    if(IsMaximized(hWnd))
-                    {
-                        state.isMaximized = true;
-                        hRgn = CreateRoundRectRgn(0, 0, rc.right + state.frameSize.right, rc.bottom + state.frameSize.bot, 0, 0);
-                    }
-                    else
-                    {
-                        state.isMaximized = false;
-                        hRgn = CreateRoundRectRgn(0, 0, rc.right, rc.bottom, borderRadius, borderRadius);
-                    }
-
-                    SetWindowRgn(hWnd, hRgn, TRUE);
-                    DeleteObject(hRgn);*/
+                    
                     
                     onSize({LOWORD(lParam), HIWORD(lParam)});
                 

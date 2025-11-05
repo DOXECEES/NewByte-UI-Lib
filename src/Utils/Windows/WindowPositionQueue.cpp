@@ -28,7 +28,7 @@ namespace Utils
             {
                 return;
             }
-            hDefer = DeferWindowPos(hDefer, handle.as<HWND>(), nullptr, rect.x, rect.y, rect.width, rect.height, flags);
+            hDefer = DeferWindowPos(hDefer, handle.as<HWND>(), nullptr, rect.x + 5, rect.y + 35, rect.width, rect.height, flags);
         }
 
         void WindowPosQueue::apply() noexcept

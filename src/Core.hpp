@@ -193,6 +193,15 @@ struct NbRect
             && point.y >= this->y && point.y < this->y + this->height;
     }
 
+    constexpr bool operator==(const NbRect<T>& other) const noexcept {
+        return x == other.x && y == other.y &&
+            width == other.width && height == other.height;
+    }
+
+    constexpr bool operator!=(const NbRect<T>& other) const noexcept {
+        return !(*this == other);
+    }
+
 
 };
 

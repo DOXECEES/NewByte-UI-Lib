@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\src"
   ],
-  "SelectedNode": "\\NewByte_UI_Lib.sln",
+  "SelectedNode": "\\src",
   "PreviewInSolutionExplorer": false
 }

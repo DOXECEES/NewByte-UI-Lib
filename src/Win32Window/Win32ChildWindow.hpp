@@ -3,7 +3,6 @@
 
 #include "../WindowInterface/IWindow.hpp"
 
-#include "../DockManager.hpp"
 
 #include <windowsx.h>
 #include <algorithm>

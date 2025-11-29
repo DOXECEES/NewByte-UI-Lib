@@ -15,6 +15,9 @@
 #include "../CaptionButtons.hpp"
 #include "../Widgets/IWidget.hpp"
 
+#include "Layout/LayoutNode.hpp"
+
+
 
 namespace WindowInterface
 {
@@ -28,7 +31,7 @@ namespace WindowInterface
     class IWindow
     {
     public:
-        IWindow() = default;
+        IWindow() noexcept;
         virtual ~IWindow() = default;
 
         virtual void onSize(const NbSize<int>& newSize) = 0;
@@ -74,6 +77,8 @@ namespace WindowInterface
         
         void notifyAllListeners() noexcept;
 
+        NNsLayout::LayoutNode* getLayoutRoot() noexcept { return rootLayout.get(); }
+        void recalculateLayout() noexcept;
     protected:
         NbWindowHandle                              handle;
         WindowState                                 state;
@@ -85,6 +90,8 @@ namespace WindowInterface
         CaptionButtonsContainer                     captionButtonsContainer;
         std::vector<Widgets::IWidget*>              widgets;
     
+        std::unique_ptr<NNsLayout::LayoutNode>       rootLayout;
+
     };
 };
 

@@ -23,6 +23,8 @@ namespace WindowInterface
         }
         clientSize = { size.width - frameSize.left - frameSize.right, size.height - frameSize.top - frameSize.bot };
 
+        clientRect.x = frameSize.left;
+        clientRect.y = frameSize.top;
         clientRect.width = clientSize.width;
         clientRect.height = clientSize.height;
 

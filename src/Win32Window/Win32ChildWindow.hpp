@@ -3,7 +3,7 @@
 
 #include "../WindowInterface/IWindow.hpp"
 
-
+#include "Debug.hpp"
 #include <windowsx.h>
 #include <algorithm>
 
@@ -14,7 +14,7 @@ namespace Win32Window
     class ChildWindow : public IWindow
     {
     public:
-        ChildWindow(IWindow *parentWindow);
+        ChildWindow(IWindow *parentWindow, bool setOwnDc = false);
         ~ChildWindow();
 
         void onSize(const NbSize<int>& newSize) override { };
@@ -25,17 +25,16 @@ namespace Win32Window
 
         void addCaption() noexcept;
         void setRenderable(bool flag) noexcept;
+		bool getIsRenderable() const noexcept { return isRenderable; };
 
         inline static Widgets::IWidget* focusedWidget = nullptr; // only one widget can have focus
 
     public:
         Signal<void(const NbSize<int>&)> onSizeChanged;
 
-
-
         LRESULT wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
-
+            static bool wasNonRenderable = false;
             static NbPoint<int> dragOffset = {};
             static bool dragging = false;
             static bool clicked = true;
@@ -52,23 +51,39 @@ namespace Win32Window
                         return 0;
                     }
 
-                    HDC hdc = BeginPaint(hWnd, &ps);
-                    renderer->render(this);
-                    EndPaint(hWnd, &ps);
+                    if(state.title != L"SCENE")
+                    {
+                        renderer->render(this);
+                    }
 
+                    ValidateRect(hWnd, nullptr);
+            
                     return 0;
                 } 
                 case WM_SIZE:
                 {
                     int xSize = LOWORD(lParam);
                     int ySize = HIWORD(lParam);
+                    
 
                     state.setSize({xSize, ySize});
                     
+                    if (isRenderable == false)
+                    {
+                        wasNonRenderable = true;
+                        isRenderable = true;
+                    }
+
+
+                    recalculateLayout();
+
 
                     if (renderer)
                     {
                         renderer->resize(this);
+                        //renderer->render(this);
+                        InvalidateRect(hWnd, nullptr, FALSE);
+
                     }
 
                     onSizeChanged.emit(state.size);
@@ -77,7 +92,7 @@ namespace Win32Window
                         listener->onSizeChanged(state.clientSize);
                     }
 
-                    InvalidateRect(hWnd, NULL, FALSE);
+                                      //InvalidateRect(hWnd, nullptr, TRUE); // FALSE = не стирать фон, т.к. мы обработали WM_ERASEBKGND
 
                     return 0;
                 }
@@ -179,29 +194,61 @@ namespace Win32Window
                     // }
                     return 0;
                 }
+                case WM_APP + 1:
+                {
+                    if (wasNonRenderable)
+                    {
+                        setRenderable(false);
+                    }
+                    Debug::debug("Resize finished");
+                    return 0;
+                }
 
                 case WM_MOUSEMOVE:
                 {
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
-                    
                     {
                         bool isHoveredSet = false;
-                        for (const auto& widget : widgets)
-                        {
-                            if(widget->isDisable())
-                                continue;
 
-                            if (!isHoveredSet && widget->hitTest(point))
+                        std::vector<NNsLayout::LayoutNode*> stack;
+                        stack.push_back(rootLayout.get());
+
+                        while (!stack.empty())
+                        {
+                            auto node = stack.back();
+                            stack.pop_back();
+
+                            if (auto widgetNode = dynamic_cast<NNsLayout::LayoutWidget*>(node); widgetNode != nullptr)
                             {
-                                widget->setHover();
-                                isHoveredSet = true;
+                                if (auto widget = widgetNode->getWidget())
+                                {
+                                    if (widget->isDisable())
+                                    {
+                                        continue;
+                                    }
+
+
+                                    if (!isHoveredSet && widget->hitTest(point))
+                                    {
+                                        widget->setHover();
+                                        isHoveredSet = true;
+                                    }
+                                    else
+                                    {
+                                        widget->setDefault();
+                                    }
+                                }
                             }
-                            else
+                            
+
+                            for (auto& child : node->getChildren())
                             {
-                                widget->setDefault();
+                                stack.push_back(child.get());
                             }
                         }
+
+
                         InvalidateRect(hWnd, NULL, FALSE);
                     }
                     return 0;
@@ -235,7 +282,8 @@ namespace Win32Window
                     mmi->ptMinTrackSize.y = state.minSize.height;
                     return 0;
                 }
-
+                case WM_ERASEBKGND:
+                    return 1;
 
             }
             return DefWindowProc(hWnd, message, wParam, lParam);

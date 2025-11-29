@@ -19,7 +19,7 @@ namespace Renderer
     {
     public:
         Direct2dWidgetRenderer(Direct2dHandleRenderTarget* renderTarget);
-        void render(IWidget* widget) override;
+        void render(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle) override;
         void renderPopUp() noexcept override;
     
     private:
@@ -33,7 +33,7 @@ namespace Renderer
             std::vector<NbColor>        addictionalColors;
         };
 
-        void renderButton(IWidget* widget);
+        void renderButton(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
         void renderTextEdit(IWidget* widget);
         void renderTreeView(IWidget* widget);
         void renderLabel(IWidget* widget);

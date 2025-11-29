@@ -4,6 +4,7 @@
 
 #include "Core.hpp"
 
+
 #include <DynamicFlatmatrix.hpp>
 
 #include "WindowInterface/IWindow.hpp"
@@ -13,7 +14,7 @@
 #include <vector>
 
 template<typename T>
-struct Margin
+struct OldMargin
 {
     T left  = T(0);
     T right = T(0);
@@ -112,7 +113,7 @@ public:
 	{
 		if (linkedWidgets.empty()) return;
 
-		auto clientRect = applyPaddingToRect(window->getClientRect(), Padding());
+		auto clientRect = applyPaddingToRect(window->getClientRect(), OldPadding());
 		clientRect.y + 35;
 		int currentY = 5;
 

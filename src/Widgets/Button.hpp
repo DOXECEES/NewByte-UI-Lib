@@ -21,14 +21,61 @@ namespace Widgets
         virtual const char* getClassName() const override { return CLASS_NAME; }
         NB_NODISCARD const ButtonStyle& getButtonStyle() const noexcept;
 
+        WidgetStyle& getStyle() noexcept override { return buttonStyle.baseStyle; }
+        const WidgetStyle& getStyle() const noexcept override { return buttonStyle.baseStyle; }
+
         inline void setText(const std::wstring& text) noexcept { this->text = text; }
         inline const std::wstring& getText() const noexcept { return text; }
-    
+        
+        NbSize<int> computeContentSize() const noexcept override
+        {
+            constexpr int charWidth = 50;
+            constexpr int lineHeight = 20;
+            constexpr int paddingLeft = 4;
+            constexpr int paddingRight = 4;
+            constexpr int paddingTop = 2;
+            constexpr int paddingBottom = 2;
+
+            int width = static_cast<int>(text.size()) * charWidth + paddingLeft + paddingRight;
+            int height = lineHeight + paddingTop + paddingBottom;
+
+            return { width, height };
+        }
+
+        virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
+        {
+            constexpr int charWidth = 50;
+            constexpr int lineHeight = 20;
+            constexpr int paddingLeft = 4;
+            constexpr int paddingRight = 4;
+            constexpr int paddingTop = 2;
+            constexpr int paddingBottom = 2;
+
+            int width = static_cast<int>(text.size()) * charWidth + paddingLeft + paddingRight;
+            int height = lineHeight + paddingTop + paddingBottom;
+
+            // ограничение по родителю
+            width = (std::min)(width, maxSize.width);
+            height = (std::min)(height, maxSize.height);
+
+            size.width = width;
+            size.height = height;
+
+            return size;
+        }
+
+        virtual void layout(const NbRect<int>& rect) noexcept override
+        {            
+            this->rect = rect;
+        }
+
+		Signal<void()> onButtonClickedSignal;
+
     private:
         std::wstring    text;
 
         ButtonStyle     buttonStyle = ThemeManager::getCurrent().buttonStyle;
-        
+        NbSize<int> size;
     };
 }
 

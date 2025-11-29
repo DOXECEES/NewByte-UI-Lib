@@ -24,8 +24,14 @@ namespace Widgets
         FOCUS,
     };
 
+    class IMeasureLayout
+    {
+    public:
+        virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept { return {}; };
+        virtual void layout(const NbRect<int>& rect) noexcept {};
+    };
 
-    class IWidget : public IIndexable
+    class IWidget : public IIndexable, public IMeasureLayout
     {
     public:
     
@@ -58,7 +64,16 @@ namespace Widgets
         //inline const NbColor& getColor() const { return color; }
         //inline const NbColor& getHoverColor() const { return hoverColor; }
         
-        inline const WidgetStyle& getStyle() const noexcept { return style; }
+        virtual WidgetStyle& getStyle() noexcept 
+        {
+            return style;
+        }
+
+        virtual const WidgetStyle& getStyle() const noexcept
+        {
+            return style;
+        }
+
         inline WidgetState getState() const noexcept { return state; }
         
         void show() noexcept;
@@ -100,6 +115,11 @@ namespace Widgets
         {
             return sizePolicy;
         }
+
+        virtual NbSize<int> computeContentSize() const noexcept {
+            return {};
+        }
+
         
     public:
         Signal<void(const NbRect<int>&)> onSizeChangedSignal;
@@ -128,6 +148,6 @@ namespace Widgets
         bool isSizeChange = true;
     };
 
-}
+};
 
 #endif

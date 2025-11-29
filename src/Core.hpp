@@ -11,6 +11,7 @@
 #define DCX_USESTYLE 0x00010000
 
 
+
 template<typename T>
 inline std::string toStdString(const T& val) noexcept
 {

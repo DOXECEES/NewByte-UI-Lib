@@ -2,7 +2,7 @@
 
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-
+#include "Layout/LayoutNode.hpp"
 #include "Direct2dRenderer.hpp"
 
 namespace Renderer 
@@ -21,11 +21,13 @@ namespace Renderer
         delete widgetRenderer;
 	}
 
+
 	void Direct2dRenderer::render(WindowInterface::IWindow* window)
     {
         const NbSize<int>& windowSize = window->getSize(); 
         const WindowInterface::WindowStyle& style = window->getStyle();
         renderTarget.beginDraw();
+
 
         renderTarget.clear(window->getColor());
         if(window->isMaximized())
@@ -56,16 +58,6 @@ namespace Renderer
         renderTarget.fillRectangle(rightBorder, frameColor);
         //
 
-        // corners
-        if (radius != 0)
-        {
-
-        }
-        else
-        {
-            
-        }
-
         //NbPoint<int> start = {windowSize.width, windowSize.height - radius};
         //NbPoint<int> end = {windowSize.width - radius, windowSize.height};
         //renderTarget.drawArc(start, end, radius, frameColor);
@@ -80,8 +72,31 @@ namespace Renderer
         renderTarget.drawText(window->getTitle(), {0, 0, windowSize.width, windowSize.height}, window->getFontColor());
         captionButtonRenderer->render(window->getCaptionButtonsContainer());
 
-        for(auto& widget : window->getWidgets())
-            widgetRenderer->render(widget);
+        std::vector<const NNsLayout::LayoutNode*> stack;
+        stack.push_back(window->getLayoutRoot());
+
+        while (!stack.empty()) 
+        {
+            const NNsLayout::LayoutNode* node = stack.back();
+            stack.pop_back();
+
+            if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+            {
+                auto widget = widgetLayout->getWidget().get();
+                if (widget)
+                {
+                    widgetRenderer->render(widget, widgetLayout->style);
+                }
+            }
+
+            for (int i = (int)node->getChildrenSize() - 1; i >= 0; i--)
+            {
+                stack.push_back(node->getChildrenAt(i));
+            }
+        }
+
+
+     
 
         widgetRenderer->renderPopUp();
 

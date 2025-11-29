@@ -16,15 +16,6 @@
 #pragma comment(lib, "d2d1")
 #include <wrl.h>
 
-#pragma comment(lib, "d2d1")
-#pragma comment(lib, "dwrite")
-#pragma comment(lib, "d3d11")
-#pragma comment(lib, "dxgi")
-
-#include <d3d11.h>
-#include <dxgi1_2.h>
-#include <d2d1_1.h>
-#include <dwrite.h>
 class Direct2dWrapper;
 
 
@@ -40,7 +31,7 @@ enum class TextAlignment
 {
     CENTER,
     LEFT,
-    RIGHT, 
+    RIGHT,
     JUSTIFY
 };
 
@@ -51,265 +42,401 @@ enum class ParagraphAlignment
     CENTER,
 };
 
+#include <d3d11.h>
+#include <dxgi1_2.h>
+#include <d2d1_1.h>
+#include <wrl/client.h>
+#include <unordered_map>
+#include <string>
+
+// Подключаем библиотеки (если еще не подключены в проекте)
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "dwrite.lib")
+
+using Microsoft::WRL::ComPtr;
+
 class Direct2dHandleRenderTarget
 {
 public:
-    Direct2dHandleRenderTarget(HWND hwnd)
+    // Конструктор теперь принимает HWND, так как он должен создать SwapChain с нуля
+    Direct2dHandleRenderTarget(const NbWindowHandle& handle, const NbSize<int>& size)
     {
-        createDeviceResources(hwnd);
-        createTextFormat();
+        InitDevice(handle.as<HWND>(), size);
+        InitTextFormat();
     }
 
     ~Direct2dHandleRenderTarget()
     {
+        // ComPtr очистят ресурсы автоматически, но очистим кэш кистей явно
+        colorMap.clear();
         SafeRelease(&textFormat);
+        // Остальные ресурсы (swapChain, deviceContext) удалятся деструкторами ComPtr
     }
+
+    // Инициализация D3D и DXGI (Internal)
+    void InitDevice(HWND hwnd, const NbSize<int>& size)
+    {
+        HRESULT hr;
+
+        // 1. Создаем D3D Device и D2D Factory
+        UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+#ifdef _DEBUG
+        creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
+        D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
+        ComPtr<ID3D11DeviceContext> context;
+
+        hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags,
+            featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION,
+            &m_d3dDevice, nullptr, &context);
+
+        ComPtr<IDXGIDevice> dxgiDevice;
+        m_d3dDevice.As(&dxgiDevice);
+
+        // Получаем D2D Factory (лучше брать глобальную, но для примера создадим или возьмем из синглтона)
+        // ComPtr<ID2D1Factory1> d2dFactory = Renderer::FactorySingleton::getD2DFactory1(); 
+        // Если синглтона нет под рукой, создаем локально:
+        D2D1_FACTORY_OPTIONS options = {};
+        ComPtr<ID2D1Factory1> d2dFactory;
+        m_d2dFactory = d2dFactory;
+        D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory1), &options, &d2dFactory);
+
+        ComPtr<ID2D1Device> d2dDevice;
+        d2dFactory->CreateDevice(dxgiDevice.Get(), &d2dDevice);
+        d2dDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &m_d2dContext);
+
+        // 2. Создаем Swap Chain
+        ComPtr<IDXGIAdapter> dxgiAdapter;
+        dxgiDevice->GetAdapter(&dxgiAdapter);
+        ComPtr<IDXGIFactory2> dxgiFactory;
+        dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
+
+        DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+        swapChainDesc.Width = size.width;
+        swapChainDesc.Height = size.height;
+        swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        swapChainDesc.Stereo = FALSE;
+        swapChainDesc.SampleDesc.Count = 1;
+        swapChainDesc.SampleDesc.Quality = 0;
+        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        swapChainDesc.BufferCount = 2;
+        swapChainDesc.Scaling = DXGI_SCALING_NONE;
+        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // <--- ВАЖНО
+        swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+
+        hr = dxgiFactory->CreateSwapChainForHwnd(
+            m_d3dDevice.Get(), hwnd, &swapChainDesc, nullptr, nullptr, &m_swapChain
+        );
+
+        CreateBitmapFromSwapChain();
+
+        // Установка DPI
+        float dpi = (float)GetDpiForWindow(hwnd);
+        m_d2dContext->SetDpi(dpi, dpi);
+    }
+
+    void CreateBitmapFromSwapChain()
+    {
+        if (!m_swapChain || !m_d2dContext) return;
+
+        ComPtr<IDXGISurface> dxgiBackBuffer;
+        m_swapChain->GetBuffer(0, IID_PPV_ARGS(&dxgiBackBuffer));
+
+        D2D1_BITMAP_PROPERTIES1 bitmapProperties = D2D1::BitmapProperties1(
+            D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)
+        );
+
+        m_d2dContext->CreateBitmapFromDxgiSurface(
+            dxgiBackBuffer.Get(), &bitmapProperties, &m_d2dTargetBitmap
+        );
+
+        m_d2dContext->SetTarget(m_d2dTargetBitmap.Get());
+    }
+
+    void InitTextFormat()
+    {
+        Microsoft::WRL::ComPtr<IDWriteFactory> directFactory = Renderer::FactorySingleton::getDirectWriteFactory();
+
+        if (textFormat == nullptr)
+        {
+            wchar_t buf[8];
+            GetUserDefaultLocaleName(buf, 8);
+
+            HRESULT hr = directFactory->CreateTextFormat(L"Segoe UI", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 14.0f, buf, &textFormat);
+            if (FAILED(hr))
+            {
+                OutputDebugString(std::to_wstring(hr).c_str());
+            }
+            textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+        }
+    }
+
+    // --- API ---
+
+    void pushClip(const NbRect<int>& rect)
+    {
+        if (!m_d2dFactory || !m_d2dContext) return;
+
+        HRESULT hr;
+
+        // 1. Создаем геометрию для "Дырки" (область OpenGL окна)
+        ComPtr<ID2D1RectangleGeometry> holeGeometry;
+        D2D1_RECT_F holeRect = Direct2dUtils::toD2D1Rect(rect);
+        hr = m_d2dFactory->CreateRectangleGeometry(holeRect, &holeGeometry);
+        if (FAILED(hr)) return;
+
+        // 2. Создаем геометрию для всего "Холста" (Фон)
+        // Берем текущий размер таргета или просто очень большой прямоугольник
+        D2D1_SIZE_F size = m_d2dContext->GetSize();
+        ComPtr<ID2D1RectangleGeometry> fullScreenGeometry;
+        hr = m_d2dFactory->CreateRectangleGeometry(D2D1::RectF(0, 0, size.width, size.height), &fullScreenGeometry);
+        if (FAILED(hr)) return;
+
+        // 3. Создаем пустую геометрию пути, чтобы записать туда результат вычитания
+        ComPtr<ID2D1PathGeometry> pathGeometry;
+        hr = m_d2dFactory->CreatePathGeometry(&pathGeometry);
+        if (FAILED(hr)) return;
+
+        ComPtr<ID2D1GeometrySink> sink;
+        hr = pathGeometry->Open(&sink);
+        if (FAILED(hr)) return;
+
+        // 4. Вычитаем: Результат = ПолныйЭкран - Дырка
+        hr = fullScreenGeometry->CombineWithGeometry(
+            holeGeometry.Get(),
+            D2D1_COMBINE_MODE_EXCLUDE,
+            NULL,
+            sink.Get()
+        );
+
+        sink->Close();
+
+        // 5. Создаем слой (если еще не создан)
+        if (!m_layer) {
+            m_d2dContext->CreateLayer(NULL, &m_layer);
+        }
+
+        // 6. Настраиваем параметры слоя: используем полученную геометрию как маску
+        D2D1_LAYER_PARAMETERS1 layerParams = D2D1::LayerParameters1(
+            D2D1::InfiniteRect(),       // Границы контента
+            pathGeometry.Get(),         // Геометрическая маска (наша дырка)
+            D2D1_ANTIALIAS_MODE_ALIASED, // Без сглаживания краев дырки (для четкой стыковки с окном)
+            D2D1::IdentityMatrix(),
+            1.0f,                       // Непрозрачность
+            NULL,
+            D2D1_LAYER_OPTIONS1_NONE
+        );
+
+        // 7. Применяем слой. Все, что рисуется после этого, будет обрезаться.
+        m_d2dContext->PushLayer(layerParams, m_layer.Get());
+    }
+
+    // Обязательно нужен метод для снятия клиппинга
+    void popClip() noexcept
+    {
+        if (m_d2dContext) {
+            m_d2dContext->PopLayer();
+        }
+    }
+
 
     void beginDraw() noexcept
     {
-        deviceContext->BeginDraw();
+        m_d2dContext->BeginDraw();
     }
 
     HRESULT endDraw() noexcept
     {
-        HRESULT hr = deviceContext->EndDraw();
-        swapChain->Present(1, 0); // VSync
-        return hr;
+        HRESULT hr = m_d2dContext->EndDraw();
+        if (FAILED(hr)) return hr;
+
+        // Swap Chain Present (1 = VSync On, 0 = VSync Off/Fast)
+        DXGI_PRESENT_PARAMETERS params = {};
+        return m_swapChain->Present1(1, 0, &params);
     }
 
     void clear(const NbColor& color) const noexcept
     {
-        deviceContext->Clear(D2D1::ColorF(color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f));
+        m_d2dContext->Clear(Direct2dUtils::toD2D1Color(color));
     }
 
     void resize(const NbSize<int>& size) noexcept
     {
-        if (!swapChain) return;
+        if (!m_d2dContext || !m_swapChain) return;
 
-        deviceContext->SetTarget(nullptr);
-        renderTargetBitmap.Reset();
+        // Важно: Сбрасываем цель отрисовки перед изменением размера буферов
+        m_d2dContext->SetTarget(nullptr);
+        m_d2dTargetBitmap.Reset();
 
-        swapChain->ResizeBuffers(2, size.width, size.height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
-        createBackBufferTarget();
+        HRESULT hr = m_swapChain->ResizeBuffers(0, size.width, size.height, DXGI_FORMAT_UNKNOWN, 0);
+
+        if (SUCCEEDED(hr))
+        {
+            // Пересоздаем Bitmap
+            // (Метод CreateBitmapFromSwapChain придется сделать const_cast или mutable, 
+            // либо снять const с метода resize, что логичнее, так как он меняет состояние)
+            const_cast<Direct2dHandleRenderTarget*>(this)->CreateBitmapFromSwapChain();
+        }
     }
 
-    void drawRectangle(const NbRect<int>& rect, const NbColor& color, float strokeWidth = 1.0f) const noexcept
+    void drawRectangle(const NbRect<int>& rect, const NbColor& color, const float strokeWidth = 1.0f) const noexcept
     {
-        auto brush = createSolidBrush(color);
-        deviceContext->DrawRectangle(D2D1::RectF(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height), brush.Get(), strokeWidth);
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
+        m_d2dContext->DrawRectangle(Direct2dUtils::toD2D1Rect(rect), brush.Get(), strokeWidth);
+    }
+
+    void drawRoundedRectangle(const NbRect<int>& rect, const int radius, const NbColor& color, const float strokeWidth = 1.0f) const noexcept
+    {
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
+
+        const D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
+            Direct2dUtils::toD2D1Rect(rect),
+            (float)radius,
+            (float)radius
+        );
+
+        m_d2dContext->FillRoundedRectangle(&roundedRect, brush.Get());
+    }
+
+    void drawArc(const NbPoint<int>& startPoint, const NbPoint<int>& endPoint, const int radius, const NbColor& color) const noexcept
+    {
+        ID2D1PathGeometry* pathGeometry = Renderer::FactorySingleton::getPathGeometry();
+        ID2D1GeometrySink* sink = nullptr;
+        HRESULT hr = pathGeometry->Open(&sink);
+        if (hr != S_OK) return;
+
+        sink->BeginFigure(Direct2dUtils::toD2D1Point(startPoint), D2D1_FIGURE_BEGIN_HOLLOW);
+
+        D2D1_ARC_SEGMENT arc = D2D1::ArcSegment(
+            Direct2dUtils::toD2D1Point(endPoint),
+            D2D1::SizeF((float)radius, (float)radius),
+            0.0f,
+            D2D1_SWEEP_DIRECTION_CLOCKWISE,
+            D2D1_ARC_SIZE_SMALL
+        );
+
+        sink->AddArc(arc);
+        sink->EndFigure(D2D1_FIGURE_END_OPEN);
+        sink->Close();
+        sink->Release();
+
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
+        m_d2dContext->DrawGeometry(pathGeometry, brush.Get(), 2.0f);
+    }
+
+    void drawLine(const NbPoint<int>& p1, const NbPoint<int>& p2, const NbColor& color) const noexcept
+    {
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
+        m_d2dContext->DrawLine(Direct2dUtils::toD2D1Point(p1), Direct2dUtils::toD2D1Point(p2), brush.Get());
+    }
+
+    void drawText(const std::wstring& text,
+        const NbRect<int>& rect,
+        const NbColor& color,
+        TextAlignment alignment = TextAlignment::CENTER,
+        ParagraphAlignment paragraphAligment = ParagraphAlignment::CENTER) const noexcept
+    {
+        switch (alignment)
+        {
+        case TextAlignment::CENTER: textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER); break;
+        case TextAlignment::LEFT:   textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING); break;
+        case TextAlignment::RIGHT:  textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); break;
+        case TextAlignment::JUSTIFY:textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_JUSTIFIED); break;
+        }
+
+        switch (paragraphAligment)
+        {
+        case ParagraphAlignment::TOP:    textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR); break;
+        case ParagraphAlignment::BOTTOM: textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR); break;
+        case ParagraphAlignment::CENTER: textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER); break;
+        }
+
+        m_d2dContext->DrawText(text.c_str(), static_cast<UINT32>(text.length()), textFormat, Direct2dUtils::toD2D1Rect(rect), createSolidBrush(color).Get());
+    }
+
+    void drawText(IDWriteTextLayout* textLayout, const NbRect<int>& rect, const NbColor& color, TextAlignment alignment = TextAlignment::CENTER) const noexcept
+    {
+        setAlignment(textLayout, alignment);
+        m_d2dContext->DrawTextLayout(Direct2dUtils::toD2D1Point(NbPoint<int>(rect.x, rect.y)), textLayout, createSolidBrush(color).Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+    }
+
+    void setAlignment(IDWriteTextLayout* layout, TextAlignment alignment) const
+    {
+        // Примечание: IDWriteTextLayout не имеет метода SetTextAlignment напрямую в старых версиях, 
+        // но обычно он есть в интерфейсе. Если это ваш кастомный код - ок.
+        // В стандартном DWrite TextLayout выравнивание задается на диапазон текста или через формат.
+        // Оставлю как было у вас, полагая, что метод валиден.
+        switch (alignment)
+        {
+        case TextAlignment::CENTER: layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER); break;
+        case TextAlignment::LEFT:   layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING); break;
+        case TextAlignment::RIGHT:  layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); break;
+        }
+    }
+
+    // Перегрузка для TextFormat (как в оригинале)
+    void setAlignment(IDWriteTextFormat* format, TextAlignment alignment) const
+    {
+        switch (alignment)
+        {
+        case TextAlignment::CENTER: format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER); break;
+        case TextAlignment::LEFT:   format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING); break;
+        case TextAlignment::RIGHT:  format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); break;
+        }
     }
 
     void fillRectangle(const NbRect<int>& rect, const NbColor& color) const noexcept
     {
-        auto brush = createSolidBrush(color);
-        deviceContext->FillRectangle(D2D1::RectF(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height), brush.Get());
-    }
-
-    // ✅ drawLine
-    void drawLine(const NbPoint<int>& p1, const NbPoint<int>& p2, const NbColor& color, float strokeWidth = 1.0f) const noexcept
-    {
-        auto brush = createSolidBrush(color);
-        deviceContext->DrawLine(Direct2dUtils::toD2D1Point(p1), Direct2dUtils::toD2D1Point(p2), brush.Get(), strokeWidth);
-    }
-
-    // ✅ drawText
-    void drawText(const std::wstring& text, const NbRect<int>& rect, const NbColor& color, TextAlignment textAligment = TextAlignment::CENTER, ParagraphAlignment paragraphAligment = ParagraphAlignment::CENTER) const noexcept
-    {
         Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
-
-        Microsoft::WRL::ComPtr<IDWriteTextFormat> fmt;
-        Renderer::FactorySingleton::getDirectWriteFactory()->CreateTextFormat(
-            L"Segoe UI", nullptr,
-            DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL,
-            DWRITE_FONT_STRETCH_NORMAL,
-            14, L"en-us", &fmt
-        );
-        setAlignment(fmt.Get(), textAligment);
-        fmt->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-
-        D2D1_RECT_F layout = D2D1::RectF(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height);
-        deviceContext->DrawTextW(text.c_str(), (UINT32)text.length(), fmt.Get(), &layout, brush.Get());
+        m_d2dContext->FillRectangle(Direct2dUtils::toD2D1Rect(rect), brush.Get());
     }
 
-    void drawText(
-        IDWriteTextLayout* textLayout,
-        const NbRect<int>& rect,
-        const NbColor& color,
-        TextAlignment alignment = TextAlignment::CENTER
-    ) const noexcept
-    {
-        setAlignment(textLayout, alignment);
-
-        auto brush = createSolidBrush(color);
-        deviceContext->DrawTextLayout(
-            D2D1::Point2F((FLOAT)rect.x, (FLOAT)rect.y),
-            textLayout,
-            brush.Get(),
-            D2D1_DRAW_TEXT_OPTIONS_CLIP
-        );
-    }
-
-
-    // --- Старая версия (для IDWriteTextFormat*) ---
-    void setAlignment(IDWriteTextFormat* format, TextAlignment alignment) const noexcept
-    {
-        switch (alignment)
-        {
-        case TextAlignment::CENTER:
-            format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            break;
-        case TextAlignment::LEFT:
-            format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-            break;
-        case TextAlignment::RIGHT:
-            format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-            break;
-        default:
-            break;
-        }
-    }
-
-    // --- Новая версия (для IDWriteTextLayout*) ---
-    void setAlignment(IDWriteTextLayout* layout, TextAlignment alignment) const noexcept
-    {
-        switch (alignment)
-        {
-        case TextAlignment::CENTER:
-            layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            layout->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-            break;
-        case TextAlignment::LEFT:
-            layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-            layout->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
-            break;
-        case TextAlignment::RIGHT:
-            layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-            layout->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
-            break;
-        default:
-            break;
-        }
-    }
-
-
-
-    // ✅ drawRoundedRectangle
-    void drawRoundedRectangle(const NbRect<int>& rect, float radius, const NbColor& color, float strokeWidth = 1.0f) const noexcept
-    {
-        auto brush = createSolidBrush(color);
-        D2D1_ROUNDED_RECT rounded = D2D1::RoundedRect(D2D1::RectF(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height), radius, radius);
-        deviceContext->DrawRoundedRectangle(&rounded, brush.Get(), strokeWidth);
-    }
-
-    void fillRoundedRectangle(const NbRect<int>& rect, float radius, const NbColor& color) const noexcept
-    {
-        auto brush = createSolidBrush(color);
-        D2D1_ROUNDED_RECT rounded = D2D1::RoundedRect(D2D1::RectF(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height), radius, radius);
-        deviceContext->FillRoundedRectangle(&rounded, brush.Get());
-    }
-
-    // ✅ getRawRenderTarget (для старого кода)
-    ID2D1RenderTarget* getRawRenderTarget() const noexcept
-    {
-        return deviceContext.Get();
-    }
-
-    // ✅ цветовые кисти
     Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> createSolidBrush(const NbColor& color) const noexcept
     {
         if (colorMap.find(color) != colorMap.end())
+        {
             return colorMap.at(color);
+        }
 
-        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
-        deviceContext->CreateSolidColorBrush(D2D1::ColorF(color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f), brush.GetAddressOf());
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = nullptr;
+        m_d2dContext->CreateSolidColorBrush(Direct2dUtils::toD2D1Color(color), brush.GetAddressOf());
         colorMap[color] = brush;
         return brush;
     }
 
-private:
-    void createDeviceResources(HWND hwnd)
+    // Геттер для сырого контекста (вместо RenderTarget)
+    ID2D1DeviceContext* getRawContext() const noexcept
     {
-        Microsoft::WRL::ComPtr<IDXGIDevice> dxgiDevice;
-        Microsoft::WRL::ComPtr<ID2D1Factory1> factory1;
-
-        // ⚙️ Исправление твоей ошибки: правильное получение ID2D1Factory1
-        {
-            Microsoft::WRL::ComPtr<ID2D1Factory> baseFactory = Renderer::FactorySingleton::getFactory();
-            baseFactory.As(&factory1); // конвертируем безопасно
-        }
-
-        Microsoft::WRL::ComPtr<ID2D1Device> d2dDevice;
-
-        // Создание D3D11 устройства
-        Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice;
-        Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3dContext;
-        D3D_FEATURE_LEVEL levels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
-        D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
-            D3D11_CREATE_DEVICE_BGRA_SUPPORT, levels, _countof(levels),
-            D3D11_SDK_VERSION, &d3dDevice, nullptr, &d3dContext);
-
-        d3dDevice.As(&dxgiDevice);
-        factory1->CreateDevice(dxgiDevice.Get(), &d2dDevice);
-        d2dDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &deviceContext);
-
-        Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
-        dxgiDevice->GetAdapter(&adapter);
-
-        Microsoft::WRL::ComPtr<IDXGIFactory2> dxgiFactory;
-        adapter->GetParent(__uuidof(IDXGIFactory2), &dxgiFactory);
-
-        DXGI_SWAP_CHAIN_DESC1 desc = {};
-        desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        desc.SampleDesc.Count = 1;
-        desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        desc.BufferCount = 2;
-        desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-
-        dxgiFactory->CreateSwapChainForHwnd(d3dDevice.Get(), hwnd, &desc, nullptr, nullptr, &swapChain);
-
-        createBackBufferTarget();
-    }
-
-    void createBackBufferTarget()
-    {
-        Microsoft::WRL::ComPtr<IDXGISurface> dxgiBackBuffer;
-        swapChain->GetBuffer(0, IID_PPV_ARGS(&dxgiBackBuffer));
-
-        D2D1_BITMAP_PROPERTIES1 props =
-            D2D1::BitmapProperties1(
-                D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-                D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED));
-
-        deviceContext->CreateBitmapFromDxgiSurface(dxgiBackBuffer.Get(), &props, &renderTargetBitmap);
-        deviceContext->SetTarget(renderTargetBitmap.Get());
-    }
-
-    void createTextFormat()
-    {
-        Microsoft::WRL::ComPtr<IDWriteFactory> dwFactory = Renderer::FactorySingleton::getDirectWriteFactory();
-
-        wchar_t locale[8];
-        GetUserDefaultLocaleName(locale, 8);
-
-        dwFactory->CreateTextFormat(
-            L"Segoe UI", nullptr,
-            DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL,
-            DWRITE_FONT_STRETCH_NORMAL, 14.0f, locale, &textFormat);
-
-        textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-        textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+        return m_d2dContext.Get();
     }
 
 private:
-    Microsoft::WRL::ComPtr<ID2D1DeviceContext> deviceContext;
-    Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
-    Microsoft::WRL::ComPtr<ID2D1Bitmap1> renderTargetBitmap;
+    ComPtr<ID2D1Factory1> m_d2dFactory; // Нужно сохранить фабрику при инициализации
+    ComPtr<ID2D1Layer>    m_layer;
+    ComPtr<ID3D11Device>        m_d3dDevice;
+    ComPtr<IDXGISwapChain1>     m_swapChain;
+    ComPtr<ID2D1DeviceContext>  m_d2dContext; // Аналог RenderTarget, но мощнее
+    ComPtr<ID2D1Bitmap1>        m_d2dTargetBitmap;
 
     mutable std::unordered_map<NbColor, Microsoft::WRL::ComPtr<ID2D1SolidColorBrush>> colorMap;
+
+    // Простой SafeRelease для сырых указателей (если не использовать ComPtr везде)
+    template <class T> void SafeRelease(T** ppT)
+    {
+        if (*ppT)
+        {
+            (*ppT)->Release();
+            *ppT = NULL;
+        }
+    }
+
     IDWriteTextFormat* textFormat = nullptr;
 };
-
-
 
 
 // class Direct2dTextFormat
@@ -338,9 +465,9 @@ class Direct2dWrapper
 {
 
 public:
-    static Direct2dHandleRenderTarget createRenderTarget(const NbWindowHandle &handle, const NbSize<int> &size) noexcept;
+    static Direct2dHandleRenderTarget createRenderTarget(const NbWindowHandle& handle, const NbSize<int>& size) noexcept;
     //static Direct2dTextFormat createTextFormat(const std::wstring& font) noexcept
-    static Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> createSolidColorBrush(const Direct2dHandleRenderTarget &renderTarget, const NbColor &color) noexcept;
+    static Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> createSolidColorBrush(const Direct2dHandleRenderTarget& renderTarget, const NbColor& color) noexcept;
     //static IDWriteTextLayout* createTextLayout(const std::wstring& text, IDWriteTextFormat* textFormat = nullptr);
     static Microsoft::WRL::ComPtr<IDWriteTextFormat> createTextFormatForWidget(Widgets::IWidget* widget, const Font& font) noexcept;
 

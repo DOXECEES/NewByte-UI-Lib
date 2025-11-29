@@ -17,17 +17,31 @@
 namespace Temp
 {
     // ---------------- Percent ----------------
-    class Percent
+    class NB_NODISCARD Percent
     {
-        uint8_t value; // 0..100
     public:
-        explicit Percent(uint8_t v) : value(v) { assert(v <= 100); }
+        static constexpr uint8_t MAX_VALUE = 100;
+        static constexpr float ONE_AS_FACTOR = 1.0f;
 
-        float toFactor() const { return value / 100.0f; }
-        int toPixels(int total) const { return static_cast<int>(total * toFactor()); }
+        constexpr explicit Percent(uint8_t v) noexcept
+            : value(v)
+        {
+            NB_ASSERT(v <= MAX_VALUE, "Percent cannot be greater than 100");
+        }
 
-        uint8_t get() const { return value; }
+        static constexpr Percent fromFactor(float f) noexcept
+        {
+            return Percent(static_cast<uint8_t>(f * MAX_VALUE * ONE_AS_FACTOR));
+        }
+
+        NB_NODISCARD constexpr float toFactor() const noexcept { return value / (MAX_VALUE * ONE_AS_FACTOR); }
+        NB_NODISCARD constexpr int toPixels(int total) const noexcept { return static_cast<int>(total * toFactor()); }
+        NB_NODISCARD constexpr uint8_t get() const noexcept { return value; }
+
+    private:
+        uint8_t value; // 0..MAX_VALUE
     };
+
 
     // ---------------- DockNode ----------------
     enum class DockNodeType
@@ -42,14 +56,14 @@ namespace Temp
     class DockNode : public std::enable_shared_from_this<DockNode>
     {
     public:
-        virtual ~DockNode() = default;
-        virtual DockNodeType getType() const = 0;
-        virtual void updateLayout(const NbRect<int>& newRect) = 0;
-        virtual bool canAcceptChild(const std::shared_ptr<DockNode>& child) const = 0;
+        virtual ~DockNode() noexcept = default;
+        virtual DockNodeType getType() const noexcept = 0;
+        virtual void updateLayout(const NbRect<int>& newRect) noexcept = 0;
+        virtual NB_NODISCARD bool canAcceptChild(const std::shared_ptr<DockNode>& child) const noexcept = 0;
 
-        const nbstl::Uuid getUuid() const noexcept { return uuid; }
-        std::shared_ptr<DockNode> getParent() const { return parent.lock(); }
-        const NbRect<int>& getRect() const { return rect; }
+        NB_NODISCARD const nbstl::Uuid getUuid() const noexcept { return uuid; }
+        NB_NODISCARD std::shared_ptr<DockNode> getParent() const noexcept { return parent.lock(); }
+        NB_NODISCARD const NbRect<int>& getRect() const noexcept { return rect; }
 
         void setParent(const std::shared_ptr<DockNode>& node) noexcept
         {
@@ -61,34 +75,36 @@ namespace Temp
             children.push_back(child);
         }
 
-        std::vector<std::shared_ptr<DockNode>>& getChildren() { return children; };
+        NB_NODISCARD std::vector<std::shared_ptr<DockNode>>& getChildren() noexcept { return children; };
 
     protected:
-        nbstl::Uuid uuid;
-        std::weak_ptr<DockNode> parent;
-        std::vector<std::shared_ptr<DockNode>> children;
-        NbRect<int> rect;
+        nbstl::Uuid                             uuid;
+        std::weak_ptr<DockNode>                 parent;
+        std::vector<std::shared_ptr<DockNode>>  children;
+        NbRect<int>                             rect;
     };
 
     // ---------------- RootNode ----------------
     class RootNode : public DockNode
     {
     public:
-        DockNodeType getType() const override { return DockNodeType::ROOT; }
+        NB_NODISCARD DockNodeType getType() const noexcept override { return DockNodeType::ROOT; }
 
-        bool canAcceptChild(const std::shared_ptr<DockNode>& child) const override
+        NB_NODISCARD bool canAcceptChild(const std::shared_ptr<DockNode>& child) const noexcept override
         {
             return child->getType() == DockNodeType::SPLIT || child->getType() == DockNodeType::TAB_GROUP;
         }
 
-        void updateLayout(const NbRect<int>& newRect) override
+        void updateLayout(const NbRect<int>& newRect) noexcept override
         {
             rect = newRect;
             for (auto& child : children)
+            {
                 child->updateLayout(newRect);
+            }
         }
 
-        void addChild(const std::shared_ptr<DockNode>& child)
+        void addChild(const std::shared_ptr<DockNode>& child) noexcept
         {
             if (canAcceptChild(child))
             {
@@ -110,20 +126,20 @@ namespace Temp
 
         SplitNode(Orientation o) : orientation(o), minSizeInPixel(20) {}
 
-        DockNodeType getType() const override { return DockNodeType::SPLIT; }
+        NB_NODISCARD DockNodeType getType() const noexcept override { return DockNodeType::SPLIT; }
 
-        bool canAcceptChild(const std::shared_ptr<DockNode>& child) const override
+        NB_NODISCARD bool canAcceptChild(const std::shared_ptr<DockNode>& child) const noexcept override
         {
             return child->getType() != DockNodeType::ROOT && child->getType() != DockNodeType::FLOATING;
         }
 
-        void updateLayout(const NbRect<int>& newRect) override
+        void updateLayout(const NbRect<int>& newRect) noexcept override
         {
             rect = newRect;
             recalcChildLayouts();
         }
 
-        void addChild(const std::shared_ptr<DockNode>& child, Percent sizePercent)
+        void addChild(const std::shared_ptr<DockNode>& child, Percent sizePercent) noexcept
         {
             if (!canAcceptChild(child)) return;
             child->setParent(shared_from_this());
@@ -133,13 +149,13 @@ namespace Temp
         }
 
         // --- публичный метод для пересчета layout извне ---
-        void recalculateLayout()
+        void recalculateLayout() noexcept
         {
             recalcChildLayouts();
         }
 
     private:
-        void recalcChildLayouts()
+        void recalcChildLayouts() noexcept
         {
             if (children.empty() || sizes.size() != children.size())
                 return;
@@ -182,17 +198,17 @@ namespace Temp
     class TabNode : public DockNode
     {
     public:
-        DockNodeType getType() const override { return DockNodeType::TAB; }
-        bool canAcceptChild(const std::shared_ptr<DockNode>&) const override { return false; }
+        NB_NODISCARD DockNodeType getType() const noexcept override { return DockNodeType::TAB; }
+        NB_NODISCARD bool canAcceptChild(const std::shared_ptr<DockNode>&) const noexcept override { return false; }
 
-        void updateLayout(const NbRect<int>& newRect) override
+        void updateLayout(const NbRect<int>& newRect) noexcept override
         {
             rect = newRect;
             if (window)
                 window->setClientRect(rect);
         }
 
-        void setTabGroup(const std::shared_ptr<DockNode>& group)
+        void setTabGroup(const std::shared_ptr<DockNode>& group) noexcept
         {
             if (group->getType() != DockNodeType::TAB_GROUP)
             {
@@ -205,7 +221,7 @@ namespace Temp
 
         void setTitle(const std::string& newTitle) noexcept { title = newTitle; }
 
-        void setWindow(std::shared_ptr<WindowInterface::IWindow> win) { window = win; }
+        void setWindow(std::shared_ptr<WindowInterface::IWindow> win) noexcept { window = win; }
         std::shared_ptr<WindowInterface::IWindow> getWindow() noexcept { return window; }
 
     private:
@@ -219,14 +235,14 @@ namespace Temp
     class TabGroupNode : public DockNode
     {
     public:
-        DockNodeType getType() const override { return DockNodeType::TAB_GROUP; }
+        NB_NODISCARD DockNodeType getType() const noexcept override { return DockNodeType::TAB_GROUP; }
 
-        bool canAcceptChild(const std::shared_ptr<DockNode>& child) const override
+        NB_NODISCARD bool canAcceptChild(const std::shared_ptr<DockNode>& child) const noexcept override
         {
             return child->getType() == DockNodeType::TAB;
         }
 
-        void updateLayout(const NbRect<int>& newRect) override
+        void updateLayout(const NbRect<int>& newRect) noexcept override
         {
             rect = newRect;
 
@@ -240,7 +256,7 @@ namespace Temp
             }
         }
 
-        void addTab(const std::shared_ptr<TabNode>& tab)
+        void addTab(const std::shared_ptr<TabNode>& tab) noexcept
         {
             if (!canAcceptChild(tab)) return;
             tab->setTabGroup(shared_from_this());
@@ -249,7 +265,7 @@ namespace Temp
             updateLayout(rect);
         }
 
-        void setActiveTab(size_t index)
+        void setActiveTab(size_t index) noexcept 
         {
             if (index < tabs.size())
             {
@@ -267,14 +283,14 @@ namespace Temp
     class FloatingNode : public DockNode
     {
     public:
-        DockNodeType getType() const override { return DockNodeType::FLOATING; }
+        NB_NODISCARD DockNodeType getType() const noexcept override { return DockNodeType::FLOATING; }
 
-        bool canAcceptChild(const std::shared_ptr<DockNode>& child) const override
+        NB_NODISCARD bool canAcceptChild(const std::shared_ptr<DockNode>& child) const noexcept override
         {
             return child->getType() == DockNodeType::SPLIT || child->getType() == DockNodeType::TAB_GROUP;
         }
 
-        void updateLayout(const NbRect<int>& newRect) override
+        void updateLayout(const NbRect<int>& newRect) noexcept override
         {
             rect = newRect;
             if (window)
@@ -284,8 +300,8 @@ namespace Temp
                 child->updateLayout(newRect);
         }
 
-        void setWindow(std::shared_ptr<WindowInterface::IWindow> win) { window = win; }
-        std::shared_ptr<WindowInterface::IWindow> getWindow() { return window; }
+        void setWindow(std::shared_ptr<WindowInterface::IWindow> win) noexcept { window = win; }
+        NB_NODISCARD std::shared_ptr<WindowInterface::IWindow> getWindow() noexcept { return window; }
 
     private:
         std::shared_ptr<WindowInterface::IWindow> window;

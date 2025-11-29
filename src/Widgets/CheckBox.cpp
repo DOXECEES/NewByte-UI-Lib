@@ -16,7 +16,7 @@ namespace Widgets
 
 		subscribe(static_cast<IWidget*>(this), &IWidget::onSizeChangedSignal, [this](const NbRect<int>& rc)
 		{
-			Padding p;
+			OldPadding p;
 
 			boxRect = {
 				rc.x,
@@ -90,7 +90,7 @@ namespace Widgets
 		};
 
 
-		return applyScaleOnlyPadding(requestedRect, Padding());
+		return applyScaleOnlyPadding(requestedRect, OldPadding());
 	}
 
 };

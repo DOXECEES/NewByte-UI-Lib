@@ -30,14 +30,14 @@ namespace Renderer
     {}
 
 
-    void Direct2dWidgetRenderer::render(IWidget *widget)
+    void Direct2dWidgetRenderer::render(IWidget *widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
         const char *widgetName = widget->getClassName();
         size_t size = strlen(widgetName);
 
         if(strncmp(widgetName, Button::CLASS_NAME, size) == 0 )
         {
-            renderButton(widget);
+            renderButton(widget, layoutStyle);
         }
         else if(strncmp(widgetName, TextEdit::CLASS_NAME, size) == 0 )
         {
@@ -109,7 +109,7 @@ namespace Renderer
     }
 
 
-    void Direct2dWidgetRenderer::renderButton(IWidget *widget)
+    void Direct2dWidgetRenderer::renderButton(IWidget *widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
         using namespace Widgets;
         Button* button = castWidget<Button>(widget);
@@ -124,30 +124,31 @@ namespace Renderer
         {
             case WidgetState::HOVER:
             {
-                color = buttonStyle.hoverColor;
-                textColor = buttonStyle.hoverTextColor;
+                color = buttonStyle.hoverColor();
+                textColor = buttonStyle.hoverTextColor();
                 break;
             }
             case WidgetState::ACTIVE:
             {
-                color = buttonStyle.activeColor;
-                textColor = buttonStyle.activeTextColor;
+                color = buttonStyle.activeColor();
+                textColor = buttonStyle.activeTextColor();
                 break;
             }
             case WidgetState::DISABLE:
             {
-                color = buttonStyle.disableColor;
-                textColor = buttonStyle.disableTextColor;
+                color = buttonStyle.disableColor();
+                textColor = buttonStyle.disableTextColor();
                 break;
             }
             default:
             {
-                color = buttonStyle.baseColor;
-                textColor = buttonStyle.baseTextColor;
+                color = buttonStyle.baseColor();
+                textColor = buttonStyle.baseTextColor();
                 break;
             }
         }
 
+        renderTarget->drawRectangle(button->getRect(), layoutStyle.border.color, layoutStyle.border.width);
         renderTarget->fillRectangle(button->getRect(), color);
         renderTarget->drawText(button->getText(), button->getRect(), textColor);
     }
@@ -385,10 +386,10 @@ namespace Renderer
 			SafeRelease(&sink);
 		}
         
-        auto rt = renderTarget->getRawRenderTarget();
-		D2D1_COLOR_F cc = { 1.0f,0.0f,0.0f,1.0f };
-        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> c;
-		rt->CreateSolidColorBrush(cc, c.GetAddressOf());
+        //auto rt = renderTarget->getRawRenderTarget();
+		//D2D1_COLOR_F cc = { 1.0f,0.0f,0.0f,1.0f };
+        //Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> c;
+		//rt->CreateSolidColorBrush(cc, c.GetAddressOf());
 
 
 
@@ -397,8 +398,8 @@ namespace Renderer
         renderLabel(checkBox->getLabel());
         
         
-        if(checkBox->getIsChecked()) // some pice of @@
-            rt->FillGeometry(geometry, c.Get());
+        //if(checkBox->getIsChecked()) // some pice of @@
+        //    rt->FillGeometry(geometry, c.Get());
 
         SafeRelease(&geometry);
 

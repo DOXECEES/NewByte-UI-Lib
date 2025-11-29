@@ -7,15 +7,22 @@
 
 namespace Win32Window
 {
-    ChildWindow::ChildWindow(WindowInterface::IWindow* parentWindow)
+    ChildWindow::ChildWindow(WindowInterface::IWindow* parentWindow, bool setOwnDC)
     {
         state.frameSize = { 0, 0, 0, 0 }; // no frame on clild window 
         style.setBorderRadius(0);
         WNDCLASS wc = {};
         wc.lpfnWndProc = staticWndProc;
         wc.hInstance = GetModuleHandle(nullptr);
-        wc.hbrBackground = nullptr;
-        wc.style = CS_OWNDC;
+        wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+        if (setOwnDC)
+        {
+            wc.style = CS_OWNDC;
+        }
+        else
+        {
+            wc.style = 0;
+        }
         wc.lpszClassName = L"ChildWindow";
         RegisterClass(&wc);
 
@@ -29,20 +36,22 @@ namespace Win32Window
             state.minSize = { 400, 300 };
 
             //state.clientRect = { state.frameSize.left, parentClientRect.y, 400, 300 };
-            /*state.clientRect = NbRect<int>(state.frameSize.left
+            state.clientRect = NbRect<int>(state.frameSize.left
                 , state.frameSize.top
                 , 400 - state.frameSize.left - state.frameSize.right
-                , 300 - state.frameSize.top - state.frameSize.bot);*/
+                , 300 - state.frameSize.top - state.frameSize.bot);
 
         }
         else
         {
             parentHandle = parentWindow->getHandle().as<HWND>();
             windowStyle = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS;
+            windowStyle &= ~(CS_HREDRAW | CS_VREDRAW);
+
             NbRect parentClientRect = parentWindow->getClientRect();
-            state.setSize({ 400, 300 });
+            state.setSize({ 300, 200 });
             state.setMinSize({ 0,0 });
-            state.clientRect = { parentClientRect.x, parentClientRect.y, 400, 300 };
+            state.clientRect = { parentClientRect.x + 50, parentClientRect.y + 50, 300, 200 };
         }
 
         HWND ihandle = CreateWindow(wc.lpszClassName, L"Child Window",
@@ -65,6 +74,7 @@ namespace Win32Window
     {
         notifyAllListeners();
         ShowWindow(handle.as<HWND>(), TRUE);
+        InvalidateRect(handle.as<HWND>(), nullptr, TRUE);
         UpdateWindow(handle.as<HWND>());
     }
 

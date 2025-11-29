@@ -41,6 +41,7 @@ set (SRC
         src/Win32Window/Win32ModalWindow.hpp
         src/Win32Window/Win32ChildWindow.cpp
         src/Win32Window/Win32ChildWindow.hpp
+        src/Win32Window/Win32Global.hpp
 
         src/WindowInterface/IWindow.cpp
         src/WindowInterface/IWindow.hpp
@@ -112,6 +113,9 @@ set (SRC
         src/Widgets/SideBar.hpp
         src/Widgets/ILayoutable.hpp
 
+        src/Layout/LayoutNode.cpp
+        src/Layout/LayoutNode.hpp
+
         src/Utils/Windows/WindowPositionQueue.cpp
         src/Utils/Windows/WindowPositionQueue.hpp
 
@@ -120,7 +124,7 @@ set (SRC
 )
 
 
-add_library(${PROJECT_NAME} STATIC ${SRC} "src/Widgets/SpinBox.cpp" "src/Widgets/WidgetSizePolicy.cpp" "src/Widgets/SideBar.cpp" "src/Utils/Windows/WindowPositionQueue.cpp")
+add_library(${PROJECT_NAME} STATIC ${SRC} "src/Widgets/SpinBox.cpp" "src/Widgets/WidgetSizePolicy.cpp" "src/Widgets/SideBar.cpp" "src/Utils/Windows/WindowPositionQueue.cpp" "src/Layout/LayoutNode.cpp")
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/src

@@ -1,7 +1,30 @@
 ﻿#ifndef NBUI_SRC_WIDGETS_WIDGETSTYLE_HPP
 #define NBUI_SRC_WIDGETS_WIDGETSTYLE_HPP
 
+#include <NbCore.hpp>
 #include "../Core.hpp"
+
+struct Border
+{
+    enum class Style
+    {
+        NONE,      // Нет границы
+        SOLID,     // Сплошная линия
+        DASHED,    // Пунктирная
+        DOTTED,    // Точечная
+        DOUBLE,    // Двойная линия
+        GROOVE,    // 3D-желоб
+        RIDGE,     // 3D-ребро
+        INSET,     // Вдавленная
+        OUTSET     // Выпуклая
+    };
+
+    Style style = Style::NONE;
+    int width = 1;
+    int radius = 0;
+    NbColor color;
+};
+
 
 // Общий стиль для всех виджетов
 struct WidgetStyle
@@ -17,6 +40,8 @@ struct WidgetStyle
 
 	NbColor disableColor = { 55, 55, 55 };	 // отключённый элемент
 	NbColor disableTextColor = { 100, 100, 100 }; // отключённый текст
+
+    Border  border;
 };
 
 // Стиль для TreeView
@@ -32,24 +57,57 @@ struct TreeViewStyle
 // Кнопки — слегка ярче, чтобы выделяться на фоне
 struct ButtonStyle
 {
-	// 🎨 Основные состояния
-	NbColor baseColor = { 45, 45, 48 };	 // обычное состояние
-	NbColor baseTextColor = { 220, 220, 220 }; // обычный текст
+    // Компонент для визуальных состояний
+    WidgetStyle baseStyle
+    {
+        .baseColor = {45, 45, 48},
+        .baseTextColor = {220, 220, 220},
+        .hoverColor = {63, 63, 70},
+        .hoverTextColor = {255, 255, 255},
+        .activeColor = {0, 122, 204},
+        .activeTextColor = {255, 255, 255},
+        .disableColor = {60, 60, 60},
+        .disableTextColor = {120, 120, 120}
+    };
 
-	NbColor hoverColor = { 63, 63, 70 };	 // наведение
-	NbColor hoverTextColor = { 255, 255, 255 }; // текст при наведении
+    NbColor borderColor = { 90, 90, 90 };
+    NbColor focusColor = { 70, 70, 80 };
+    int borderRadius = 4;
 
-	NbColor activeColor = { 0, 122, 204 };	 // нажата
-	NbColor activeTextColor = { 255, 255, 255 }; // текст при нажатии
+    NB_NODISCARD NbColor& baseColor() noexcept { return baseStyle.baseColor; }
+    NB_NODISCARD const NbColor& baseColor() const noexcept { return baseStyle.baseColor; }
 
-	NbColor disableColor = { 60, 60, 60 };	 // выключена
-	NbColor disableTextColor = { 120, 120, 120 }; // текст выключенной кнопки
+    NB_NODISCARD NbColor& baseTextColor() noexcept { return baseStyle.baseTextColor; }
+    NB_NODISCARD const NbColor& baseTextColor() const noexcept { return baseStyle.baseTextColor; }
 
-	// ✨ Дополнительные элементы оформления
-	NbColor borderColor = { 90, 90, 90 };	 // цвет рамки
-	NbColor focusColor = { 70, 70, 80 };	 // при фокусе клавиатурой
-	int borderRadius = 4;				 // скругление углов
+    NB_NODISCARD NbColor& hoverColor() noexcept { return baseStyle.hoverColor; }
+    NB_NODISCARD const NbColor& hoverColor() const noexcept { return baseStyle.hoverColor; }
+
+    NB_NODISCARD NbColor& hoverTextColor() noexcept { return baseStyle.hoverTextColor; }
+    NB_NODISCARD const NbColor& hoverTextColor() const noexcept { return baseStyle.hoverTextColor; }
+
+    NB_NODISCARD NbColor& activeColor() noexcept { return baseStyle.activeColor; }
+    NB_NODISCARD const NbColor& activeColor() const noexcept { return baseStyle.activeColor; }
+
+    NB_NODISCARD NbColor& activeTextColor() noexcept { return baseStyle.activeTextColor; }
+    NB_NODISCARD const NbColor& activeTextColor() const noexcept { return baseStyle.activeTextColor; }
+
+    NB_NODISCARD NbColor& disableColor() noexcept { return baseStyle.disableColor; }
+    NB_NODISCARD const NbColor& disableColor() const noexcept { return baseStyle.disableColor; }
+
+    NB_NODISCARD NbColor& disableTextColor() noexcept { return baseStyle.disableTextColor; }
+    NB_NODISCARD const NbColor& disableTextColor() const noexcept { return baseStyle.disableTextColor; }
+
+    NB_NODISCARD Border& border() noexcept { return baseStyle.border; }
+    NB_NODISCARD const Border& border() const noexcept { return baseStyle.border; }
+
+    void updateFrom(const WidgetStyle& ws) noexcept
+    {
+        baseStyle = ws;
+    }
 };
+
+
 
 // Поля ввода
 struct TextEditStyle

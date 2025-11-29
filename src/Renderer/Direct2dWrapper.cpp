@@ -23,12 +23,45 @@ D2D1_POINT_2F Direct2dUtils::toD2D1Point(const NbPoint<int> &point) noexcept
     return D2D1::Point2F(static_cast<float>(point.x), static_cast<float>(point.y));
 }
 
-Direct2dHandleRenderTarget Direct2dWrapper::createRenderTarget(const NbWindowHandle &handle, const NbSize<int> &size) noexcept
+Direct2dHandleRenderTarget Direct2dWrapper::createRenderTarget(const NbWindowHandle& handle, const NbSize<int>& size) noexcept
 {
+    D2D1_SIZE_U renderTargetSize = D2D1::SizeU(size.width, size.height);
 
-    return Direct2dHandleRenderTarget(handle.as<HWND>());
+    D2D1_PIXEL_FORMAT pixelFormat = D2D1::PixelFormat(
+        DXGI_FORMAT_B8G8R8A8_UNORM,
+        D2D1_ALPHA_MODE_IGNORE
+    );
 
+    // 2. Создаем свойства с этим форматом.
+    D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
+        D2D1_RENDER_TARGET_TYPE_DEFAULT,
+        pixelFormat,
+        0, // default DPI (x)
+        0, // default DPI (y)
+        D2D1_RENDER_TARGET_USAGE_NONE,
+        D2D1_FEATURE_LEVEL_DEFAULT
+    );
+
+
+    D2D1_HWND_RENDER_TARGET_PROPERTIES hwndProps = D2D1::HwndRenderTargetProperties(
+        handle.as<HWND>(),
+        renderTargetSize,
+        D2D1_PRESENT_OPTIONS_IMMEDIATELY
+    );
+
+    ID2D1HwndRenderTarget* renderTarget = nullptr;
+    if (factory->CreateHwndRenderTarget(props, hwndProps, &renderTarget) != S_OK)
+    {
+        return {handle, size};
+    }
+
+    // Установка DPI (как у вас было)
+    uint32_t dpi = GetDpiForWindow(handle.as<HWND>());
+    renderTarget->SetDpi(dpi, dpi);
+
+    return Direct2dHandleRenderTarget(handle, size);
 }
+
 
 // Direct2dTextFormat Direct2dWrapper::createTextFormat(const std::wstring& font) noexcept
 // {

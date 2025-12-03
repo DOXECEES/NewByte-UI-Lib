@@ -1,0 +1,13 @@
+#ifndef NBUI_SRC_RENDERER_GEOMETRY_BORDERGEOMETRYBUILDER_HPP
+#define NBUI_SRC_RENDERER_GEOMETRY_BORDERGEOMETRYBUILDER_HPP
+
+namespace Renderer
+{
+	namespace Geometry
+	{
+
+
+	};
+};
+
+#endif

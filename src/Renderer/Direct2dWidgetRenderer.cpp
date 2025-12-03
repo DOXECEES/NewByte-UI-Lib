@@ -22,6 +22,7 @@
 #include <Debug.hpp>
 
 #include <stack>
+#include <Array.hpp>
 
 namespace Renderer
 {
@@ -108,6 +109,84 @@ namespace Renderer
         }
     }
 
+    void Direct2dWidgetRenderer::drawBorder(IWidget* widget, const Border& border) noexcept
+    {
+        const NbRect<int>& rect = widget->getRect();
+
+        switch (border.style)
+        {
+            case Border::Style::SOLID:
+            {
+                renderTarget->drawRectangle(rect, border.color, border.width);
+                break;
+            }
+            case Border::Style::DASHED:
+            {
+                Direct2dHandleRenderTarget::LineStyle ls;
+                ls.strokWidth = border.width;
+                ls.dotLength = 3.0f;
+                ls.gapLength = 0.5f;
+
+                renderTarget->drawStyledLine(rect.getTopLeft(), rect.getTopRight(), border.color, ls);
+                renderTarget->drawStyledLine(rect.getBottomLeft(), rect.getBottomRight(), border.color, ls);
+                renderTarget->drawStyledLine(rect.getTopLeft(), rect.getBottomLeft(), border.color, ls);
+                renderTarget->drawStyledLine(rect.getTopRight(), rect.getBottomRight(), border.color, ls);
+                break;
+            }
+            case Border::Style::DOTTED:
+            {
+                Direct2dHandleRenderTarget::LineStyle ls;
+                ls.strokWidth = border.width;
+
+                renderTarget->drawStyledLine(rect.getTopLeft(), rect.getTopRight(), border.color, ls);
+                renderTarget->drawStyledLine(rect.getBottomLeft(), rect.getBottomRight(), border.color, ls);
+                renderTarget->drawStyledLine(rect.getTopLeft(), rect.getBottomLeft(), border.color, ls);
+                renderTarget->drawStyledLine(rect.getTopRight(), rect.getBottomRight(), border.color, ls);
+                break;
+            }
+            case Border::Style::DOUBLE:
+            {
+                renderTarget->drawRectangle(rect.expand(border.width / 2), border.color, border.width);
+                NbRect<int> expd = rect.expand(2 * border.width + border.width/2);
+                renderTarget->drawRectangle(expd, border.color, border.width);
+                break;
+            }
+            case Border::Style::INSET:
+            {
+                NbRect<int> expandedRect = rect.expand(20);
+
+                nbstl::Array<D2D1_POINT_2F, 6> upper;
+                upper[0] = Direct2dUtils::toD2D1Point(expandedRect.getBottomLeft());
+                upper[1] = Direct2dUtils::toD2D1Point(expandedRect.getTopLeft());
+                upper[2] = Direct2dUtils::toD2D1Point(expandedRect.getTopRight());
+                upper[3] = Direct2dUtils::toD2D1Point(rect.getTopRight());
+                upper[4] = Direct2dUtils::toD2D1Point(rect.getTopLeft());
+                upper[5] = Direct2dUtils::toD2D1Point(rect.getBottomLeft());
+
+                Microsoft::WRL::ComPtr<ID2D1Geometry> geometry = FactorySingleton::createGeometry(upper);
+                
+                nbstl::Array<D2D1_POINT_2F, 6> lower;
+                lower[0] = Direct2dUtils::toD2D1Point(expandedRect.getBottomLeft());
+                lower[1] = Direct2dUtils::toD2D1Point(expandedRect.getBottomRight());
+                lower[2] = Direct2dUtils::toD2D1Point(expandedRect.getTopRight());
+                lower[3] = Direct2dUtils::toD2D1Point(rect.getTopRight());
+                lower[4] = Direct2dUtils::toD2D1Point(rect.getBottomRight());
+                lower[5] = Direct2dUtils::toD2D1Point(rect.getBottomLeft());
+
+                Microsoft::WRL::ComPtr<ID2D1Geometry> geometryLower = FactorySingleton::createGeometry(lower);
+                renderTarget->drawGeometry(geometry, border.color);
+                renderTarget->drawGeometry(geometryLower, border.color.addMask(55));
+
+                break;
+            }
+            case Border::Style::OUTSET:
+            {
+                break;
+            }
+
+
+        }
+    }
 
     void Direct2dWidgetRenderer::renderButton(IWidget *widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
@@ -148,7 +227,11 @@ namespace Renderer
             }
         }
 
-        renderTarget->drawRectangle(button->getRect(), layoutStyle.border.color, layoutStyle.border.width);
+        drawBorder(button, layoutStyle.border);
+
+        
+
+
         renderTarget->fillRectangle(button->getRect(), color);
         renderTarget->drawText(button->getText(), button->getRect(), textColor);
     }

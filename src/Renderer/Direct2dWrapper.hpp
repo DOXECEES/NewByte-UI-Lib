@@ -15,6 +15,7 @@
 #include <d2d1.h>
 #pragma comment(lib, "d2d1")
 #include <wrl.h>
+#include "Debug.hpp"
 
 class Direct2dWrapper;
 
@@ -100,13 +101,13 @@ public:
         // ComPtr<ID2D1Factory1> d2dFactory = Renderer::FactorySingleton::getD2DFactory1(); 
         // Если синглтона нет под рукой, создаем локально:
         D2D1_FACTORY_OPTIONS options = {};
-        ComPtr<ID2D1Factory1> d2dFactory;
-        m_d2dFactory = d2dFactory;
-        D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory1), &options, &d2dFactory);
+        ComPtr<ID2D1Factory1> d2dFactory = Renderer::FactorySingleton::getFactory();
+        //D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory1), &options, &d2dFactory);
 
         ComPtr<ID2D1Device> d2dDevice;
         d2dFactory->CreateDevice(dxgiDevice.Get(), &d2dDevice);
         d2dDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &m_d2dContext);
+        m_d2dFactory = d2dFactory;
 
         // 2. Создаем Swap Chain
         ComPtr<IDXGIAdapter> dxgiAdapter;
@@ -253,8 +254,11 @@ public:
     HRESULT endDraw() noexcept
     {
         HRESULT hr = m_d2dContext->EndDraw();
-        if (FAILED(hr)) return hr;
-
+        if (FAILED(hr))
+        {
+            Debug::debug(hr);
+            return hr;
+        }
         // Swap Chain Present (1 = VSync On, 0 = VSync Off/Fast)
         DXGI_PRESENT_PARAMETERS params = {};
         return m_swapChain->Present1(1, 0, &params);
@@ -283,6 +287,97 @@ public:
             const_cast<Direct2dHandleRenderTarget*>(this)->CreateBitmapFromSwapChain();
         }
     }
+
+    struct LineStyle
+    {
+        float strokWidth = 10.0f;
+        float dotLength = 1.0f;
+        float gapLength = 0.0f;
+    };
+
+    void drawStyledLine(
+        const NbPoint<int>& start,
+        const NbPoint<int>& end,
+        const NbColor& color,
+        const LineStyle& style
+    ) {
+        ComPtr<ID2D1PathGeometry> geom;
+        m_d2dFactory->CreatePathGeometry(&geom);
+
+        ComPtr<ID2D1GeometrySink> sink;
+        geom->Open(&sink);
+
+        float size = style.strokWidth * style.dotLength;
+        float half = size * 0.5f;
+        float halfOfBasis = style.strokWidth * 0.5f;
+        float spacing = size * (1.0f - style.gapLength);
+
+        float dx = end.x - start.x;
+        float dy = end.y - start.y;
+        float len = sqrtf(dx * dx + dy * dy);
+
+        if (len < 0.001f)
+            return;
+
+        float nx = dx / len;
+        float ny = dy / len;
+
+        float px = -ny;
+        float py = nx;
+
+        float step = size + spacing;
+
+        int count = static_cast<int>(std::floor(len / step)) + 1;
+
+        for (int i = 0; i < count; i++)
+        {
+            float t = (float)i / (count - 1);
+            float dist = t * len;
+
+            D2D1_POINT_2F center = {
+                start.x + nx * dist,
+                start.y + ny * dist
+            };
+
+            D2D1_POINT_2F v0 = {
+                center.x + px * half + nx * half,
+                center.y + py * halfOfBasis + ny * half
+            };
+            D2D1_POINT_2F v1 = {
+                center.x - px * half + nx * half,
+                center.y - py * halfOfBasis + ny * half
+            };
+            D2D1_POINT_2F v2 = {
+                center.x - px * half - nx * half,
+                center.y - py * halfOfBasis - ny * half
+            };
+            D2D1_POINT_2F v3 = {
+                center.x + px * half - nx * half,
+                center.y + py * halfOfBasis - ny * half
+            };
+
+            sink->BeginFigure(v0, D2D1_FIGURE_BEGIN_FILLED);
+            sink->AddLine(v1);
+            sink->AddLine(v2);
+            sink->AddLine(v3);
+            sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+        }
+
+        sink->Close();
+
+        ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
+        m_d2dContext->FillGeometry(geom.Get(), brush.Get());
+    }
+
+    void drawGeometry(
+        const Microsoft::WRL::ComPtr<ID2D1Geometry>& geometry,
+        const NbColor& color
+    )
+    {
+        ComPtr<ID2D1Brush> brush = createSolidBrush(color);
+        m_d2dContext->FillGeometry(geometry.Get(), brush.Get());
+    }
+
 
     void drawRectangle(const NbRect<int>& rect, const NbColor& color, const float strokeWidth = 1.0f) const noexcept
     {
@@ -416,7 +511,7 @@ public:
     }
 
 private:
-    ComPtr<ID2D1Factory1> m_d2dFactory; // Нужно сохранить фабрику при инициализации
+    ComPtr<ID2D1Factory1> m_d2dFactory; 
     ComPtr<ID2D1Layer>    m_layer;
     ComPtr<ID3D11Device>        m_d3dDevice;
     ComPtr<IDXGISwapChain1>     m_swapChain;
@@ -475,4 +570,4 @@ private:
     inline static Microsoft::WRL::ComPtr<ID2D1Factory> factory = Renderer::FactorySingleton::getFactory();
 };
 
-#endif
+#endif////////////////////////////////////////////////////////////////

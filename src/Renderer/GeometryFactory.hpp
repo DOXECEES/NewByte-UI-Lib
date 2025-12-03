@@ -13,7 +13,7 @@ namespace Renderer
 	{
 		CHECK_MARK,
 		CROSS,
-		ARROW
+		ARROW,
 	};
 
 	class ShapeLibrary

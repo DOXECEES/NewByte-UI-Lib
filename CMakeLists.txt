@@ -80,6 +80,8 @@ set (SRC
         src/Renderer/GeometryFactory.cpp
         src/Renderer/GeometryFactory.hpp
 
+        src/Renderer/Geometry/BorderGeometryBuilder.cpp
+        src/Renderer/Geometry/BorderGeometryBuilder.hpp
 
         src/Widgets/IWidget.cpp
         src/Widgets/IWidget.hpp
@@ -124,7 +126,7 @@ set (SRC
 )
 
 
-add_library(${PROJECT_NAME} STATIC ${SRC} "src/Widgets/SpinBox.cpp" "src/Widgets/WidgetSizePolicy.cpp" "src/Widgets/SideBar.cpp" "src/Utils/Windows/WindowPositionQueue.cpp" "src/Layout/LayoutNode.cpp")
+add_library(${PROJECT_NAME} STATIC ${SRC} "src/Widgets/SpinBox.cpp" "src/Widgets/WidgetSizePolicy.cpp" "src/Widgets/SideBar.cpp" "src/Utils/Windows/WindowPositionQueue.cpp" "src/Layout/LayoutNode.cpp" "src/Renderer/Geometry/BorderGeometryBuilder.cpp")
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/src

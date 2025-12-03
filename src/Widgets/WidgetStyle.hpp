@@ -19,9 +19,9 @@ struct Border
         OUTSET     // Выпуклая
     };
 
-    Style style = Style::NONE;
-    int width = 1;
-    int radius = 0;
+    Style   style   = Style::NONE;
+    int     width   = 1;
+    int     radius  = 0;
     NbColor color;
 };
 

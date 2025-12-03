@@ -33,6 +33,8 @@ namespace Renderer
             std::vector<NbColor>        addictionalColors;
         };
 
+        void drawBorder(IWidget* widget, const Border& border) noexcept;
+
         void renderButton(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
         void renderTextEdit(IWidget* widget);
         void renderTreeView(IWidget* widget);

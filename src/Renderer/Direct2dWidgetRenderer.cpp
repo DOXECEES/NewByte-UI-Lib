@@ -24,6 +24,8 @@
 #include <stack>
 #include <Array.hpp>
 
+#include "Geometry/BorderGeometryBuilder.hpp"
+
 namespace Renderer
 {
     Direct2dWidgetRenderer::Direct2dWidgetRenderer(Direct2dHandleRenderTarget *renderTarget)
@@ -153,34 +155,41 @@ namespace Renderer
             }
             case Border::Style::INSET:
             {
-                NbRect<int> expandedRect = rect.expand(20);
-
-                nbstl::Array<D2D1_POINT_2F, 6> upper;
-                upper[0] = Direct2dUtils::toD2D1Point(expandedRect.getBottomLeft());
-                upper[1] = Direct2dUtils::toD2D1Point(expandedRect.getTopLeft());
-                upper[2] = Direct2dUtils::toD2D1Point(expandedRect.getTopRight());
-                upper[3] = Direct2dUtils::toD2D1Point(rect.getTopRight());
-                upper[4] = Direct2dUtils::toD2D1Point(rect.getTopLeft());
-                upper[5] = Direct2dUtils::toD2D1Point(rect.getBottomLeft());
-
-                Microsoft::WRL::ComPtr<ID2D1Geometry> geometry = FactorySingleton::createGeometry(upper);
+                Geometry::BorderGeometryCache::GeometrySet mesh = cache.getMesh({ border.style, rect, border.width});
+                NB_ASSERT(mesh.geometries.size() <= 2, "INSET border should have at most 2 geometries");
                 
-                nbstl::Array<D2D1_POINT_2F, 6> lower;
-                lower[0] = Direct2dUtils::toD2D1Point(expandedRect.getBottomLeft());
-                lower[1] = Direct2dUtils::toD2D1Point(expandedRect.getBottomRight());
-                lower[2] = Direct2dUtils::toD2D1Point(expandedRect.getTopRight());
-                lower[3] = Direct2dUtils::toD2D1Point(rect.getTopRight());
-                lower[4] = Direct2dUtils::toD2D1Point(rect.getBottomRight());
-                lower[5] = Direct2dUtils::toD2D1Point(rect.getBottomLeft());
-
-                Microsoft::WRL::ComPtr<ID2D1Geometry> geometryLower = FactorySingleton::createGeometry(lower);
-                renderTarget->drawGeometry(geometry, border.color);
-                renderTarget->drawGeometry(geometryLower, border.color.addMask(55));
+                nbstl::Array<NbColor, 2> colors = {
+                    border.color,
+                    border.color.addMask(55)
+                };
+                Debug::debug(mesh.geometries[0].Get());
+                for (size_t i = 0; i < mesh.geometries.size(); ++i)
+                {
+                    if (mesh.geometries[i])
+                    {
+                        renderTarget->drawGeometry(mesh.geometries[i], colors[i]);
+                    }
+                }
 
                 break;
             }
             case Border::Style::OUTSET:
             {
+                const Geometry::BorderGeometryCache::GeometrySet& mesh = cache.getMesh({ border.style, rect, border.width });
+                NB_ASSERT(mesh.geometries.size() <= 2, "OUTSET border should have at most 2 geometries");
+
+                nbstl::Array<NbColor, 2> colors = {
+                    border.color.addMask(55),
+                    border.color
+                };
+
+                for (size_t i = 0; i < mesh.geometries.size(); ++i)
+                {
+                    if (mesh.geometries[i])
+                    {
+                        renderTarget->drawGeometry(mesh.geometries[i], colors[i]);
+                    }
+                }
                 break;
             }
 
@@ -656,4 +665,4 @@ namespace Renderer
 		Direct2dGlobalWidgetMapper::addTextlayout(label, textLayout);
 	}
 
-};
+};//////////////////////////////////////

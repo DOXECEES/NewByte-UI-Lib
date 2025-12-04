@@ -82,6 +82,8 @@ set (SRC
 
         src/Renderer/Geometry/BorderGeometryBuilder.cpp
         src/Renderer/Geometry/BorderGeometryBuilder.hpp
+        src/Renderer/Geometry/BorderGeometryCache.cpp
+        src/Renderer/Geometry/BorderGeometryCache.hpp
 
         src/Widgets/IWidget.cpp
         src/Widgets/IWidget.hpp

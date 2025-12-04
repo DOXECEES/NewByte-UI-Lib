@@ -7,7 +7,7 @@
 #include "Widgets/TreeView.hpp"
 #include "Widgets/Label.hpp"
 #include "Widgets/ComboBox.hpp"
-
+#include "Geometry/BorderGeometryCache.hpp"
 #include "Debug.hpp"
 
 #include <queue>
@@ -113,6 +113,9 @@ namespace Renderer
 
     private:
         std::queue<PopUpRenderParams> popupQueue;
+        Geometry::BorderGeometryCache cache;
+        
+
     };
 
 

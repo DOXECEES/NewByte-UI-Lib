@@ -115,6 +115,17 @@ namespace Renderer
     {
         const NbRect<int>& rect = widget->getRect();
 
+        auto drawGeometries = [&](const Geometry::BorderGeometryCache::GeometrySet& mesh, auto& colors)
+            {
+                for (size_t i = 0; i < mesh.geometries.size(); ++i)
+                {
+                    if (mesh.geometries[i])
+                    {
+                        renderTarget->drawGeometry(mesh.geometries[i], colors[i]);
+                    }
+                }
+            };
+
         switch (border.style)
         {
             case Border::Style::SOLID:
@@ -149,53 +160,40 @@ namespace Renderer
             case Border::Style::DOUBLE:
             {
                 renderTarget->drawRectangle(rect.expand(border.width / 2), border.color, border.width);
-                NbRect<int> expd = rect.expand(2 * border.width + border.width/2);
+                NbRect<int> expd = rect.expand(2 * border.width + border.width / 2);
                 renderTarget->drawRectangle(expd, border.color, border.width);
                 break;
             }
             case Border::Style::INSET:
             {
-                Geometry::BorderGeometryCache::GeometrySet mesh = cache.getMesh({ border.style, rect, border.width});
-                NB_ASSERT(mesh.geometries.size() <= 2, "INSET border should have at most 2 geometries");
-                
+                auto& mesh = cache.getMesh({ border.style, rect, border.width });
+                NB_ASSERT(mesh.geometries.size() == 2, "INSET border must have exactly 2 geometries");
+
                 nbstl::Array<NbColor, 2> colors = {
                     border.color,
                     border.color.addMask(55)
                 };
-                Debug::debug(mesh.geometries[0].Get());
-                for (size_t i = 0; i < mesh.geometries.size(); ++i)
-                {
-                    if (mesh.geometries[i])
-                    {
-                        renderTarget->drawGeometry(mesh.geometries[i], colors[i]);
-                    }
-                }
 
+                drawGeometries(mesh, colors);
                 break;
             }
             case Border::Style::OUTSET:
             {
-                const Geometry::BorderGeometryCache::GeometrySet& mesh = cache.getMesh({ border.style, rect, border.width });
-                NB_ASSERT(mesh.geometries.size() <= 2, "OUTSET border should have at most 2 geometries");
+                auto& mesh = cache.getMesh({ border.style, rect, border.width });
+                NB_ASSERT(mesh.geometries.size() == 2, "OUTSET border must have exactly 2 geometries");
 
                 nbstl::Array<NbColor, 2> colors = {
                     border.color.addMask(55),
                     border.color
                 };
 
-                for (size_t i = 0; i < mesh.geometries.size(); ++i)
-                {
-                    if (mesh.geometries[i])
-                    {
-                        renderTarget->drawGeometry(mesh.geometries[i], colors[i]);
-                    }
-                }
+                drawGeometries(mesh, colors);
                 break;
             }
             case Border::Style::RIDGE:
             {
-                const Geometry::BorderGeometryCache::GeometrySet& mesh = cache.getMesh({ border.style, rect, border.width });
-                NB_ASSERT(mesh.geometries.size() <= 4, "GROOVE border should have at most 4 geometries");
+                auto& mesh = cache.getMesh({ border.style, rect, border.width });
+                NB_ASSERT(mesh.geometries.size() == 4, "RIDGE border must have exactly 4 geometries");
 
                 nbstl::Array<NbColor, 4> colors = {
                     border.color.addMask(55),
@@ -204,20 +202,13 @@ namespace Renderer
                     border.color.addMask(55)
                 };
 
-                for (size_t i = 0; i < mesh.geometries.size(); ++i)
-                {
-                    if (mesh.geometries[i])
-                    {
-                        renderTarget->drawGeometry(mesh.geometries[i], colors[i]);
-                    }
-                }
+                drawGeometries(mesh, colors);
                 break;
             }
-
             case Border::Style::GROOVE:
             {
-                const Geometry::BorderGeometryCache::GeometrySet& mesh = cache.getMesh({ border.style, rect, border.width });
-                NB_ASSERT(mesh.geometries.size() <= 4, "GROOVE border should have at most 4 geometries");
+                auto& mesh = cache.getMesh({ border.style, rect, border.width });
+                NB_ASSERT(mesh.geometries.size() == 4, "GROOVE border must have exactly 4 geometries");
 
                 nbstl::Array<NbColor, 4> colors = {
                     border.color,
@@ -226,19 +217,13 @@ namespace Renderer
                     border.color
                 };
 
-                for (size_t i = 0; i < mesh.geometries.size(); ++i)
-                {
-                    if (mesh.geometries[i])
-                    {
-                        renderTarget->drawGeometry(mesh.geometries[i], colors[i]);
-                    }
-                }
+                drawGeometries(mesh, colors);
                 break;
             }
 
-
         }
     }
+
 
     void Direct2dWidgetRenderer::renderButton(IWidget *widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
@@ -280,8 +265,6 @@ namespace Renderer
         }
 
         drawBorder(button, layoutStyle.border);
-
-        
 
 
         renderTarget->fillRectangle(button->getRect(), color);

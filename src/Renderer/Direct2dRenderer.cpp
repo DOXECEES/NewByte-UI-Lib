@@ -88,6 +88,10 @@ namespace Renderer
                     widgetRenderer->render(widget, widgetLayout->style);
                 }
             }
+            else if (auto layout = dynamic_cast<const NNsLayout::LayoutNode*>(node))
+            {
+                renderTarget.fillRectangle(layout->getRect(), layout->style.color);
+            }
 
             for (int i = (int)node->getChildrenSize() - 1; i >= 0; i--)
             {

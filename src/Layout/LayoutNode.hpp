@@ -29,6 +29,7 @@ namespace NNsLayout
 
     struct LayoutStyle
     {
+        NbColor         color;
         NbSize<int>     minSize;
         NbSize<int>     maxSize;
 
@@ -87,8 +88,8 @@ namespace NNsLayout
         const std::vector<std::unique_ptr<LayoutNode>>& getChildren() const noexcept { return children; }
         const LayoutNode* getChildrenAt(size_t index) const noexcept { return children.at(index).get(); }
         size_t getChildrenSize() const noexcept { return children.size(); }
-
-
+        const NbRect<int>& getRect() const noexcept { return layoutRect; }
+        void setRect(const NbRect<int>& rc) noexcept { layoutRect = rc; }
         virtual void measure(const NbSize<int>& available) noexcept = 0;
         virtual void layout(const NbRect<int>& bounds) noexcept = 0;
 
@@ -150,6 +151,22 @@ namespace NNsLayout
         void measure(const NbSize<int>& available) noexcept override;
         void layout(const NbRect<int>& bounds) noexcept override;
     };
+
+    class VLayout : public LayoutNode
+    {
+    public:
+        VLayout() noexcept : LayoutNode(nullptr), scrollOffset(0) {}
+
+        void measure(const NbSize<int>& available) noexcept override;
+        void layout(const NbRect<int>& bounds) noexcept override;
+
+        void setScrollOffset(int offset) noexcept { scrollOffset = offset; }
+        int getScrollOffset() const noexcept { return scrollOffset; }
+
+    private:
+        int scrollOffset; // сдвиг для скроллинга
+    };
+
 
     class LayoutWidget : public LayoutNode
     {

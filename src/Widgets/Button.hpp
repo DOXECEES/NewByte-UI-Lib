@@ -1,10 +1,13 @@
 #ifndef NBUI_SRC_WIDGETS_BUTTON_HPP
 #define NBUI_SRC_WIDGETS_BUTTON_HPP
 
+#include <Alghorithm.hpp>
+
 #include "IWidget.hpp"
 
 #include "WidgetStyle.hpp"
 #include "Theme.hpp"
+
 
 namespace Widgets
 {
@@ -54,9 +57,8 @@ namespace Widgets
             int width = static_cast<int>(text.size()) * charWidth + paddingLeft + paddingRight;
             int height = lineHeight + paddingTop + paddingBottom;
 
-            // ограничение по родителю
-            width = (std::min)(width, maxSize.width);
-            height = (std::min)(height, maxSize.height);
+            width = (nbstl::min)(width, maxSize.width);
+            height = (nbstl::min)(height, maxSize.height);
 
             size.width = width;
             size.height = height;
@@ -75,7 +77,7 @@ namespace Widgets
         std::wstring    text;
 
         ButtonStyle     buttonStyle = ThemeManager::getCurrent().buttonStyle;
-        NbSize<int> size;
+        NbSize<int>     size;
     };
 }
 

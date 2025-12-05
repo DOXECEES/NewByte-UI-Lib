@@ -75,7 +75,16 @@ namespace Renderer
                     auto mesh = Geometry::BorderGeometryBuilder::buildInsetMesh(rect, thickness);
                     set.geometries.pushBack(FactorySingleton::createGeometry(mesh.upper));
                     set.geometries.pushBack(FactorySingleton::createGeometry(mesh.lower));
-                    Debug::debug(set.geometries.at(0).Get());
+
+                    break;
+                }
+                case Border::Style::GROOVE:
+                {
+                    Geometry::BorderGeometryBuilder::GrooveBorderMesh mesh = Geometry::BorderGeometryBuilder::buildGrooveMesh(rect, thickness);
+                    set.geometries.pushBack(FactorySingleton::createGeometry(mesh.innerLower));
+                    set.geometries.pushBack(FactorySingleton::createGeometry(mesh.innerUpper));
+                    set.geometries.pushBack(FactorySingleton::createGeometry(mesh.outerLower));
+                    set.geometries.pushBack(FactorySingleton::createGeometry(mesh.outerUpper));
 
                     break;
                 }

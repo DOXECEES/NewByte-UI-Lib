@@ -192,6 +192,49 @@ namespace Renderer
                 }
                 break;
             }
+            case Border::Style::RIDGE:
+            {
+                const Geometry::BorderGeometryCache::GeometrySet& mesh = cache.getMesh({ border.style, rect, border.width });
+                NB_ASSERT(mesh.geometries.size() <= 4, "GROOVE border should have at most 4 geometries");
+
+                nbstl::Array<NbColor, 4> colors = {
+                    border.color.addMask(55),
+                    border.color,
+                    border.color,
+                    border.color.addMask(55)
+                };
+
+                for (size_t i = 0; i < mesh.geometries.size(); ++i)
+                {
+                    if (mesh.geometries[i])
+                    {
+                        renderTarget->drawGeometry(mesh.geometries[i], colors[i]);
+                    }
+                }
+                break;
+            }
+
+            case Border::Style::GROOVE:
+            {
+                const Geometry::BorderGeometryCache::GeometrySet& mesh = cache.getMesh({ border.style, rect, border.width });
+                NB_ASSERT(mesh.geometries.size() <= 4, "GROOVE border should have at most 4 geometries");
+
+                nbstl::Array<NbColor, 4> colors = {
+                    border.color,
+                    border.color.addMask(55),
+                    border.color.addMask(55),
+                    border.color
+                };
+
+                for (size_t i = 0; i < mesh.geometries.size(); ++i)
+                {
+                    if (mesh.geometries[i])
+                    {
+                        renderTarget->drawGeometry(mesh.geometries[i], colors[i]);
+                    }
+                }
+                break;
+            }
 
 
         }

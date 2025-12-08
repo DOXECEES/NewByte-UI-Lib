@@ -55,11 +55,9 @@ namespace NNsLayout
 
         virtual ~LayoutNode() = default;
 
-        // запрещаем копирование
         LayoutNode(const LayoutNode&) = delete;
         LayoutNode& operator=(const LayoutNode&) = delete;
 
-        // разрешаем перемещение
         LayoutNode(LayoutNode&&) noexcept = default;
         LayoutNode& operator=(LayoutNode&&) noexcept = default;
 
@@ -164,7 +162,7 @@ namespace NNsLayout
         int getScrollOffset() const noexcept { return scrollOffset; }
 
     private:
-        int scrollOffset; // сдвиг для скроллинга
+        int scrollOffset; 
     };
 
 

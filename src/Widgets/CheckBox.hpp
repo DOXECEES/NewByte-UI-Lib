@@ -17,6 +17,7 @@ namespace Widgets
 
 		static constexpr const char* CLASS_NAME = "CheckBox";
 
+        CheckBox() noexcept;
 		CheckBox(const NbRect<int>& rect) noexcept;
 		virtual ~CheckBox() noexcept = default;
 

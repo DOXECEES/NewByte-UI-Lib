@@ -152,11 +152,81 @@ namespace Win32Window
                     MapWindowPoints(hWnd, GetParent(hWnd), &p, 1);
                     NbPoint<int> pp = Utils::toNbPoint<int>(p);
 
+                    // widgets no longer use
                     std::sort(widgets.begin(), widgets.end(), [](Widgets::IWidget* widget1, Widgets::IWidget* widget2) -> bool {
                         return widget1->getZIndex() > widget2->getZIndex();
                     });
 
-                    for (const auto& widget : widgets)
+                    //
+
+                    std::vector<const NNsLayout::LayoutNode*> stack;
+                    stack.push_back(this->getLayoutRoot());
+
+                    while (!stack.empty())
+                    {
+                        const NNsLayout::LayoutNode* node = stack.back();
+                        stack.pop_back();
+
+                        if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                        {
+                            auto widget = widgetLayout->getWidget().get();
+                            if (widget)
+                            {
+                                if (!widget->isHide() && widget->hitTest(point))
+                                {
+                                    if (focusedWidget) focusedWidget->setUnfocused();
+
+                                    focusedWidget = widget;
+                                    focusedWidget->setFocused();
+                                    clicked = true;
+                                    widget->onClick();
+                                    break;
+                                }
+                                //widgetRenderer->render(widget, widgetLayout->style);
+                            }
+                        }
+                        else if (auto layout = dynamic_cast<const NNsLayout::LayoutNode*>(node))
+                        {
+                            //renderTarget.fillRectangle(layout->getRect(), layout->style.color);
+                        }
+
+                        for (int i = (int)node->getChildrenSize() - 1; i >= 0; i--)
+                        {
+                            stack.push_back(node->getChildrenAt(i));
+                        }
+                    }
+
+                    stack.push_back(this->getLayoutRoot());
+
+                    while (!stack.empty())
+                    {
+                        const NNsLayout::LayoutNode* node = stack.back();
+                        stack.pop_back();
+
+                        if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                        {
+                            auto widget = widgetLayout->getWidget().get();
+                            if (widget)
+                            {
+                                if (!widget->isHide() && widget->hitTestClick(point))
+                                {
+                                    break;
+                                }
+                            }
+                        }
+
+                        for (int i = (int)node->getChildrenSize() - 1; i >= 0; i--)
+                        {
+                            stack.push_back(node->getChildrenAt(i));
+                        }
+                    }
+
+
+
+
+
+                    //
+                    /*for (const auto& widget : widgets)
                     {
                         if (!widget->isHide() && widget->hitTest(point))
                         {
@@ -168,16 +238,16 @@ namespace Win32Window
                             widget->onClick();
                             break;
                         }
-                    }
+                    }*/
 
-                    for (const auto& widget : widgets)
+                    /*for (const auto& widget : widgets)
                     {
                         
                         if (!widget->isHide() && widget->hitTestClick(point))
                         {
                             break;
                         }
-                    }
+                    }*/
 
                     // for (auto& i : DockManager::splitterList)
                     // {
@@ -313,4 +383,4 @@ namespace Win32Window
     };
 };
 
-#endif
+#endif////////////////

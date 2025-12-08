@@ -17,9 +17,10 @@ namespace Widgets
 
         static constexpr const char* CLASS_NAME = "Button";
 
+        Button() noexcept : IWidget({}) {};
         Button(const NbRect<int>& rect) : IWidget(rect) {};
         
-        bool hitTest(const NbPoint<int>& pos) override;
+        bool hitTest(const NbPoint<int>& pos) override; // 
 
         virtual const char* getClassName() const override { return CLASS_NAME; }
         NB_NODISCARD const ButtonStyle& getButtonStyle() const noexcept;
@@ -72,6 +73,7 @@ namespace Widgets
         }
 
 		Signal<void()> onButtonClickedSignal;
+        Signal<void()> onButtonReleasedSignal;
 
     private:
         std::wstring    text;

@@ -504,10 +504,11 @@ namespace Renderer
 			SafeRelease(&sink);
 		}
         
-        //auto rt = renderTarget->getRawRenderTarget();
-		//D2D1_COLOR_F cc = { 1.0f,0.0f,0.0f,1.0f };
-        //Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> c;
-		//rt->CreateSolidColorBrush(cc, c.GetAddressOf());
+        // TODO: must be rewrited because of leaks and caching
+        auto rt = renderTarget->getRawContext();
+		D2D1_COLOR_F cc = { 1.0f,0.0f,0.0f,1.0f };
+        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> c;
+		rt->CreateSolidColorBrush(cc, c.GetAddressOf());
 
 
 
@@ -516,8 +517,8 @@ namespace Renderer
         renderLabel(checkBox->getLabel());
         
         
-        //if(checkBox->getIsChecked()) // some pice of @@
-        //    rt->FillGeometry(geometry, c.Get());
+        if(checkBox->getIsChecked()) // some pice of @@
+            rt->FillGeometry(geometry, c.Get());
 
         SafeRelease(&geometry);
 

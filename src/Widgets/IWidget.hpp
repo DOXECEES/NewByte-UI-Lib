@@ -39,11 +39,26 @@ namespace Widgets
             : rect(rect)
             , zIndex(Core::ZIndex::ZType::WIDGET, zIndexOrder) {}
         virtual ~IWidget() = default;
+        
+        
         virtual void onClick() 
         {
-            if(onClickCallback == nullptr || state == WidgetState::DISABLE) return;
-            onClickCallback();
+            if (state == WidgetState::DISABLE)
+            {
+                return;
+            }
+            onPressedSignal.emit();
+            //onClickCallback();
         };
+        virtual void onRelease() noexcept
+        {
+            if (state == WidgetState::DISABLE)
+            {
+                return;
+            }
+
+            onReleasedSignal.emit();
+        }
 
         virtual void onButtonClicked(const wchar_t symbol, SpecialKeyCode specialCode = SpecialKeyCode::NONE) {};
         virtual void onSymbolButtonClicked(const wchar_t symbol) {};
@@ -123,6 +138,9 @@ namespace Widgets
         
     public:
         Signal<void(const NbRect<int>&)> onSizeChangedSignal;
+        Signal<void()> onPressedSignal;
+        Signal<void()> onReleasedSignal;
+        
 
     protected:
 

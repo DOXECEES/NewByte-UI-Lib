@@ -50,6 +50,7 @@ namespace Widgets
             onPressedSignal.emit();
             //onClickCallback();
         };
+
         virtual void onRelease() noexcept
         {
             if (state == WidgetState::DISABLE)

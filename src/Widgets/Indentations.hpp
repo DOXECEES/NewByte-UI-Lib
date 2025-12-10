@@ -10,9 +10,9 @@ template<typename T, typename = nbstl::isArithmetic<T>>
 struct Margin
 {
     T top       = T(0);
+    T right     = T(0);
     T bottom    = T(0);
     T left      = T(0);
-    T right     = T(0);
 
     template<typename U>
     Margin<U> to() const noexcept
@@ -20,9 +20,9 @@ struct Margin
         return Margin<U>
         {
             .top    = static_cast<U>(top),
+            .right  = static_cast<U>(right),
             .bottom = static_cast<U>(bottom),
-            .left   = static_cast<U>(left),
-            .right  = static_cast<U>(right)
+            .left   = static_cast<U>(left)
         };
     }
 };
@@ -31,9 +31,9 @@ template<typename T, typename = nbstl::isArithmetic<T>>
 struct Padding
 {
     T top       = T(0);
+    T right     = T(0);
     T bottom    = T(0);
     T left      = T(0);
-    T right     = T(0);
 
     template<typename U>
     Padding<U> to() const noexcept
@@ -41,9 +41,9 @@ struct Padding
         return Padding<U>
         {
             .top = static_cast<U>(top),
+            .right = static_cast<U>(right),
             .bottom = static_cast<U>(bottom),
-            .left = static_cast<U>(left),
-            .right = static_cast<U>(right)
+            .left = static_cast<U>(left)
         };
     }
 };

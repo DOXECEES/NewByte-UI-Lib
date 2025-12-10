@@ -72,8 +72,8 @@ namespace Widgets
             this->rect = rect;
         }
 
-		Signal<void()> onButtonClickedSignal;
-        Signal<void()> onButtonReleasedSignal;
+		//Signal<void()> onButtonClickedSignal;
+        //Signal<void()> onButtonReleasedSignal;
 
     private:
         std::wstring    text;

@@ -7,6 +7,8 @@
 #include <windowsx.h>
 #include <algorithm>
 
+#include <Utility.hpp>
+
 namespace Win32Window
 {
     using namespace WindowInterface;
@@ -159,67 +161,71 @@ namespace Win32Window
 
                     //
 
-                    std::vector<const NNsLayout::LayoutNode*> stack;
-                    stack.push_back(this->getLayoutRoot());
-
-                    while (!stack.empty())
-                    {
-                        const NNsLayout::LayoutNode* node = stack.back();
-                        stack.pop_back();
-
-                        if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                    nbstl::dfs(
+                        this->getLayoutRoot(),
+                        [](const NNsLayout::LayoutNode* node)
                         {
-                            auto widget = widgetLayout->getWidget().get();
-                            if (widget)
+                            nbstl::Vector<const NNsLayout::LayoutNode*> children;
+                            children.reserve(node->getChildrenSize());
+                            for (int i = 0; i < node->getChildrenSize(); i++)
                             {
-                                if (!widget->isHide() && widget->hitTest(point))
+                                children.pushBack(node->getChildrenAt(i));
+                            }
+                            return children;
+                        },
+                        [&](const NNsLayout::LayoutNode* node)
+                        {
+                            if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                            {
+                                auto widget = widgetLayout->getWidget().get();
+                                if (widget && !widget->isHide() && widget->hitTest(point))
                                 {
-                                    if (focusedWidget) focusedWidget->setUnfocused();
-
+                                    if (focusedWidget)
+                                    {
+                                        focusedWidget->setUnfocused();
+                                    }
                                     focusedWidget = widget;
                                     focusedWidget->setFocused();
                                     clicked = true;
                                     widget->onClick();
-                                    break;
+                                    return true;
                                 }
-                                //widgetRenderer->render(widget, widgetLayout->style);
                             }
+                            return false;
                         }
-                        else if (auto layout = dynamic_cast<const NNsLayout::LayoutNode*>(node))
+                    );
+
+                    nbstl::dfs(
+                        this->getLayoutRoot(),
+                        [](const NNsLayout::LayoutNode* node)
                         {
-                            //renderTarget.fillRectangle(layout->getRect(), layout->style.color);
-                        }
-
-                        for (int i = (int)node->getChildrenSize() - 1; i >= 0; i--)
-                        {
-                            stack.push_back(node->getChildrenAt(i));
-                        }
-                    }
-
-                    stack.push_back(this->getLayoutRoot());
-
-                    while (!stack.empty())
-                    {
-                        const NNsLayout::LayoutNode* node = stack.back();
-                        stack.pop_back();
-
-                        if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
-                        {
-                            auto widget = widgetLayout->getWidget().get();
-                            if (widget)
+                            nbstl::Vector<const NNsLayout::LayoutNode*> children;
+                            children.reserve(node->getChildrenSize());
+                            for (int i = 0; i < node->getChildrenSize(); i++)
                             {
-                                if (!widget->isHide() && widget->hitTestClick(point))
+                                children.pushBack(node->getChildrenAt(i));
+                            }
+                            return children;
+                        },
+                        [&](const NNsLayout::LayoutNode* node)
+                        {
+                            if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                            {
+                                auto widget = widgetLayout->getWidget().get();
+                                if (widget)
                                 {
-                                    break;
+                                    if (!widget->isHide() && widget->hitTestClick(point))
+                                    {
+                                        return true;
+                                    }
                                 }
                             }
+                            return false;
                         }
+                    );
+                    
 
-                        for (int i = (int)node->getChildrenSize() - 1; i >= 0; i--)
-                        {
-                            stack.push_back(node->getChildrenAt(i));
-                        }
-                    }
+                   
 
 
 
@@ -343,6 +349,38 @@ namespace Win32Window
                 {
                     ReleaseCapture();
                     dragging = false;
+                 
+                    NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+
+                    
+                    nbstl::dfs(
+                        this->getLayoutRoot(),
+                        [](const NNsLayout::LayoutNode* node)
+                        {
+                            nbstl::Vector<const NNsLayout::LayoutNode*> children;
+                            children.reserve(node->getChildrenSize());
+                            for (int i = 0; i < node->getChildrenSize(); i++)
+                            {
+                                children.pushBack(node->getChildrenAt(i));
+                            }
+                            return children;
+                        },
+                        [&](const NNsLayout::LayoutNode* node)
+                        {
+                            if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                            {
+                                auto widget = widgetLayout->getWidget().get();
+                                if (widget && !widget->isHide() && widget->hitTest(point))
+                                {
+                                    widget->onRelease();
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    );
+                    
+                    
                     return 0;
                 }
                 case WM_GETMINMAXINFO:
@@ -383,4 +421,4 @@ namespace Win32Window
     };
 };
 
-#endif////////////////
+#endif////////////////////////////////////////////////////////////////

@@ -432,6 +432,7 @@ namespace Renderer
     {
         Label* label = castWidget<Label>(widget);
         const NbRect<int>& widgetRect = label->getRect();
+        const WidgetStyle& style = label->getStyle();
 
         Label::VTextAlign vTextAlign = label->getVTextAlign();
 		Label::HTextAlign hTextAlign = label->getHTextAlign();
@@ -451,8 +452,8 @@ namespace Renderer
 
         IDWriteTextLayout* textLayout =  Direct2dGlobalWidgetMapper::getTextLayoutByWidget(label);
         
-        renderTarget->drawText(textLayout, widgetRect, NbColor(255, 255, 255), static_cast<TextAlignment>(vTextAlign));
-
+        renderTarget->fillRectangle(widgetRect, style.baseColor);
+        renderTarget->drawText(textLayout, widgetRect, style.baseTextColor, static_cast<TextAlignment>(vTextAlign));
     }
 
 

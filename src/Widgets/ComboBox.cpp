@@ -11,7 +11,7 @@ namespace Widgets
 		this->addChildrenWidget(dropdownList.get());
 		subscribe(static_cast<IWidget*>(this), &IWidget::onSizeChangedSignal, [this](const NbRect<int>& rc)
 		{
-			Padding p;
+			OldPadding p;
 
 			selectedItemRect = {
 				rc.x,

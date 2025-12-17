@@ -1,202 +1,292 @@
 #include "TreeView.hpp"
+#include "Debug.hpp" 
 
-#include "Debug.hpp"
+#include <algorithm>
+#include <stack>
 
 namespace Widgets
 {
-	TreeView::TreeView(const NbRect<int>& rect)
-		: IWidget(rect)
-	{
-		//visibleTree.reserve(getMaxCountOfItems());
-	}
 
-	bool TreeView::hitTest(const NbPoint<int>& pos)
-	{
-		lastHitIndex = hitElement(pos);
-		return false;
-	}
+    TreeView::TreeView(const NbRect<int>& rect) noexcept
+        : IWidget(rect)
+    {
+        range.second = rect.height;
+    }
 
-	bool TreeView::hitTestClick(const NbPoint<int>& pos) noexcept
-	{
-		if (!model)
-		{
-			return false;
-		}
+    bool TreeView::hitTest(const NbPoint<int>& pos)
+    {
+        size_t index = hitElement(pos);
+        lastHitIndex = indexFromVisibleRow(index);
+        return true;
+    }
 
-		lastClickedIndex.setIndex(hitElement(pos));// tech dept is too high
+    bool TreeView::hitTestClick(const NbPoint<int>& pos) noexcept
+    {
+        if (!model)
+        {
+            return false;
+        }
 
-		if (lastClickedIndex.getRaw() > model->getSize() - 1)
-			lastClickedIndex.setNoIndex();
+        size_t row = hitElement(pos);
+        static ModelIndex prevClickedIndex;
+        lastClickedIndex = indexFromVisibleRow(row);
+        if (!lastClickedIndex.isValid())
+        {
+            return false;
+        }
+   
+        const ModelItem* item = uuidMap.at(lastClickedIndex.getUuid());
+        
+
+        if (isItemHaveChildrens(lastClickedIndex))
+        {
+            NbRect<int> buttonRect = {
+                (int)20 * (int)item->getDepth(),
+                (int)row * 20,
+                20,
+                20
+            };
+            if (buttonRect.isInside(pos))
+            {
+                onItemButtonClickSignal.emit(lastClickedIndex);
+            }
+            else
+            {
+                onItemClickSignal.emit(lastClickedIndex);
+                if (prevClickedIndex != lastClickedIndex)
+                {
+                    onItemChangeSignal.emit(lastClickedIndex);
+                }
+            }
+
+        }
+        else
+        {
+            onItemClickSignal.emit(lastClickedIndex);
+            if (prevClickedIndex != lastClickedIndex)
+            {
+                onItemChangeSignal.emit(lastClickedIndex);
+            }
+        }
+        prevClickedIndex = lastClickedIndex;
+        return true;
+    }
+
+    const char* TreeView::getClassName() const
+    {
+        return CLASS_NAME;
+    }
+
+    const TreeViewStyle& TreeView::getTreeViewStyle() const noexcept
+    {
+        return treeViewStyle;
+    }
+
+    void TreeView::setModel(const std::shared_ptr<ITreeModel>& modelParam) noexcept
+    {
+        model = modelParam;
+        uuidMap.clear();
+        nodeStates.clear();
+        visibleItems.clear();
+
+        if (!model) return;
+
+        buildUuidMap();
+
+        for (auto& kv : uuidMap)
+        {
+            nodeStates.emplace(kv.first, NodeState{ false, false });
+        }
+
+        for (const auto& rootPtr : model->getRootItems())
+        {
+            nodeStates[rootPtr->getUuid()].expanded = true;
+        }
+
+        rebuildVisibleList();
+    }
+
+    void TreeView::buildUuidMap() noexcept
+    {
+        if (!model) return;
+        model->forEach([this](const ModelItem& item)
+        {
+            uuidMap.emplace(item.getUuid(), &item);
+        });
+    }
+
+    void TreeView::rebuildVisibleList() noexcept
+    {
+        visibleItems.clear();
+        if (!model) return;
+
+        for (const auto& root : model->getRootItems())
+        {
+            collectVisibleRecursive(root.get());
+        }
+    }
+
+    const ModelItem* TreeView::getVisibleItem(size_t index) const noexcept
+    {
+        return (index < visibleItems.size()) ? visibleItems[index] : nullptr;
+    }
+
+    bool TreeView::isItemSelected(const ModelIndex& index) const noexcept
+    {
+        auto it = nodeStates.find(index.getUuid());
+        return it != nodeStates.end() && it->second.selected;
+    }
+
+    bool TreeView::isItemHaveChildrens(const ModelIndex& index) const noexcept
+    {
+        if (!index.isValid())
+        {
+            return false;
+        }
+        const nbstl::Uuid& uuid = index.getUuid();
+        return uuidMap.at(uuid)->haveChildrens();
+    }
+
+    void TreeView::collectVisibleRecursive(const ModelItem* node) noexcept
+    {
+        if (!node) return;
+        visibleItems.push_back(node);
+
+        const auto it = nodeStates.find(node->getUuid());
+        const bool expanded = (it != nodeStates.end()) ? it->second.expanded : false;
+
+        if (expanded)
+        {
+            for (const auto& child : node->children)
+                collectVisibleRecursive(child.get());
+        }
+    }
+
+    ModelIndex TreeView::indexFromVisibleRow(size_t row) const noexcept
+    {
+        if (row >= visibleItems.size())
+        {
+            return ModelIndex{};
+        }
+        return ModelIndex(visibleItems[row]->getUuid());
+    }
+
+    std::optional<size_t> TreeView::visibleRowFromIndex(const ModelIndex& index) const noexcept
+    {
+        if (!index.isValid()) return std::nullopt;
+        const nbstl::Uuid& id = index.getUuid();
+        for (size_t i = 0; i < visibleItems.size(); ++i)
+            if (visibleItems[i]->getUuid() == id)
+                return i;
+        return std::nullopt;
+    }
+
+    const ModelItem& TreeView::getItemByIndex(const ModelIndex& index) const noexcept
+    {
+        const nbstl::Uuid& uuid = index.getUuid();
+        if (uuidMap.find(uuid) != uuidMap.cend())
+        {
+            NB_ASSERT(true, "no such index in uuidMap");
+        }
+        
+        return *uuidMap.at(uuid);
+    }
+
+    size_t TreeView::hitElement(const NbPoint<int>& pos) const noexcept
+    {
+        size_t elementIndex = range.first + pos.y;
+        return elementIndex / HEIGHT_OF_ITEM_IN_PIXEL;
+    }
+
+    size_t TreeView::getVisibleCount() const noexcept
+    {
+        return visibleItems.size();
+    }
+
+    size_t TreeView::getMaxCountOfItems() const noexcept
+    {
+        return rect.height / HEIGHT_OF_ITEM_IN_PIXEL;
+    }
+
+    ModelIndex TreeView::getLastClickIndex() const noexcept
+    {
+        return lastClickedIndex;
+    }
+
+    ModelIndex TreeView::getLastHitIndex() const noexcept
+    {
+        return lastHitIndex;
+    }
+
+    TreeView::ItemState TreeView::getItemState(const ModelItem& item) const noexcept
+    {
+        const auto it = nodeStates.find(item.getUuid());
+        if (it == nodeStates.end())
+        {
+            return ItemState::COLLAPSED;
+        }
+        return it->second.expanded ? ItemState::EXPANDED : ItemState::COLLAPSED;
+    }
+
+    void TreeView::setItemExpanded(const ModelIndex& index, bool expanded) noexcept
+    {
+        if (!index.isValid()) return;
+        const nbstl::Uuid id = index.getUuid();
+        auto it = nodeStates.find(id);
+        if (it == nodeStates.end())
+        {
+            nodeStates[id] = NodeState{ expanded, false };
+        }
+        else
+        {
+            it->second.expanded = expanded;
+        }
+        rebuildVisibleList();
+    }
+
+    bool TreeView::isItemExpanded(const ModelIndex& index) const noexcept
+    {
+        if (!index.isValid()) return false;
+        const auto it = nodeStates.find(index.getUuid());
+        return it != nodeStates.end() && it->second.expanded;
+    }
+
+    void TreeView::setItemState(const ModelIndex& index, ItemState state) noexcept
+    {
+        if (!index.isValid() || !model)
+            return;
+
+        const auto* item = model->findById(index.getUuid());
+        if (!item)
+            return;
+
+        auto& nodeState = nodeStates[item->getUuid()];
+
+        switch (state)
+        {
+        case ItemState::COLLAPSED:
+            nodeState.expanded = false;
+            break;
+        case ItemState::EXPANDED:
+            nodeState.expanded = true;
+            break;
+        case ItemState::SELECTED:
+            // Снимаем выделение со всех, если нужно single-select
+            for (auto& [uuid, st] : nodeStates)
+                st.selected = false;
+            nodeState.selected = true;
+            break;
+        default:
+            break;
+        }
+
+        rebuildVisibleList();
+    }
 
 
-		onItemClickSignal.emit(lastClickedIndex);
-		return false;  // some piece of shit 
-						 // need refactoring
-	}
+    bool ModelItem::haveChildrens() const noexcept
+    {
+        return !children.empty();
+    }
 
-	size_t TreeView::hitElement(const NbPoint<int>& pos) const noexcept
-	{
-		size_t elementIndex = range.first + pos.y;
-		return elementIndex / HEIGHT_OF_ITEM_IN_PIXEL;
-	}
-
-	const char* TreeView::getClassName() const
-	{
-		return CLASS_NAME;
-	}
-
-
-	void TreeView::setModel(const std::shared_ptr<ITreeModel>& modelParam) noexcept
-	{
-		model = modelParam;
-		model->forEach([this](const ModelItem& item) {
-
-			auto p = &item;
-			stateMap[p] = ItemState::EXPANDED;
-		});
-
-		calculateVisibleForce();
-	}
-
-	void TreeView::onItemClick(const std::shared_ptr<ModelItem>& item) noexcept
-	{
-
-	}
-
-	size_t TreeView::getLastHitIndex() const noexcept
-	{
-		return lastHitIndex;
-	}
-
-	ModelIndex TreeView::getLastClickedIndex() const noexcept
-	{
-		return lastClickedIndex;
-	}
-
-	Widgets::TreeView::ItemState TreeView::getItemState(const ModelItem& item) const noexcept
-	{
-		if (stateMap.find(&item) == stateMap.end())
-		{
-			stateMap[&item] = ItemState::COLLAPSED;
-		}
-
-		return stateMap.at(&item);
-	}
-
-	void TreeView::setItemState(const ModelIndex& index, ItemState state) noexcept
-	{
-		const ModelItem& item = model->findByIndex(index);
-		stateMap[&item] = state;
-	}
-
-	size_t TreeView::getMaxCountOfItems() const noexcept
-	{
-		return rect.height / HEIGHT_OF_ITEM_IN_PIXEL;
-	}
-
-	void TreeView::calculateVisibleForce() noexcept
-	{
-		struct Frame
-		{
-			ModelItem*	node;
-			size_t		idx;   
-			size_t		total; 
-		};
-
-		std::vector<Frame> stack;
-
-		for (auto& root : model->getRootItems())
-		{
-			stack.push_back({ root.get(), 0, 1 });
-
-			while (!stack.empty())
-			{
-				Frame& frame = stack.back();
-
-				if (frame.idx < frame.node->children.size())
-				{
-					stack.push_back({ frame.node->children[frame.idx].get(), 0, 1 });
-					frame.idx++;
-				}
-				else
-				{
-					if (stateMap[frame.node] == ItemState::EXPANDED)
-					{
-						for (auto& child : frame.node->children)
-						{
-							frame.total += child->countOfVisibleChildrens - 1;
-						}
-					}
-					frame.node->countOfVisibleChildrens = frame.total;
-
-					stack.pop_back();
-
-					if (!stack.empty())
-					{
-						stack.back().total += frame.total;
-					}
-				}
-			}
-		}
-
-	}
-
-	size_t ModelItem::getDepth() const noexcept
-	{
-		return depth;
-	}
-
-	size_t ModelItem::getCountOfVisibleChildrens() const noexcept
-	{
-		return countOfVisibleChildrens;
-	}
-
-	const Widgets::ModelItem& ITreeModel::findByIndex(const ModelIndex& index) noexcept
-	{
-		size_t rawIndex = index.getRaw();
-		size_t localIndex = 0;
-
-		const ModelItem* ptrItem = nullptr;
-
-		forEach([&rawIndex, &localIndex, &ptrItem](const ModelItem& item) {
-			if (localIndex == rawIndex)
-			{
-				ptrItem = &item;
-			}
-			localIndex++;
-		});
-
-		return *ptrItem;
-	}
-
-	size_t ITreeModel::getSize() noexcept
-	{
-		if (!isSizeChanged)
-		{
-			return size;
-		}
-
-		sizeCalculateForce();
-		isSizeChanged = false;
-		return size;
-	}
-
-	void ITreeModel::sizeCalculateForce() noexcept
-	{
-		size = 0;
-		forEach([this](const ModelItem& item) {
-			size++;
-			});
-	}
-
-};
-
-namespace std
-{
-	size_t hash<Widgets::ModelItem>::operator()(const Widgets::ModelItem& item) const noexcept
-	{
-		size_t h1 = std::hash<void*>{}(item.data);
-		size_t h2 = std::hash<size_t>{}(item.depth);
-		return h1 ^ (h2 << 1);
-	}
-}
+} // namespace Widgets

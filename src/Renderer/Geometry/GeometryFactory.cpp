@@ -1,18 +1,18 @@
 
 #include "GeometryFactory.hpp"
 
-namespace Renderer
+namespace Renderer::Geometry
 {
-	NB_NODISCARD std::vector<NbPoint<float>> GeometryFactory::create(ShapeType type, const NbRect<int>& rect) noexcept
+	NB_NODISCARD nbstl::Vector<NbPoint<float>> GeometryFactory::create(ShapeType type, const NbRect<int>& rect) noexcept
 	{
 		const auto& normalized = ShapeLibrary::get(type);
 
-		std::vector<NbPoint<float>> result;
+		nbstl::Vector<NbPoint<float>> result;
 		result.reserve(normalized.size());
 
 		for (auto& p : normalized)
 		{
-			result.push_back({
+			result.pushBack({
 				rect.x + p.x * rect.width,
 				rect.y + p.y * rect.height
 				});
@@ -20,9 +20,9 @@ namespace Renderer
 		return result;
 	}
 
-	NB_NODISCARD const std::vector<NbPoint<float>>& ShapeLibrary::get(ShapeType type) noexcept
+	NB_NODISCARD const nbstl::Vector<NbPoint<float>>& ShapeLibrary::get(ShapeType type) noexcept
 	{
-		static const std::unordered_map<ShapeType, std::vector<NbPoint<float>>> shapes =
+		static const std::unordered_map<ShapeType, nbstl::Vector<NbPoint<float>>> shapes =
 		{
 			{ ShapeType::CHECK_MARK, {
 				{  5.0f / 48.0f, 14.0f / 48.0f },

@@ -1,11 +1,36 @@
 #include "TextEdit.hpp"
 
+#include <Alghorithm.hpp>
+
+//TEMP
+#include <Debug.hpp>
+//
+
 namespace Widgets
 {
+    TextEdit::TextEdit() noexcept
+        :IWidget({})
+    {
+        onUnfocusedSignal.connect([this]() {
+            this->isCaretVisible = false;
+            Debug::debug("Unfocused signal");
+        });
+    }
+
+    TextEdit::TextEdit(const NbRect<int>& rect) noexcept
+        :IWidget(rect)
+    {
+        onUnfocusedSignal.connect([this]() {
+            this->isCaretVisible = false;
+            Debug::debug("Unfocused signal");
+        });
+    }
+
     bool TextEdit::hitTest(const NbPoint<int> &pos)
     {
         return pos.x >= rect.x && pos.x < rect.x + rect.width && pos.y >= rect.y && pos.y < rect.y + rect.height;
     }
+
     void TextEdit::onClick()
     {
     }
@@ -61,9 +86,7 @@ namespace Widgets
     }
 
     void TextEdit::onSymbolButtonClicked(const wchar_t symbol)
-    {
-        // make some type of validator
-        
+    {        
         switch (symbol)
         {
         case L'\r':
@@ -72,7 +95,16 @@ namespace Widgets
         default:
             break;
         }
-        
+
+        std::wstring testData = data;
+        testData.insert(caretPosition, 1, symbol);
+
+        auto res = validator.validate(testData);
+        if (!res.isValid())
+        {
+            return;
+        }
+
         data.insert(caretPosition, 1, symbol);
         caretPosition++;
         isDataChanged = true;
@@ -82,6 +114,13 @@ namespace Widgets
     void TextEdit::onTimer()
     {
         isCaretVisible = !isCaretVisible;
+    }
+
+    void TextEdit::setData(const std::wstring& data) noexcept
+    {
+        this->data = data;
+        caretPosition = data.length();
+        isDataChanged = true;
     }
 
     void TextEdit::decrementCaretPos() noexcept
@@ -174,5 +213,59 @@ namespace Widgets
         // }
     }
 
+
+    const NbSize<int>& TextEdit::measure(const NbSize<int>& maxSize) noexcept
+    {
+        // Да, это та самая временная переменная. 
+        // В IWidget уже есть isSizeChange и rect, так что особо не хочется городить лишнего.
+        // Но measure по контракту должен вернуть ссылку.
+        static NbSize<int> measured;
+
+        // Паддинги. Их желательно вытащить из WidgetStyle.
+        const int paddingLeft = 0;
+        const int paddingRight = 0;
+        const int paddingTop = 0;
+        const int paddingBottom = 0;
+
+        // Измеряем ширину текста
+        NbSize<int> textSize = { 0, 0 };
+        if (!data.empty())
+        {
+            // Твой движок должен уметь измерять текст (в твоём TextMetrics или что-то похожее)
+            textSize = { 80,30 };
+        }
+
+        // Минимальный размер: текст + отступы
+        int width = textSize.width + paddingLeft + paddingRight;
+        int height = nbstl::max(textSize.height, 20) + paddingTop + paddingBottom;
+
+        // Ограничиваем maxSize
+        measured.width = nbstl::min(width, maxSize.width);
+        measured.height = nbstl::min(height, maxSize.height);
+
+        return measured;
+    }
+
+    void TextEdit::layout(const NbRect<int>& newRect) noexcept
+    {
+        // Ты правильно хранишь rect в IWidget, так что просто обновляем
+        rect = newRect;
+        isSizeChange = true;
+
+        // И раз уж это текстовое поле...
+        // Каретка должна всегда быть в диапазоне
+        if (caretPosition > data.size())
+        {
+            caretPosition = static_cast<uint32_t>(data.size());
+        }
+
+        // Можно обновить внутреннее состояние
+        // но без лишней логики: рендер сам посмотрит isDataChanged/isCaretVisible
+    }
+
+    void TextEdit::addValidator(Utils::Validator valid) noexcept
+    {
+        validator = valid;
+    }
 
 };

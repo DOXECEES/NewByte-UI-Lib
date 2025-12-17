@@ -2,221 +2,164 @@
 #define NBUI_SRC_WIDGETS_TREEVIEW_HPP
 
 #include "IWidget.hpp"
-
 #include "Signal.hpp"
+
+#include "WidgetStyle.hpp"
+#include "Theme.hpp"
+
+#include <Uuid.hpp>
 
 #include <vector>
 #include <memory>
 #include <functional>
-
-namespace Widgets
-{
-	class ModelItem;
-	class ModelIndex;
-
-}
-
-// Define hash specialization early
-namespace std
-{
-	template<>
-	struct hash<Widgets::ModelItem>
-	{
-		size_t operator()(const Widgets::ModelItem& item) const noexcept;
-	};
-}
-
-// Now include unordered_map
+#include <optional>
 #include <unordered_map>
+#include <string>
 
 namespace Widgets
 {
+    class ModelItem;
 
-	class ModelIndex
-	{
-		static constexpr size_t NON_VALID_INDEX = ~0LL;
+    class ModelIndex
+    {
+    public:
+        ModelIndex() noexcept = default;
+        explicit ModelIndex(const nbstl::Uuid& id) noexcept : id(id) {}
+        ~ModelIndex() = default;
 
-	public:
+        bool isValid() const noexcept { return !(id == nbstl::Uuid{}); }
+        const nbstl::Uuid& getUuid() const noexcept { return id; }
 
-		ModelIndex() = default;
-		~ModelIndex() = default;
+        bool operator==(const ModelIndex& o) const noexcept { return id == o.id; }
+        bool operator!=(const ModelIndex& o) const noexcept { return !(*this == o); }
 
-		void setIndex(const size_t newIndex) noexcept
-		{
-			index = newIndex;
-		}
+    private:
+        nbstl::Uuid id;
+    };
 
-		void setNoIndex() noexcept
-		{
-			index = NON_VALID_INDEX;
-		}
+    class ITreeModel
+    {
+    public:
+        virtual ~ITreeModel() = default;
 
-		bool isValid() const noexcept
-		{
-			return index != NON_VALID_INDEX;
-		}
+        virtual const std::vector<std::unique_ptr<ModelItem>>& getRootItems() const noexcept = 0;
 
-		size_t getRaw() const noexcept
-		{
-			return index;
-		}
+        virtual const ModelItem* findById(const nbstl::Uuid& id) const noexcept = 0;
 
-		bool operator==(const ModelIndex& other) const noexcept
-		{
-			return index == other.index;
-		}
+        virtual std::string data(const ModelItem& item) const noexcept = 0;
 
-		bool operator!=(const ModelIndex& other) const noexcept
-		{
-			return index != other.index;
-		}
+        virtual void forEach(std::function<void(const ModelItem&)> func) const noexcept = 0;
 
-		friend std::ostream& operator<<(std::ostream& os, const ModelIndex& modelIndex);
+        virtual size_t size() const noexcept = 0;
+    };
 
 
-	private:
-		size_t index = NON_VALID_INDEX;
-	};
+    class ModelItem
+    {
+    public:
+        ModelItem() = default;
+        ModelItem(void* userData, ModelItem* parent, size_t depth) noexcept
+            : data(userData), parent(parent), depth(depth) {}
+
+        ~ModelItem() = default;
+
+        ModelItem(const ModelItem&) = delete;
+        ModelItem& operator=(const ModelItem&) = delete;
+
+        ModelItem(ModelItem&&) noexcept = default;
+        ModelItem& operator=(ModelItem&&) noexcept = default;
+
+        const nbstl::Uuid& getUuid() const noexcept { return uuid; }
+        size_t getDepth() const noexcept { return depth; }
+        void* getData() const noexcept { return data; }
+
+        bool haveChildrens() const noexcept;
+
+        nbstl::Uuid uuid = nbstl::Uuid::generate();
+        void* data = nullptr;
+        ModelItem* parent = nullptr;
+        std::vector<std::unique_ptr<ModelItem>> children;
+    
+    private:
+        size_t depth = 0;
+    };
 
 
-	inline std::ostream& operator<<(std::ostream& os, const ModelIndex& modelIndex)
-	{
-		return os << "ModelIndex("
-			<< (modelIndex.isValid() ? std::to_string(modelIndex.getRaw()) : "INVALID")
-			<< ")";
+    class TreeView : public IWidget
+    {
+    public:
+        static constexpr const char* CLASS_NAME = "TreeView";
+        static constexpr size_t HEIGHT_OF_ITEM_IN_PIXEL = 20;
 
-	}
+        enum class ItemState : uint8_t
+        {
+            COLLAPSED = 0,
+            EXPANDED = 1,
+            SELECTED = 2,
+        };
 
-	//std::ostream& operator<<(std::ostream& os, const ModelIndex& modelIndex);
+        explicit TreeView(const NbRect<int>& rect) noexcept;
+        ~TreeView() override = default;
 
-	class ModelItem
-	{
-	public:
+        bool hitTest(const NbPoint<int>& pos) override;
+        bool hitTestClick(const NbPoint<int>& pos) noexcept override;
+        const char* getClassName() const override;
+        NB_NODISCARD const TreeViewStyle& getTreeViewStyle() const noexcept;
 
-		ModelItem() = default;
-		ModelItem(void* data, ModelItem* itemParent, const size_t itemDepth) 
-			: data(data)
-			, depth(itemDepth)
-			, parent(itemParent)
-		{}
-		~ModelItem() = default;
+        void setModel(const std::shared_ptr<ITreeModel>& modelParam) noexcept;
+        std::shared_ptr<ITreeModel> getModel() const noexcept { return model; }
 
-		ModelItem(const ModelItem&) = delete;
-		ModelItem& operator=(const ModelItem&) = delete;
+        ModelIndex indexFromVisibleRow(size_t row) const noexcept; 
+        std::optional<size_t> visibleRowFromIndex(const ModelIndex& index) const noexcept; 
 
-		ModelItem(ModelItem&&) noexcept = default;
-		ModelItem& operator=(ModelItem&&) noexcept = default;
+        const ModelItem& getItemByIndex(const ModelIndex& index) const noexcept;
 
-		bool operator==(const ModelItem& other) const noexcept
-		{
-			return data == other.data && depth == other.depth;
-		}
+        ItemState getItemState(const ModelItem& item) const noexcept;
+        void setItemExpanded(const ModelIndex& index, bool expanded) noexcept;
+        bool isItemExpanded(const ModelIndex& index) const noexcept;
+        
+        void setItemState(const ModelIndex& index, ItemState state) noexcept;
+        void rebuildVisibleList() noexcept;
 
-		size_t getDepth() const noexcept;
-		size_t getCountOfVisibleChildrens() const noexcept;
+        const ModelItem* getVisibleItem(size_t index) const noexcept;
+        bool isItemSelected(const ModelIndex& index) const noexcept;
+        bool isItemHaveChildrens(const ModelIndex& index) const noexcept;
 
-		
+        size_t getVisibleCount() const noexcept;
+        size_t hitElement(const NbPoint<int>& pos) const noexcept;
+        size_t getMaxCountOfItems() const noexcept;
+        ModelIndex getLastClickIndex() const noexcept;
+        ModelIndex getLastHitIndex() const noexcept;
 
-		void* 									data 					= nullptr;
-		ModelItem*								parent					= nullptr;
-		std::vector<std::unique_ptr<ModelItem>> children;
+    public: 
+        Signal<void(const ModelIndex&)> onItemClickSignal;
+        Signal<void(const ModelIndex&)> onItemButtonClickSignal;
+        Signal<void(const ModelIndex&)> onItemChangeSignal;
 
-		size_t									depth					= 0;
+    private:
 
-		size_t									countOfVisibleChildrens = 1;
-	};
+        TreeViewStyle                                       treeViewStyle = ThemeManager::getCurrent().treeViewStyle;
 
-	class ITreeModel
-	{
-	public:
-		const std::vector<std::unique_ptr<Widgets::ModelItem>>& getRootItems() const noexcept { return rootItems; }
-		virtual const std::vector<std::unique_ptr<Widgets::ModelItem>>&  getChildren(const ModelItem& parent) const noexcept = 0;
+        struct NodeState
+        {
+            bool expanded = false;
+            bool selected = false;
+        };
 
-		virtual bool hasChildren(const ModelItem& parent) const noexcept 			= 0;
-		virtual std::string data(const ModelItem& item) const noexcept 				= 0;
-		virtual std::string data(const ModelIndex& index) noexcept					= 0;
+        std::shared_ptr<ITreeModel>                         model               = nullptr;
+        std::unordered_map<nbstl::Uuid, const ModelItem*>   uuidMap;
+        std::unordered_map<nbstl::Uuid, NodeState>          nodeStates;
+        std::vector<const ModelItem*>                       visibleItems; 
 
-		virtual void forEach(std::function<void(const ModelItem&)> func) noexcept 	= 0;
+        ModelIndex                                          lastHitIndex;
+        ModelIndex                                          lastClickedIndex;
 
-		const ModelItem& findByIndex(const ModelIndex& index) noexcept;
+        std::pair<size_t, size_t>                           range               = { 0 , 0 };
 
-		size_t getSize() noexcept;
-
-	private:
-		void sizeCalculateForce() noexcept;
-
-	protected:
-		std::vector<std::unique_ptr<Widgets::ModelItem>> rootItems;
-	
-	private:
-		size_t	size;
-
-		bool	isSizeChanged = true;
-	};
-
-
-	class TreeView : public IWidget
-	{
-	public:
-		static constexpr const char*	CLASS_NAME				= "TreeView";
-		static constexpr size_t			HEIGHT_OF_ITEM_IN_PIXEL = 20;
-		enum class ItemState
-		{
-			EXPANDED,
-			COLLAPSED,
-			EXPANDED_ACTIVE,
-			LEAF,
-			UNACTIVE,
-		};
-
-		TreeView(const NbRect<int>& rect);
-		~TreeView() = default;
-
-		bool hitTest(const NbPoint<int>& pos) override;
-		bool hitTestClick(const NbPoint<int>& pos) noexcept override;
-
-		size_t hitElement(const NbPoint<int>& pos) const noexcept;
-		const char* getClassName() const override;
-		
-		void setModel(const std::shared_ptr<ITreeModel>& modelParam) noexcept;
-		inline std::shared_ptr<ITreeModel> getModel() const noexcept { return model; }
-
-		void onItemClick(const std::shared_ptr<ModelItem>& item) noexcept;
-		//void onItemExpand(std::shared_ptr<TreeItem> item) noexcept;
-		//void onItemCollapse(std::shared_ptr<TreeItem> item) noexcept;
-		//void onSelectionChanged(std::shared_ptr<TreeItem> item) noexcept;
-
-		size_t getLastHitIndex() const noexcept;
-		ModelIndex getLastClickedIndex() const noexcept;
-
-		ItemState getItemState(const ModelItem& item) const noexcept;
-		void setItemState(const ModelIndex& index, ItemState state) noexcept;
-
-		size_t getMaxCountOfItems() const noexcept;
-
-
-	public: // signals
-		Signal<void(ModelIndex)> onItemClickSignal;
-
-
-	protected:
-		void calculateVisibleForce() noexcept;
-
-	private:
-
-		//std::vector<const ModelItem*> visibleTree;
-
-		size_t lastHitIndex = 0;
-		ModelIndex lastClickedIndex; 
-
-		std::pair<size_t, size_t> range = { 0 , this->rect.height };
-
-		std::shared_ptr<ITreeModel> model = nullptr;
-		mutable std::unordered_map<const ModelItem*, ItemState> stateMap;
-	};
+        void buildUuidMap() noexcept;
+        void collectVisibleRecursive(const ModelItem* node) noexcept;
+    };
 
 };
 
-
-
-#endif
+#endif 

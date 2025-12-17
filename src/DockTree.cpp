@@ -15,7 +15,8 @@ std::shared_ptr<DockNode> DockTree::insert(const std::shared_ptr<DockNode> &pare
     else
     {
         std::shared_ptr<DockNode> parentOfParent = std::dynamic_pointer_cast<DockNode>(parent->getParent());
-        std::shared_ptr<DockNode> container = std::make_shared<DockContainer>(parent->getRect(), parent->getPlacement(), parentOfParent);
+        NbRect<int> rc = parent->getRect();
+        std::shared_ptr<DockNode> container = std::make_shared<DockContainer>(rc, parent->getPlacement(), parentOfParent);
 
         DockTree::replaceNode(parent, container);
         parent->setPlacement(DockPlacement::CENTER);

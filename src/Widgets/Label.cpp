@@ -26,7 +26,8 @@ namespace Widgets
     void Label::setText(const std::wstring &newText) noexcept
     {
         text = newText;
-    }
+		onTextChanged.emit(text);
+	}
 
 	Label::TextWrap Label::getWrap() const noexcept
 	{

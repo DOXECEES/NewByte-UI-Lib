@@ -11,10 +11,10 @@
 #include "Widgets/Label.hpp"
 #include "Widgets/CheckBox.hpp"
 #include "Widgets/ComboBox.hpp"
+#include "Widgets/SpinBox.hpp"
 
 #include "Direct2dGlobalWidgetMapper.hpp"
 
-#include "GeometryFactory.hpp"
 
 #include "../Widgets/WidgetStyle.hpp"
 
@@ -22,6 +22,9 @@
 #include <Debug.hpp>
 
 #include <stack>
+#include <Array.hpp>
+
+#include "Geometry/BorderGeometryBuilder.hpp"
 
 namespace Renderer
 {
@@ -30,35 +33,40 @@ namespace Renderer
     {}
 
 
-    void Direct2dWidgetRenderer::render(IWidget *widget)
+    void Direct2dWidgetRenderer::render(IWidget *widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
         const char *widgetName = widget->getClassName();
         size_t size = strlen(widgetName);
 
         if(strncmp(widgetName, Button::CLASS_NAME, size) == 0 )
         {
-            renderButton(widget);
+            renderButton(widget, layoutStyle);
         }
         else if(strncmp(widgetName, TextEdit::CLASS_NAME, size) == 0 )
         {
-            renderTextEdit(widget);
+            renderTextEdit(widget, layoutStyle);
         }
         else if (strncmp(widgetName, TreeView::CLASS_NAME, size) == 0)
         {
-            renderTreeView(widget);
+            renderTreeView(widget, layoutStyle);
         }
         else if(strncmp(widgetName, Label::CLASS_NAME, size) == 0 )
         {
-            renderLabel(widget);
+            renderLabel(widget, layoutStyle);
         }
         else if (strncmp(widgetName, CheckBox::CLASS_NAME, size) == 0)
         {
-            renderCheckBox(widget);
+            renderCheckBox(widget, layoutStyle);
         }
         else if (strncmp(widgetName, ComboBox::CLASS_NAME, size) == 0)
         {
-            renderComboBox(widget);
+            renderComboBox(widget, layoutStyle);
         }
+        else if (strncmp(widgetName, SpinBox::CLASS_NAME , size) == 0)
+        {
+            renderSpinBox(widget, layoutStyle);
+        }
+
 
     }
 
@@ -108,18 +116,160 @@ namespace Renderer
         }
     }
 
+    void Direct2dWidgetRenderer::drawBorder(IWidget* widget, const Border& border) noexcept
+    {
+        const NbRect<int>& rect = widget->getRect();
 
-    void Direct2dWidgetRenderer::renderButton(IWidget *widget)
+        auto drawGeometries = [&](const Geometry::BorderGeometryCache::GeometrySet& mesh, auto& colors)
+            {
+                for (size_t i = 0; i < mesh.geometries.size(); ++i)
+                {
+                    if (mesh.geometries[i])
+                    {
+                        renderTarget->fillGeometry(mesh.geometries[i], colors[i]);
+                    }
+                }
+            };
+
+        switch (border.style)
+        {
+            case Border::Style::SOLID:
+            {
+                renderTarget->drawRectangle(rect, border.color, border.width);
+                break;
+            }
+            case Border::Style::DASHED:
+            {
+                Direct2dHandleRenderTarget::LineStyle ls;
+                ls.strokWidth = border.width;
+                ls.dotLength = 3.0f;
+                ls.gapLength = 0.5f;
+
+                renderTarget->drawStyledLine(rect.getTopLeft(), rect.getTopRight(), border.color, ls);
+                renderTarget->drawStyledLine(rect.getBottomLeft(), rect.getBottomRight(), border.color, ls);
+                renderTarget->drawStyledLine(rect.getTopLeft(), rect.getBottomLeft(), border.color, ls);
+                renderTarget->drawStyledLine(rect.getTopRight(), rect.getBottomRight(), border.color, ls);
+                break;
+            }
+            case Border::Style::DOTTED:
+            {
+                Direct2dHandleRenderTarget::LineStyle ls;
+                ls.strokWidth = border.width;
+
+                renderTarget->drawStyledLine(rect.getTopLeft(), rect.getTopRight(), border.color, ls);
+                renderTarget->drawStyledLine(rect.getBottomLeft(), rect.getBottomRight(), border.color, ls);
+                renderTarget->drawStyledLine(rect.getTopLeft(), rect.getBottomLeft(), border.color, ls);
+                renderTarget->drawStyledLine(rect.getTopRight(), rect.getBottomRight(), border.color, ls);
+                break;
+            }
+            case Border::Style::DOUBLE:
+            {
+                renderTarget->drawRectangle(rect.expand(border.width / 2), border.color, border.width);
+                NbRect<int> expd = rect.expand(2 * border.width + border.width / 2);
+                renderTarget->drawRectangle(expd, border.color, border.width);
+                break;
+            }
+            case Border::Style::INSET:
+            {
+                auto& mesh = cache.getMesh({ border.style, rect, border.width });
+                NB_ASSERT(mesh.geometries.size() == 2, "INSET border must have exactly 2 geometries");
+
+                nbstl::Array<NbColor, 2> colors = {
+                    border.color,
+                    border.color.addMask(55)
+                };
+
+                drawGeometries(mesh, colors);
+                break;
+            }
+            case Border::Style::OUTSET:
+            {
+                auto& mesh = cache.getMesh({ border.style, rect, border.width });
+                NB_ASSERT(mesh.geometries.size() == 2, "OUTSET border must have exactly 2 geometries");
+
+                nbstl::Array<NbColor, 2> colors = {
+                    border.color.addMask(55),
+                    border.color
+                };
+
+                drawGeometries(mesh, colors);
+                break;
+            }
+            case Border::Style::RIDGE:
+            {
+                auto& mesh = cache.getMesh({ border.style, rect, border.width });
+                NB_ASSERT(mesh.geometries.size() == 4, "RIDGE border must have exactly 4 geometries");
+
+                nbstl::Array<NbColor, 4> colors = {
+                    border.color.addMask(55),
+                    border.color,
+                    border.color,
+                    border.color.addMask(55)
+                };
+
+                drawGeometries(mesh, colors);
+                break;
+            }
+            case Border::Style::GROOVE:
+            {
+                auto& mesh = cache.getMesh({ border.style, rect, border.width });
+                NB_ASSERT(mesh.geometries.size() == 4, "GROOVE border must have exactly 4 geometries");
+
+                nbstl::Array<NbColor, 4> colors = {
+                    border.color,
+                    border.color.addMask(55),
+                    border.color.addMask(55),
+                    border.color
+                };
+
+                drawGeometries(mesh, colors);
+                break;
+            }
+
+        }
+    }
+
+
+    void Direct2dWidgetRenderer::renderButton(IWidget *widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
         using namespace Widgets;
         Button* button = castWidget<Button>(widget);
 
         const WidgetStyle& style = button->getStyle();
+        const ButtonStyle& buttonStyle = button->getButtonStyle();
         WidgetState state = button->getState();
         NbColor color;
         NbColor textColor;
 
-        getWidgetThemeColorByState(button, color, textColor);
+        switch (widget->getState())
+        {
+            case WidgetState::HOVER:
+            {
+                color = buttonStyle.hoverColor();
+                textColor = buttonStyle.hoverTextColor();
+                break;
+            }
+            case WidgetState::ACTIVE:
+            {
+                color = buttonStyle.activeColor();
+                textColor = buttonStyle.activeTextColor();
+                break;
+            }
+            case WidgetState::DISABLE:
+            {
+                color = buttonStyle.disableColor();
+                textColor = buttonStyle.disableTextColor();
+                break;
+            }
+            default:
+            {
+                color = buttonStyle.baseColor();
+                textColor = buttonStyle.baseTextColor();
+                break;
+            }
+        }
+
+        drawBorder(button, layoutStyle.border);
 
 
         renderTarget->fillRectangle(button->getRect(), color);
@@ -127,7 +277,7 @@ namespace Renderer
     }
 
 
-    void Direct2dWidgetRenderer::renderTextEdit(IWidget *widget)
+    void Direct2dWidgetRenderer::renderTextEdit(IWidget *widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
         TextEdit* textEdit = castWidget<TextEdit>(widget);
         const NbRect<int> &widgetRect = textEdit->getRect();
@@ -144,7 +294,7 @@ namespace Renderer
 
         DWRITE_TEXT_METRICS textMetrics {};
 
-        IDWriteTextLayout *textLayout = Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit);
+        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout = Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit);
         textLayout->GetMetrics(&textMetrics);
         HRESULT hr = textLayout->GetMetrics(&textMetrics);
         if (SUCCEEDED(hr))
@@ -158,14 +308,14 @@ namespace Renderer
 
                 int halfOfRectWidth = widgetRect.width / 2;
 
-                int startOfString = max(0, caretPos - halfOfRectWidth);
+                int startOfString = std::max(0, caretPos - halfOfRectWidth);
                 std::wstring temp = textEdit->getData().substr(startOfString, halfOfRectWidth * 2);
 
                 createTextLayoutForWidget(textEdit, temp);
             }
         }
 
-        renderTarget->drawText(Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit), widgetRect, NbColor(255, 255, 255), TextAlignment::LEFT);
+        renderTarget->drawText(Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit).Get(), widgetRect, NbColor(255, 255, 255), TextAlignment::LEFT);
         
         
         if(textEdit->getIsCaretVisible() && textEdit->getIsFocused())
@@ -182,6 +332,8 @@ namespace Renderer
                 &hitTestMetrics
             );
 
+            caretY = (widgetRect.height - hitTestMetrics.height)/ 2;
+
             if (SUCCEEDED(hr))
             {
                 D2D1_RECT_F caretRect = D2D1::RectF(
@@ -196,77 +348,98 @@ namespace Renderer
     }
 
     
-    void Direct2dWidgetRenderer::renderTreeView(IWidget* widget)
+    void Direct2dWidgetRenderer::renderTreeView(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
+        using namespace Widgets;
+
         TreeView* treeView = castWidget<TreeView>(widget);
+        const WidgetStyle& style = treeView->getStyle();
         const NbRect<int>& widgetRect = treeView->getRect();
-
+        const TreeViewStyle& treeViewStyle = treeView->getTreeViewStyle();
         renderTarget->fillRectangle(widgetRect, treeView->getStyle().baseColor);
-        auto model = treeView->getModel();
-        if(model == nullptr) return;
-        int shift = 0;
-        const int shiftX = 10;
 
-        size_t index = 0;
-        size_t rootDepth = 128;
+        std::shared_ptr<ITreeModel> model = treeView->getModel();
+        if (!model)
+        {
+            return;
+        }
 
-        model->forEach([this, &widgetRect, &model, &shift, &index, &treeView, &rootDepth](const ModelItem& item) {
-            
-            bool isParent = false;
+        const int itemHeight = static_cast<int>(TreeView::HEIGHT_OF_ITEM_IN_PIXEL);
+        const int indent = 12;
 
-            if (treeView->getItemState(item) == TreeView::ItemState::COLLAPSED)
+        int y = widgetRect.y;
+        size_t visibleCount = treeView->getVisibleCount();
+
+        for (size_t i = 0; i < visibleCount; ++i)
+        {
+            const ModelItem* item = treeView->getVisibleItem(i);
+            if (!item)
             {
-                rootDepth = item.getDepth();
-                isParent = true;
-            }
-			
-            if (rootDepth < item.getDepth() && isParent == false)
-            {
-				index++;
-                return;
-            }
-            
-           
-            std::string str = model->data(item);
-            std::wstring wstr = Utils::toWstring(str);
-            NbRect<int> wr = widgetRect;
-            wr.x += shiftX * item.getDepth();
-            wr.width -= shiftX * item.getDepth();
-            wr.y += shift;
-            wr.height = 20;
-            shift += 20;
-
-            if (index == treeView->getLastHitIndex())
-            {
-                renderTarget->drawRectangle({wr.x - int(shiftX * item.getDepth()),
-                                             wr.y,
-                                             wr.width + int(shiftX * item.getDepth()),
-                                             wr.height
-                    },
-                    { 255,167,133 });
+                continue;
             }
 
-            if (index == treeView->getLastClickedIndex().getRaw())
+            NbRect<int> itemRect = {
+                widgetRect.x + indent * static_cast<int>(item->getDepth()) + 15,
+                y,
+                widgetRect.width - indent * static_cast<int>(item->getDepth()) - 15,
+                itemHeight
+            };
+
+            NbRect<int> itemFullRect = {
+                widgetRect.x,
+                y,
+                widgetRect.width,
+                itemHeight
+            };
+
+
+            const nbstl::Uuid uuid = item->getUuid();
+            const bool expanded = treeView->isItemExpanded(ModelIndex(uuid));
+            const bool selected = treeView->isItemSelected(ModelIndex(uuid));
+
+            
+            if (selected)
             {
-                renderTarget->fillRectangle({ wr.x - int(shiftX * item.getDepth()),
-                                             wr.y,
-                                             wr.width + int(shiftX * item.getDepth()),
-                                             wr.height
-                    },
-                    { 255,167,255 });
+                renderTarget->fillRectangle(itemFullRect, treeViewStyle.selectionColor);
             }
-            
-            
-            renderTarget->drawText(wstr, wr, NbColor(255, 255, 255), TextAlignment::LEFT, ParagraphAlignment::TOP);
-            index++;
-        });
+            else if (treeView->getLastClickIndex().isValid() &&
+                treeView->getLastClickIndex().getUuid() == uuid)
+            {
+                renderTarget->fillRectangle(itemFullRect, treeViewStyle.clickColor);
+            }
+            else if (treeView->getLastHitIndex().getUuid() == item->getUuid())
+            {
+                renderTarget->fillRectangle(itemFullRect, treeViewStyle.hoverSelectionColor);
+            }
+
+            if (!item->children.empty())
+            {
+                NbRect<int> box = { itemRect.x - indent + 2, itemRect.y + 6, 8, 8 };
+                renderTarget->drawRectangle(box, treeViewStyle.buttonColor);
+
+                if (!expanded)
+                {
+                    renderTarget->drawLine({ box.x + 4, box.y + 2 }, { box.x + 4, box.y + 6 }, treeViewStyle.inButtonColor); // вертикаль
+                }
+                renderTarget->drawLine({ box.x + 2, box.y + 4 }, { box.x + 6, box.y + 4 }, treeViewStyle.inButtonColor); // горизонталь
+            }
+
+            // Текст
+            std::wstring text = Utils::toWstring(model->data(*item));
+            renderTarget->drawText(text, itemRect, style.baseTextColor,
+                TextAlignment::LEFT, ParagraphAlignment::TOP);
+
+            y += itemHeight;
+        }
     }
 
 
-    void Direct2dWidgetRenderer::renderLabel(IWidget *widget)
+
+    void Direct2dWidgetRenderer::renderLabel(IWidget *widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
         Label* label = castWidget<Label>(widget);
         const NbRect<int>& widgetRect = label->getRect();
+        const WidgetStyle& style = label->getStyle();
 
         Label::VTextAlign vTextAlign = label->getVTextAlign();
 		Label::HTextAlign hTextAlign = label->getHTextAlign();
@@ -284,14 +457,14 @@ namespace Renderer
         }
 
 
-        IDWriteTextLayout* textLayout =  Direct2dGlobalWidgetMapper::getTextLayoutByWidget(label);
+        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout =  Direct2dGlobalWidgetMapper::getTextLayoutByWidget(label);
         
-        renderTarget->drawText(textLayout, widgetRect, NbColor(255, 255, 255), static_cast<TextAlignment>(vTextAlign));
-
+        renderTarget->fillRectangle(widgetRect, style.baseColor);
+        renderTarget->drawText(textLayout.Get(), widgetRect, style.baseTextColor, static_cast<TextAlignment>(vTextAlign));
     }
 
 
-	void Direct2dWidgetRenderer::renderCheckBox(IWidget* widget)
+	void Direct2dWidgetRenderer::renderCheckBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
 	{
 		using namespace Widgets;
 		CheckBox* checkBox = castWidget<CheckBox>(widget);
@@ -302,64 +475,27 @@ namespace Renderer
 		NbColor textColor;
 
         getWidgetThemeColorByState(checkBox, color, textColor);
-
-
-        // TODO: cache geometry & add to wrapper class
-        // smth like getArrowTextureForCheckBox
-        // mb add class figures
-
-        ID2D1PathGeometry* geometry;
-        ID2D1GeometrySink* sink;
-		HRESULT hr =  FactorySingleton::getFactory()->CreatePathGeometry(&geometry);
-         
-		if (SUCCEEDED(hr))
-		{
-			hr = geometry->Open(&sink);
-
-			if (SUCCEEDED(hr))
-			{
-                const NbRect<int>& boxRc = checkBox->getBoxRect();
-
-                auto vertex = GeometryFactory::create(ShapeType::CHECK_MARK, boxRc);
-
-				sink->BeginFigure(
-					D2D1::Point2F(vertex[0].x, vertex[0].y),
-					D2D1_FIGURE_BEGIN_FILLED
-				);
-
-                for(size_t i = 1; i < vertex.size(); ++i)
-                {
-					sink->AddLine(D2D1::Point2F(vertex[i].x, vertex[i].y));
-                }
-
-                sink->EndFigure(D2D1_FIGURE_END_CLOSED);
-
-				hr = sink->Close();
-			}
-			SafeRelease(&sink);
-		}
-        
-        auto rt = renderTarget->getRawRenderTarget();
-		D2D1_COLOR_F cc = { 1.0f,0.0f,0.0f,1.0f };
-        ID2D1SolidColorBrush *c;
-		rt->CreateSolidColorBrush(cc, &c);
-
-
-
+		
 		renderTarget->fillRectangle(checkBox->getRect(), color);
         renderTarget->drawRectangle(checkBox->getBoxRect(), { 255,255,255 });
-        renderLabel(checkBox->getLabel());
+        renderLabel(checkBox->getLabel(), layoutStyle);
         
+        auto geometry = widgetsCache.getMesh(
+            Geometry::ShapeType::CHECK_MARK,
+            {checkBox->getBoxRect(), checkBox->getIndex()}
+        );
         
-        if(checkBox->getIsChecked()) // some pice of @@
-            rt->FillGeometry(geometry, c);
+        if (checkBox->getIsChecked())
+        {
+            renderTarget->fillGeometry(geometry, { 255,0,0 });
 
-        SafeRelease(&geometry);
+        }
+
 
 	}
 
 
-	void Direct2dWidgetRenderer::renderComboBox(IWidget* widget)
+	void Direct2dWidgetRenderer::renderComboBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
 	{
 		using namespace Widgets;
 		ComboBox* comboBox = castWidget<ComboBox>(widget);
@@ -381,6 +517,44 @@ namespace Renderer
         }
 	}
 
+    void Direct2dWidgetRenderer::renderSpinBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
+    {
+        using namespace Widgets;
+
+        SpinBox* spinBox = castWidget<SpinBox>(widget);
+
+        const WidgetStyle& style = spinBox->getStyle();
+        WidgetState state = spinBox->getState();
+
+        NbColor backgroundColor;
+        NbColor textColor;
+
+        getWidgetThemeColorByState(spinBox, backgroundColor, textColor);
+
+        // Рисуем фон SpinBox
+        renderTarget->fillRectangle(spinBox->getRect(), backgroundColor);
+
+        // Рисуем рамку
+        //renderTarget->drawRectangle(spinBox->getRect(), style.borderColor);
+
+        // Рендерим вложенные виджеты
+        // Все три должны иметь собственные rect, уже рассчитанные layout
+        if (spinBox->getInput())
+        {
+            renderTextEdit(spinBox->getInput(), layoutStyle);
+        }
+
+        if (spinBox->getUpButton())
+        {
+            renderButton(spinBox->getUpButton(), layoutStyle);
+        }
+
+        if (spinBox->getDownButton())
+        {
+            renderButton(spinBox->getDownButton(), layoutStyle);
+        }
+    }
+
 
     void Direct2dWidgetRenderer::getWidgetThemeColorByState(IWidget* widget, NbColor& color, NbColor& textColor) const noexcept
     {
@@ -394,7 +568,7 @@ namespace Renderer
                 textColor = style.hoverTextColor;
                 break;
             }
-            case WidgetState::ACTIVE:
+                case WidgetState::ACTIVE:
             {
                 color = style.activeColor;
                 textColor = style.activeTextColor;
@@ -418,7 +592,7 @@ namespace Renderer
 
     void Direct2dWidgetRenderer::createTextLayoutForWidget(IWidget* widget, const std::wstring& data)
     {
-        static IDWriteFactory *factory = FactorySingleton::getDirectWriteFactory();
+        static Microsoft::WRL::ComPtr<IDWriteFactory> factory = FactorySingleton::getDirectWriteFactory();
         const char* widgetName = widget->getClassName();
         size_t size = strlen(widgetName);
 
@@ -436,7 +610,7 @@ namespace Renderer
                 newData = data;
             }
 
-            IDWriteTextLayout *textLayout = nullptr;
+            Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout = nullptr;
             Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(textEdit);
             
             if(!textFormat)
@@ -475,7 +649,7 @@ namespace Renderer
     
 	void Direct2dWidgetRenderer::createTextLayoutForLabel(Label* label) noexcept
 	{
-		IDWriteTextLayout* textLayout = nullptr;
+        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout = nullptr;
 		Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(label);
         if (label->getFont().isDirty())
         {
@@ -486,7 +660,7 @@ namespace Renderer
         const NbRect<int>& rect = label->getRect();
         const std::wstring& text = label->getText();
 
-		IDWriteFactory* factory = FactorySingleton::getDirectWriteFactory();
+        Microsoft::WRL::ComPtr<IDWriteFactory> factory = FactorySingleton::getDirectWriteFactory();
 		factory->CreateTextLayout(text.c_str(), text.length(), textFormat.Get(), rect.width, rect.height, &textLayout);
 		textLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 		Direct2dGlobalWidgetMapper::addTextlayout(label, textLayout);
@@ -510,7 +684,7 @@ namespace Renderer
 		trimming.delimiterCount = 0;
 
 		Microsoft::WRL::ComPtr<IDWriteInlineObject> inlineEllipsis;
-		IDWriteFactory* factory = FactorySingleton::getDirectWriteFactory();
+        Microsoft::WRL::ComPtr<IDWriteFactory> factory = FactorySingleton::getDirectWriteFactory();
 		factory->CreateEllipsisTrimmingSign(textFormat.Get(), &inlineEllipsis);
 
 		textFormat->SetTrimming(&trimming, inlineEllipsis.Get());
@@ -526,4 +700,4 @@ namespace Renderer
 		Direct2dGlobalWidgetMapper::addTextlayout(label, textLayout);
 	}
 
-};
+};//////////////////////////////////////

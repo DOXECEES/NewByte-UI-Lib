@@ -3,10 +3,12 @@
 
 #include "../WindowInterface/IWindow.hpp"
 
-#include "../DockManager.hpp"
-
+#include "Debug.hpp"
 #include <windowsx.h>
 #include <algorithm>
+
+#include <Utility.hpp>
+#pragma comment(lib, "winmm.lib")
 
 namespace Win32Window
 {
@@ -15,7 +17,9 @@ namespace Win32Window
     class ChildWindow : public IWindow
     {
     public:
-        ChildWindow(IWindow *parentWindow);
+        constexpr static uint32_t   CARET_FLICKERING_TIME_MS = 500;
+
+        ChildWindow(IWindow *parentWindow, bool setOwnDc = false);
         ~ChildWindow();
 
         void onSize(const NbSize<int>& newSize) override { };
@@ -25,43 +29,100 @@ namespace Win32Window
         const NbWindowHandle &getHandle() const noexcept { return handle; };
 
         void addCaption() noexcept;
+        void setRenderable(bool flag) noexcept;
+		bool getIsRenderable() const noexcept { return isRenderable; };
 
         inline static Widgets::IWidget* focusedWidget = nullptr; // only one widget can have focus
 
+    public:
+        Signal<void(const NbSize<int>&)> onSizeChanged;
+
         LRESULT wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
-            static Splitter* activeSplitter = nullptr;
-
+            static bool wasNonRenderable = false;
             static NbPoint<int> dragOffset = {};
             static bool dragging = false;
             static bool clicked = true;
+
             switch(message)
             {
+                case WM_CREATE:
+                {
+                    timer = CreateThreadpoolTimer([](PTP_CALLBACK_INSTANCE Instance, PVOID Context, PTP_TIMER Timer) {
+                        HWND hwnd = reinterpret_cast<HWND>(Context);
+                        InvalidateRect(hwnd, NULL, FALSE);
+
+                        if (focusedWidget)
+                        {
+                            focusedWidget->onTimer();
+                        }
+                        
+                        }, reinterpret_cast<PVOID>(hWnd), nullptr);
+
+                    FILETIME dueTime;
+
+                    ULONGLONG qwDueTime = -10000000LL;
+                    dueTime.dwHighDateTime = (DWORD)(qwDueTime >> 32);
+                    dueTime.dwLowDateTime = (DWORD)qwDueTime;
+
+                    SetThreadpoolTimer(timer, &dueTime, CARET_FLICKERING_TIME_MS, 0);
+
+                    //SetTimer(hWnd, 100, 500, nullptr);
+
+                    return FALSE;
+                }
                 case WM_PAINT:
                 {
                     PAINTSTRUCT ps;
-                    HDC hdc = BeginPaint(hWnd, &ps);
-                    renderer->render(this);
-                    EndPaint(hWnd, &ps);
 
+                   /* if (!isRenderable)
+                    {
+                       HDC hdc = BeginPaint(hWnd, &ps);
+
+                        EndPaint(hWnd, &ps);
+                        return 0;
+                    }*/
+
+                    if(state.title != L"SCENE")
+                    {
+                        renderer->render(this);
+                    }
+
+                    ValidateRect(hWnd, nullptr);
+            
                     return 0;
                 } 
                 case WM_SIZE:
                 {
-                    state.setSize({ LOWORD(lParam), HIWORD(lParam) });
+                    int xSize = LOWORD(lParam);
+                    int ySize = HIWORD(lParam);
                     
+
+                    state.setSize({xSize, ySize});
+                    
+                    if (isRenderable == false)
+                    {
+                        wasNonRenderable = true;
+                        isRenderable = true;
+                    }
+
+
+                    recalculateLayout();
+
 
                     if (renderer)
                     {
                         renderer->resize(this);
+                        //renderer->render(this);
+                        InvalidateRect(hWnd, nullptr, FALSE);
+
                     }
 
+                    onSizeChanged.emit(state.size);
                     for (auto& listener : stateChangedListeners)
                     {
                         listener->onSizeChanged(state.clientSize);
                     }
-
-                    InvalidateRect(hWnd, NULL, FALSE);
 
                     return 0;
                 }
@@ -112,6 +173,17 @@ namespace Win32Window
                     LoadCursor(nullptr, IDC_ARROW);
                     return HTCLIENT;
                 }
+                case WM_CHAR:
+                {
+                    if (!focusedWidget)
+                    {
+                        return FALSE;
+                    }
+
+                    focusedWidget->onSymbolButtonClicked(static_cast<wchar_t>(wParam));
+
+                    return FALSE;
+                }
                 case WM_LBUTTONDOWN:
                 {
                     SetCapture(hWnd);
@@ -121,11 +193,94 @@ namespace Win32Window
                     MapWindowPoints(hWnd, GetParent(hWnd), &p, 1);
                     NbPoint<int> pp = Utils::toNbPoint<int>(p);
 
+                    // widgets no longer use
                     std::sort(widgets.begin(), widgets.end(), [](Widgets::IWidget* widget1, Widgets::IWidget* widget2) -> bool {
                         return widget1->getZIndex() > widget2->getZIndex();
                     });
 
-                    for (const auto& widget : widgets)
+                    //
+
+                    bool isFocusChanged = false;
+
+                    nbstl::dfs(
+                        this->getLayoutRoot(),
+                        [](const NNsLayout::LayoutNode* node)
+                        {
+                            nbstl::Vector<const NNsLayout::LayoutNode*> children;
+                            children.reserve(node->getChildrenSize());
+                            for (int i = 0; i < node->getChildrenSize(); i++)
+                            {
+                                children.pushBack(node->getChildrenAt(i));
+                            }
+                            return children;
+                        },
+                        [&](const NNsLayout::LayoutNode* node)
+                        {
+                            if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                            {
+                                auto widget = widgetLayout->getWidget().get();
+                                if (widget && !widget->isHide() && widget->hitTest(point))
+                                {
+                                    isFocusChanged = true;
+                                    if (focusedWidget)
+                                    {
+                                        focusedWidget->setUnfocused();
+                                    }
+                                    focusedWidget = widget;
+                                    focusedWidget->setFocused();
+                                    clicked = true;
+                                    widget->onClick();
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    );
+
+
+                    nbstl::dfs(
+                        this->getLayoutRoot(),
+                        [](const NNsLayout::LayoutNode* node)
+                        {
+                            nbstl::Vector<const NNsLayout::LayoutNode*> children;
+                            children.reserve(node->getChildrenSize());
+                            for (int i = 0; i < node->getChildrenSize(); i++)
+                            {
+                                children.pushBack(node->getChildrenAt(i));
+                            }
+                            return children;
+                        },
+                        [&](const NNsLayout::LayoutNode* node)
+                        {
+                            if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                            {
+                                auto widget = widgetLayout->getWidget().get();
+                                if (widget)
+                                {
+                                    if (!widget->isHide() && widget->hitTestClick(point))
+                                    {
+                                        return true;
+                                    }
+                                }
+                            }
+                            return false;
+                        }
+                    );
+                    
+                    if (!isFocusChanged && focusedWidget)
+                    {
+                        focusedWidget->setUnfocused();
+                        focusedWidget = nullptr;
+                    }
+
+                    InvalidateRect(hWnd, nullptr, FALSE);
+
+
+
+
+
+                    //
+                    /*for (const auto& widget : widgets)
                     {
                         if (!widget->isHide() && widget->hitTest(point))
                         {
@@ -137,16 +292,16 @@ namespace Win32Window
                             widget->onClick();
                             break;
                         }
-                    }
+                    }*/
 
-                    for (const auto& widget : widgets)
+                    /*for (const auto& widget : widgets)
                     {
                         
                         if (!widget->isHide() && widget->hitTestClick(point))
                         {
                             break;
                         }
-                    }
+                    }*/
 
                     // for (auto& i : DockManager::splitterList)
                     // {
@@ -163,43 +318,64 @@ namespace Win32Window
                     // }
                     return 0;
                 }
+                case WM_APP + 1:
+                {
+                    if (wasNonRenderable)
+                    {
+                        setRenderable(false);
+                    }
+                    Debug::debug("Resize finished");
+                    return 0;
+                }
 
                 case WM_MOUSEMOVE:
                 {
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
-                    if (activeSplitter && dragging)
-                    {
-                        POINT p = { point.x, point.y };
-                        MapWindowPoints(hWnd, GetParent(hWnd), &p, 1);
-                        NbPoint<int> pp = Utils::toNbPoint<int>(p);
-
-                        // ������������ �������� ��������� ������ �� ������� � ������������ �������
-                        int shiftX = pp.x - dragOffset.x - activeSplitter->rect.x;
-                        int shiftY = pp.y - dragOffset.y - activeSplitter->rect.y;
-
-                        activeSplitter->onMove({ shiftX, shiftY });
-                    }
-                    else
                     {
                         bool isHoveredSet = false;
-                        for (const auto& widget : widgets)
-                        {
-                            if(widget->isDisable())
-                                continue;
 
-                            if (!isHoveredSet && widget->hitTest(point))
+                        std::vector<NNsLayout::LayoutNode*> stack;
+                        stack.push_back(rootLayout.get());
+
+                        while (!stack.empty())
+                        {
+                            auto node = stack.back();
+                            stack.pop_back();
+
+                            if (auto widgetNode = dynamic_cast<NNsLayout::LayoutWidget*>(node); widgetNode != nullptr)
                             {
-                                widget->setHover();
-                                isHoveredSet = true;
+                                if (auto widget = widgetNode->getWidget())
+                                {
+                                    if (widget->isDisable())
+                                    {
+                                        continue;
+                                    }
+
+
+                                    if (!isHoveredSet && widget->hitTest(point))
+                                    {
+                                        widget->setHover();
+                                        isHoveredSet = true;
+                                    }
+                                    else
+                                    {
+                                        widget->setDefault();
+                                    }
+                                }
                             }
-                            else
+                            
+
+                            for (auto& child : node->getChildren())
                             {
-                                widget->setDefault();
+                                stack.push_back(child.get());
                             }
                         }
-                        InvalidateRect(hWnd, NULL, FALSE);
+
+
                     }
+
+                    InvalidateRect(hWnd, NULL, FALSE);
                     return 0;
                 }
                 case WM_KEYDOWN:
@@ -216,23 +392,72 @@ namespace Win32Window
                         focusedWidget->onButtonClicked(wParam);
                     }
 
+                    InvalidateRect(hWnd, nullptr, FALSE);
+
                     return 0;
+                }
+                case WM_TIMER:
+                {
+                    if (focusedWidget != nullptr)
+                    {
+                        focusedWidget->onTimer();
+                    }
+                    InvalidateRect(hWnd, NULL, FALSE);
+                    //UpdateWindow(hWnd);
+
+                    return FALSE;
                 }
                 case WM_LBUTTONUP:
                 {
-
-
                     ReleaseCapture();
                     dragging = false;
-                    activeSplitter = nullptr;
+                 
+                    NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+
+                    
+                    nbstl::dfs(
+                        this->getLayoutRoot(),
+                        [](const NNsLayout::LayoutNode* node)
+                        {
+                            nbstl::Vector<const NNsLayout::LayoutNode*> children;
+                            children.reserve(node->getChildrenSize());
+                            for (int i = 0; i < node->getChildrenSize(); i++)
+                            {
+                                children.pushBack(node->getChildrenAt(i));
+                            }
+                            return children;
+                        },
+                        [&](const NNsLayout::LayoutNode* node)
+                        {
+                            if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                            {
+                                auto widget = widgetLayout->getWidget().get();
+                                if (widget && !widget->isHide() && widget->hitTest(point))
+                                {
+                                    widget->onRelease();
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    );
+                    
+                    
                     return 0;
                 }
-
+                case WM_GETMINMAXINFO:
+                {
+                    LPMINMAXINFO mmi = (LPMINMAXINFO)lParam;
+                    mmi->ptMinTrackSize.x = state.minSize.width;
+                    mmi->ptMinTrackSize.y = state.minSize.height;
+                    return 0;
+                }
+                case WM_ERASEBKGND:
+                    return 1;
 
             }
             return DefWindowProc(hWnd, message, wParam, lParam);
         }
-
 
         inline static LRESULT CALLBACK staticWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
@@ -251,7 +476,11 @@ namespace Win32Window
 
                     
         }
+    private:
+        bool isRenderable = true;
+        PTP_TIMER           timer;
+
     };
 };
 
-#endif
+#endif//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

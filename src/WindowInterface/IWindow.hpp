@@ -15,10 +15,13 @@
 #include "../CaptionButtons.hpp"
 #include "../Widgets/IWidget.hpp"
 
+#include "Layout/LayoutNode.hpp"
+
 
 
 namespace WindowInterface
 {
+
     class IWindowStateChangedListener
     {
     public:
@@ -28,7 +31,7 @@ namespace WindowInterface
     class IWindow
     {
     public:
-        IWindow() = default;
+        IWindow() noexcept;
         virtual ~IWindow() = default;
 
         virtual void onSize(const NbSize<int>& newSize) = 0;
@@ -47,15 +50,15 @@ namespace WindowInterface
         const bool isMaximized() const noexcept { return state.isMaximized; };
         const NbSize<int>& getMinSize() const noexcept { return state.minSize; };
 
+        const int getWidth() const noexcept { return state.clientSize.width; }
+        const int getHeight() const noexcept { return state.clientSize.height; }
+
         const WindowStyle& getStyle() const noexcept { return style; };
         const NbRect<int> getClientRect() const noexcept { return state.clientRect; };
         void setClientRect(const NbRect<int>& rect) noexcept
         { 
             state.setSize({rect.width, rect.height});
             state.setClientRect(rect);
-            SetWindowPos(handle.as<HWND>(), nullptr, state.clientRect.x, state.clientRect.y, state.clientRect.width, state.clientRect.height, SWP_NOZORDER | SWP_NOACTIVATE);
-            InvalidateRect(handle.as<HWND>(), NULL, FALSE);
-            UpdateWindow(handle.as<HWND>());
         };
 
         void setBackgroundColor(const NbColor& color) { state.color = color; };
@@ -74,6 +77,8 @@ namespace WindowInterface
         
         void notifyAllListeners() noexcept;
 
+        NNsLayout::LayoutNode* getLayoutRoot() noexcept { return rootLayout.get(); }
+        void recalculateLayout() noexcept;
     protected:
         NbWindowHandle                              handle;
         WindowState                                 state;
@@ -85,6 +90,8 @@ namespace WindowInterface
         CaptionButtonsContainer                     captionButtonsContainer;
         std::vector<Widgets::IWidget*>              widgets;
     
+        std::unique_ptr<NNsLayout::LayoutNode>       rootLayout;
+
     };
 };
 

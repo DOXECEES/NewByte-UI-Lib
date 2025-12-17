@@ -15,14 +15,16 @@ namespace Renderer
     class Direct2dGlobalWidgetMapper
     {
     public:
-        static IDWriteTextLayout* getTextLayoutByWidget(Widgets::IWidget *widget) noexcept;
-        static void addTextlayout(Widgets::IWidget* widget, IDWriteTextLayout* textLayout);
+
+
+        static Microsoft::WRL::ComPtr<IDWriteTextLayout> getTextLayoutByWidget(Widgets::IWidget *widget) noexcept;
+        static void addTextlayout(Widgets::IWidget* widget, Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout);
 
         static Microsoft::WRL::ComPtr<IDWriteTextFormat> getTextFormatByWidget(Widgets::IWidget *widget) noexcept;
         static void addTextFormat(Widgets::IWidget* widget, const Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat) noexcept;
 
-    private:
-        inline static std::unordered_map<int, IDWriteTextLayout *> textLayoutMapper;
+    //private:
+        inline static std::unordered_map<int, Microsoft::WRL::ComPtr<IDWriteTextLayout>> textLayoutMapper;
         inline static std::unordered_map<int, Microsoft::WRL::ComPtr<IDWriteTextFormat>> textFormatMapper;
     };
 

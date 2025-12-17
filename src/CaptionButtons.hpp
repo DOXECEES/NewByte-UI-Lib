@@ -37,7 +37,7 @@ struct CaptionButton
 
     bool hitTest(const NbRect<int>& windowRect, const NbPoint<int> &point) const noexcept;
     void onClick(const NbRect<int>& windowRect, const NbPoint<int> &point) const noexcept;
-
+    bool getIsHovered() const noexcept { return isHovered; }
     std::function<void()>   func;
 
     NbRect<int>             rect;

@@ -1,6 +1,6 @@
 #include "Indentations.hpp"
 
-NbRect<int> applyPaddingToRect(const NbRect<int>& rect, const Padding& padding) noexcept
+NbRect<int> applyPaddingToRect(const NbRect<int>& rect, const OldPadding& padding) noexcept
 {
 	return {
 		rect.x + padding.left,
@@ -10,7 +10,7 @@ NbRect<int> applyPaddingToRect(const NbRect<int>& rect, const Padding& padding) 
 	};
 }
 
-NbRect<int> applyLeftTopPaddingToRect(const NbRect<int>& rect, const Padding& padding) noexcept
+NbRect<int> applyLeftTopPaddingToRect(const NbRect<int>& rect, const OldPadding& padding) noexcept
 {
 	return {
 		rect.x + padding.left,
@@ -20,7 +20,7 @@ NbRect<int> applyLeftTopPaddingToRect(const NbRect<int>& rect, const Padding& pa
 	};
 }
 
-NbRect<int> applyScaleOnlyPadding(const NbRect<int>& rect, const Padding& padding) noexcept
+NbRect<int> applyScaleOnlyPadding(const NbRect<int>& rect, const OldPadding& padding) noexcept
 {
 	return {
 		rect.x,
@@ -31,7 +31,7 @@ NbRect<int> applyScaleOnlyPadding(const NbRect<int>& rect, const Padding& paddin
 
 }
 
-NbRect<int> applyHeightOnlyPaddingToRect(const NbRect<int>& rect, const Padding& padding) noexcept
+NbRect<int> applyHeightOnlyPaddingToRect(const NbRect<int>& rect, const OldPadding& padding) noexcept
 {
 	return {
 		rect.x,

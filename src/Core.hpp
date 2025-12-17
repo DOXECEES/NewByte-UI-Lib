@@ -1,6 +1,8 @@
 #ifndef NBUI_SRC_CORE_HPP
 #define NBUI_SRC_CORE_HPP
+#define NOMINMAX
 
+#include <NbCore.hpp>
 #include <cstdint>
 #include <string>
 #include <variant>
@@ -8,7 +10,9 @@
 #include <cmath>
 #include <sstream>
 #include <ostream>
+
 #define DCX_USESTYLE 0x00010000
+
 
 
 template<typename T>
@@ -83,6 +87,17 @@ struct NbSize
         return *this;
     }
 
+    bool isEmpty() const
+    {
+        return width == 0 || height == 0;
+	}
+
+    bool operator==(const NbSize<T>& other) const
+    {
+        return width == other.width &&
+            height == other.height;
+    }
+
 
 
 };
@@ -99,6 +114,17 @@ struct NbColor
     constexpr NbColor(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha = 255) 
         : r(red), g(green), b(blue), a(alpha) {}
 
+    constexpr NbColor addMask(uint8_t value) const noexcept
+    {
+        auto clamp = [](int v) { return v > 255 ? 255 : v; };
+
+        return NbColor{
+            static_cast<uint8_t>(clamp(r + value)),
+            static_cast<uint8_t>(clamp(g + value)),
+            static_cast<uint8_t>(clamp(b + value)),
+            a // альфа остаётся
+        };
+    }
 
 
     bool operator==(const NbColor& other) const
@@ -129,6 +155,37 @@ struct NbRect
     T y         = {};
     T width     = {};
     T height    = {};
+
+    NB_NODISCARD constexpr NbPoint<T> getTopLeft() const noexcept
+    {
+        return { x, y };
+    }
+
+    NB_NODISCARD constexpr NbPoint<T> getTopRight() const noexcept
+    {
+        return { x + width, y };
+    }
+
+    NB_NODISCARD constexpr NbPoint<T> getBottomLeft() const noexcept
+    {
+        return { x, y + height };
+    }
+
+    NB_NODISCARD constexpr NbPoint<T> getBottomRight() const noexcept
+    {
+        return { x + width, y + height };
+    }
+
+    constexpr NbRect<T> expand(const T& coef) const noexcept
+    {
+        return NbRect<T>{
+            this->x - coef,
+            this->y - coef,
+            this->width + coef * T(2),
+            this->height + coef * T(2),
+        };
+    }
+
 
     constexpr bool isEmpty() const
     { 
@@ -180,6 +237,15 @@ struct NbRect
     {
         return point.x >= this->x && point.x < this->x + this->width
             && point.y >= this->y && point.y < this->y + this->height;
+    }
+
+    constexpr bool operator==(const NbRect<T>& other) const noexcept {
+        return x == other.x && y == other.y &&
+            width == other.width && height == other.height;
+    }
+
+    constexpr bool operator!=(const NbRect<T>& other) const noexcept {
+        return !(*this == other);
     }
 
 

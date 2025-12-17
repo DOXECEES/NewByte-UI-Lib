@@ -11,18 +11,11 @@ add_subdirectory(../Common NbCommon_build)
 
 set (SRC 
         src/main.cpp
-        src/IWindow.cpp
-        src/IWindow.hpp
+        
         src/Core.cpp
         src/Core.hpp
-        src/MainWindow.cpp
-        src/MainWindow.hpp
         src/Utils.cpp
         src/Utils.hpp
-        src/DoceTree.cpp
-        src/DoceTree.hpp
-        src/ChildWindow.cpp
-        src/ChildWindow.hpp
         src/CaptionButtons.cpp
         src/CaptionButtons.hpp
         src/Layout.cpp
@@ -36,6 +29,7 @@ set (SRC
         src/Signal.hpp
         src/SubscribtionManager.cpp
         src/SubscribtionManager.hpp
+        src/TempDocking.hpp
 
 
 
@@ -47,6 +41,7 @@ set (SRC
         src/Win32Window/Win32ModalWindow.hpp
         src/Win32Window/Win32ChildWindow.cpp
         src/Win32Window/Win32ChildWindow.hpp
+        src/Win32Window/Win32Global.hpp
 
         src/WindowInterface/IWindow.cpp
         src/WindowInterface/IWindow.hpp
@@ -82,8 +77,33 @@ set (SRC
         src/Renderer/Direct2dFont.hpp
         src/Renderer/Font.cpp
         src/Renderer/Font.hpp
-        src/Renderer/GeometryFactory.cpp
-        src/Renderer/GeometryFactory.hpp
+        src/Renderer/Geometry/GeometryFactory.cpp
+        src/Renderer/Geometry/GeometryFactory.hpp
+
+        src/Renderer/Geometry/BorderGeometryBuilder.cpp
+        src/Renderer/Geometry/BorderGeometryBuilder.hpp
+        src/Renderer/Geometry/BorderGeometryCache.cpp
+        src/Renderer/Geometry/BorderGeometryCache.hpp
+        src/Renderer/Geometry/WidgetsGeometryBuilder.cpp
+        src/Renderer/Geometry/WidgetsGeometryBuilder.hpp
+        src/Renderer/Geometry/WidgetsGeometryCache.cpp
+        src/Renderer/Geometry/WidgetsGeometryCache.hpp
+
+
+        src/RendererInterface/IRenderContext.cpp
+        src/RendererInterface/IRenderContext.hpp
+        src/RendererInterface/IResourceManager.cpp
+        src/RendererInterface/IResourceManager.hpp
+        src/RendererInterface/RenderTypes.hpp
+        
+        src/NewRenderer/Direct2dRenderContext.cpp
+        src/NewRenderer/Direct2dRenderContext.hpp
+        src/NewRenderer/Direct2dFactory.cpp
+        src/NewRenderer/Direct2dFactory.hpp
+        src/NewRenderer/Direct2dResourceManager.cpp
+        src/NewRenderer/Direct2dResourceManager.hpp
+        src/NewRenderer/Direct2dWindowRenderer.cpp
+        src/NewRenderer/Direct2dWindowRenderer.hpp
 
 
         src/Widgets/IWidget.cpp
@@ -110,13 +130,28 @@ set (SRC
         src/Widgets/ComboBox.hpp
         src/Widgets/IPopUp.cpp
         src/Widgets/IPopUp.hpp
+        src/Widgets/SpinBox.cpp
+        src/Widgets/SpinBox.hpp
+        src/Widgets/WidgetSizePolicy.cpp
+        src/Widgets/WidgetSizePolicy.hpp
+        src/Widgets/SideBar.cpp
+        src/Widgets/SideBar.hpp
+        src/Widgets/ILayoutable.hpp
+
+        src/Layout/LayoutNode.cpp
+        src/Layout/LayoutNode.hpp
+
+        src/Utils/Windows/WindowPositionQueue.cpp
+        src/Utils/Windows/WindowPositionQueue.hpp
+        src/Utils/Validator.cpp
+        src/Utils/Validator.hpp
 
         src/Core/ZIndex.cpp
         src/Core/ZIndex.hpp
 )
 
 
-add_library(${PROJECT_NAME} STATIC ${SRC})
+add_library(${PROJECT_NAME} STATIC ${SRC} "src/Widgets/SpinBox.cpp" "src/Widgets/WidgetSizePolicy.cpp" "src/Widgets/SideBar.cpp" "src/Utils/Windows/WindowPositionQueue.cpp" "src/Layout/LayoutNode.cpp" "src/Renderer/Geometry/BorderGeometryBuilder.cpp")
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/src

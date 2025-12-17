@@ -10,6 +10,7 @@ namespace Widgets
     class IWidgetRenderer
     {
     public:
+        virtual ~IWidgetRenderer() noexcept = default;
         virtual void render(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle) = 0;
         virtual void renderPopUp() noexcept = 0;
     };

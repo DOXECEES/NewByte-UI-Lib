@@ -2,39 +2,75 @@
 #define NBUI_SRC_WIDGETS_SPINBOX_HPP
 
 #include "IWidget.hpp"
+#include "Button.hpp"
+#include "TextEdit.hpp"
+
+#include <memory>
 
 namespace Widgets
 {
-	class SpinBox: public IWidget
-	{
-	public:
-		
-		void setStep(const int step) noexcept;
-		void setMinValue(const int minValue) noexcept;
-		void setMaxValue(const int maxValue) noexcept;
-		void setValue(const int value) noexcept;
+    class SpinBox : public IWidget
+    {
+    public:
+     
+        static constexpr const char* CLASS_NAME = "SpinBox";
 
-		NB_NODISCARD int getStep() const noexcept;
-		NB_NODISCARD int getMinValue() const noexcept;
-		NB_NODISCARD int getMaxValue() const noexcept;
-		NB_NODISCARD int getValue() const noexcept;
-	
-	public:
+        
+        SpinBox(int initialValue = 0);
 
-		Signal<void(int)> onValueChanged;
-	
-	private:
+        const char* getClassName() const override { return CLASS_NAME; }
 
-		bool hitTest(const NbPoint<int>& pos) override;
-		const char* getClassName() const override;
+        void setRange(int minVal, int maxVal) noexcept;
+        void setStep(int s) noexcept;
 
-		int step;
-		int minValue;
-		int maxValue;
-		int value;
+        void setValue(int v) noexcept;
+        int getValue() const noexcept { return value; }
 
-	};
-};
+        const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override;
+        void layout(const NbRect<int>& rect) noexcept override;
 
+        virtual void onTimer() override;
+
+        void onButtonClicked(const wchar_t symbol, SpecialKeyCode code) override;
+        bool hitTest(const NbPoint<int>& pos) override;
+        bool hitTestClick(const NbPoint<int>& pos) noexcept override;
+
+        TextEdit* getInput() noexcept { return input.get(); }
+        Button* getUpButton() noexcept { return upButton.get(); }
+        Button* getDownButton() noexcept { return downButton.get(); }
+
+
+    private:
+        // State
+        int value = 0;
+        int minValue = 0;
+        int maxValue = 100;
+        int step = 1;
+
+        // Widgets
+        std::unique_ptr<TextEdit> input;
+        std::unique_ptr<Button> upButton;
+        std::unique_ptr<Button> downButton;
+
+        // Internal helpers
+        void createInternalWidgets();
+        void setupHandlers();
+
+        void syncText();
+        void onInputEdited();
+
+        void onUpClicked();
+        void onDownClicked();
+
+        int clamp(int v) const noexcept
+        {
+            return (v < minValue) ? minValue : (v > maxValue ? maxValue : v);
+        }
+
+        void clampValue() noexcept { value = clamp(value); }
+
+        NbSize<int> measuredSize = { 0, 0 };
+    };
+}
 
 #endif

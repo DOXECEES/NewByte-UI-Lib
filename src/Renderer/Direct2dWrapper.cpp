@@ -49,7 +49,7 @@ Direct2dHandleRenderTarget Direct2dWrapper::createRenderTarget(const NbWindowHan
         D2D1_PRESENT_OPTIONS_IMMEDIATELY
     );
 
-    ID2D1HwndRenderTarget* renderTarget = nullptr;
+    Microsoft::WRL::ComPtr<ID2D1HwndRenderTarget> renderTarget = nullptr;
     if (factory->CreateHwndRenderTarget(props, hwndProps, &renderTarget) != S_OK)
     {
         return {handle, size};

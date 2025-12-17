@@ -3,6 +3,7 @@
 #include "../WindowInterface/WindowMapper.hpp"
 #include "../Renderer/Direct2dRenderer.hpp"
 
+#include "NewRenderer/Direct2dWindowRenderer.hpp"
 
 
 namespace Win32Window

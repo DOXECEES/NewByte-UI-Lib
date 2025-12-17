@@ -89,8 +89,6 @@
             int totalFixed = 0;
             float totalRelative = 0.0f;
 
-            // Сначала проходим детей, собираем фиксированную высоту
-            // и относительные коэффициенты
             for (auto& child : children)
             {
                 auto& st = child->style;
@@ -100,11 +98,9 @@
                     continue;
                 }
 
-                // измеряем только не-relative
                 child->measure(available);
                 auto s = child->getMeasuredSize();
 
-                // полный b+m+p-бокс
                 int fullH =
                     st.margin.top + st.margin.bottom +
                     st.border.width * 2 +
@@ -117,7 +113,6 @@
             int remaining = available.height - totalFixed;
             if (remaining < 0) remaining = 0;
 
-            // Общий высотный размер лейаута
             measuredSize.width = available.width;
             measuredSize.height = totalFixed;
 
@@ -134,7 +129,6 @@
             float totalRelative = 0.0f;
             int totalFixed = 0;
 
-            // Собираем информацию о коэффициентах
             for (auto& child : children)
             {
                 auto& st = child->style;
@@ -189,7 +183,6 @@
                     break;
                 }
 
-                // Полный box layout
                 int fullHeight =
                     st.margin.top +
                     st.border.width +
@@ -199,7 +192,6 @@
                     st.border.width +
                     st.margin.bottom;
 
-                // Layout rect для контента
                 NbRect<int> childRect;
                 childRect.x = bounds.x + st.margin.left + st.border.width + st.padding.left;
                 childRect.y = y + st.margin.top + st.border.width + st.padding.top;
@@ -229,7 +221,6 @@
             int w = 0;
             int h = 0;
 
-            // WIDTH
             switch (style.widthSizeType) {
             case SizeType::ABSOLUTE:
                 w = static_cast<int>(style.width);
@@ -245,7 +236,6 @@
                 break;
             }
 
-            // HEIGHT
             switch (style.heightSizeType) {
             case SizeType::ABSOLUTE:
                 h = static_cast<int>(style.height);

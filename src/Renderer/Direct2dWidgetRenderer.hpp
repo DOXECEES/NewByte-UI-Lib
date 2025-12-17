@@ -8,6 +8,7 @@
 #include "Widgets/Label.hpp"
 #include "Widgets/ComboBox.hpp"
 #include "Geometry/BorderGeometryCache.hpp"
+#include "Geometry/WidgetsGeometryCache.hpp"
 #include "Debug.hpp"
 
 #include <queue>
@@ -36,11 +37,12 @@ namespace Renderer
         void drawBorder(IWidget* widget, const Border& border) noexcept;
 
         void renderButton(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
-        void renderTextEdit(IWidget* widget);
-        void renderTreeView(IWidget* widget);
-        void renderLabel(IWidget* widget);
-        void renderCheckBox(IWidget* widget);
-        void renderComboBox(IWidget* widget);
+        void renderTextEdit(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
+        void renderTreeView(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
+        void renderLabel(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
+        void renderCheckBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
+        void renderComboBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
+        void renderSpinBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
 
         template<typename T>
         T* castWidget(IWidget* widget) const noexcept
@@ -114,6 +116,8 @@ namespace Renderer
     private:
         std::queue<PopUpRenderParams> popupQueue;
         Geometry::BorderGeometryCache cache;
+        Geometry::WidgetsGeometryCache widgetsCache;
+
         
 
     };

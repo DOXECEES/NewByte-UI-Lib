@@ -3,6 +3,8 @@
 
 #include "IWidget.hpp"
 
+#include "Utils/Validator.hpp"
+
 namespace Widgets
 {
 
@@ -13,7 +15,8 @@ namespace Widgets
         static constexpr const char* CLASS_NAME = "TextEdit";
 
 
-        TextEdit(const NbRect<int>& rect) : IWidget(rect) {};
+        TextEdit() noexcept;
+        explicit TextEdit(const NbRect<int>& rect) noexcept;
 
 
         virtual const char* getClassName() const override { return CLASS_NAME; }
@@ -28,9 +31,10 @@ namespace Widgets
         inline void resetIsDataChanged() noexcept { isDataChanged = false; }
         
         inline const std::wstring &getData() const noexcept { return data; }
-        inline void setData(const std::wstring &data) noexcept { this->data = data; }
+        void setData(const std::wstring& data) noexcept;
 
-        inline bool getIsCaretVisible() const noexcept { return isCaretVisible; }   
+        inline bool getIsCaretVisible() const noexcept { return isCaretVisible; }  
+        inline void setIsCaretVisible(bool flag) noexcept { isCaretVisible = flag; }
 
         inline const uint32_t getCaretPos() const noexcept { return caretPosition; }
         void decrementCaretPos() noexcept;
@@ -44,7 +48,14 @@ namespace Widgets
 
         void deleteWord() noexcept;
 
+        const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override;
+        void layout(const NbRect<int>& rect) noexcept override;
+
+        void addValidator(Utils::Validator valid) noexcept;
+
+
     private:
+        Utils::Validator validator;
         std::wstring    data;
 
         bool            isDataChanged   = true; // only for renderer

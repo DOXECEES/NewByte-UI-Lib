@@ -17,7 +17,6 @@ namespace Widgets
 		return state == WidgetState::HOVER;
 	}
 
-
 	bool IWidget::isActive() const noexcept
 	{
 		return state == WidgetState::ACTIVE;
@@ -38,6 +37,18 @@ namespace Widgets
 	bool IWidget::isHide() const noexcept
 	{
 		return isHide_;
+	}
+
+	void IWidget::setFocused() noexcept
+	{
+		isFocused = true;
+		onFocusSignal.emit();
+	}
+
+	void IWidget::setUnfocused() noexcept
+	{
+		isFocused = false;
+		onUnfocusedSignal.emit();
 	}
 
 	NbRect<int> IWidget::getRequestedSize() const noexcept

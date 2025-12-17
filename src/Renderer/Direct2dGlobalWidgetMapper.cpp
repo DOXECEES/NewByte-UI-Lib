@@ -9,7 +9,7 @@
 
 namespace Renderer
 {
-    IDWriteTextLayout *Direct2dGlobalWidgetMapper::getTextLayoutByWidget(Widgets::IWidget *widget) noexcept
+    Microsoft::WRL::ComPtr<IDWriteTextLayout> Direct2dGlobalWidgetMapper::getTextLayoutByWidget(Widgets::IWidget *widget) noexcept
     {
         const int widgetId = widget->getIndex();
         if(textLayoutMapper.find(widgetId) == textLayoutMapper.end())
@@ -19,12 +19,12 @@ namespace Renderer
     }
 
 
-    void Direct2dGlobalWidgetMapper::addTextlayout(Widgets::IWidget *widget, IDWriteTextLayout *textLayout) 
+    void Direct2dGlobalWidgetMapper::addTextlayout(Widgets::IWidget *widget, Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout)
     {
         const int widgetId = widget->getIndex();
         if(textLayoutMapper.find(widgetId) != textLayoutMapper.end() && textLayoutMapper[widgetId] != nullptr)
         {
-            //delete textLayoutMapper[widgetId];
+           textLayoutMapper[widgetId].Reset();
         }
         textLayoutMapper[widgetId] = textLayout;
     }
@@ -49,7 +49,7 @@ namespace Renderer
         const int widgetId = widget->getIndex();
         if(textFormatMapper.find(widgetId) != textFormatMapper.end() && textFormatMapper[widgetId] != nullptr)
         {
-            textFormatMapper[widgetId]->Release();
+            textFormatMapper[widgetId].Reset();
         }
         textFormatMapper[widgetId] = textFormat;
     }

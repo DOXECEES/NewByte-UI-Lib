@@ -80,8 +80,6 @@ namespace Widgets
             textRect.height = rect.height - 4; // paddingTop + paddingBottom
             label->setRect(textRect);
         }
-	
-
 
 	public:
 		Signal<void(bool)> onCheckStateChanged;

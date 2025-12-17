@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include <Utility.hpp>
+#pragma comment(lib, "winmm.lib")
 
 namespace Win32Window
 {
@@ -16,6 +17,8 @@ namespace Win32Window
     class ChildWindow : public IWindow
     {
     public:
+        constexpr static uint32_t   CARET_FLICKERING_TIME_MS = 500;
+
         ChildWindow(IWindow *parentWindow, bool setOwnDc = false);
         ~ChildWindow();
 
@@ -40,18 +43,45 @@ namespace Win32Window
             static NbPoint<int> dragOffset = {};
             static bool dragging = false;
             static bool clicked = true;
+
             switch(message)
             {
+                case WM_CREATE:
+                {
+                    timer = CreateThreadpoolTimer([](PTP_CALLBACK_INSTANCE Instance, PVOID Context, PTP_TIMER Timer) {
+                        HWND hwnd = reinterpret_cast<HWND>(Context);
+                        InvalidateRect(hwnd, NULL, FALSE);
+
+                        if (focusedWidget)
+                        {
+                            focusedWidget->onTimer();
+                        }
+                        
+                        }, reinterpret_cast<PVOID>(hWnd), nullptr);
+
+                    FILETIME dueTime;
+
+                    ULONGLONG qwDueTime = -10000000LL;
+                    dueTime.dwHighDateTime = (DWORD)(qwDueTime >> 32);
+                    dueTime.dwLowDateTime = (DWORD)qwDueTime;
+
+                    SetThreadpoolTimer(timer, &dueTime, CARET_FLICKERING_TIME_MS, 0);
+
+                    //SetTimer(hWnd, 100, 500, nullptr);
+
+                    return FALSE;
+                }
                 case WM_PAINT:
                 {
                     PAINTSTRUCT ps;
 
-                    if (!isRenderable)
+                   /* if (!isRenderable)
                     {
-                        HDC hdc = BeginPaint(hWnd, &ps);
+                       HDC hdc = BeginPaint(hWnd, &ps);
+
                         EndPaint(hWnd, &ps);
                         return 0;
-                    }
+                    }*/
 
                     if(state.title != L"SCENE")
                     {
@@ -93,8 +123,6 @@ namespace Win32Window
                     {
                         listener->onSizeChanged(state.clientSize);
                     }
-
-                                      //InvalidateRect(hWnd, nullptr, TRUE); // FALSE = не стирать фон, т.к. мы обработали WM_ERASEBKGND
 
                     return 0;
                 }
@@ -145,6 +173,17 @@ namespace Win32Window
                     LoadCursor(nullptr, IDC_ARROW);
                     return HTCLIENT;
                 }
+                case WM_CHAR:
+                {
+                    if (!focusedWidget)
+                    {
+                        return FALSE;
+                    }
+
+                    focusedWidget->onSymbolButtonClicked(static_cast<wchar_t>(wParam));
+
+                    return FALSE;
+                }
                 case WM_LBUTTONDOWN:
                 {
                     SetCapture(hWnd);
@@ -160,6 +199,8 @@ namespace Win32Window
                     });
 
                     //
+
+                    bool isFocusChanged = false;
 
                     nbstl::dfs(
                         this->getLayoutRoot(),
@@ -180,6 +221,7 @@ namespace Win32Window
                                 auto widget = widgetLayout->getWidget().get();
                                 if (widget && !widget->isHide() && widget->hitTest(point))
                                 {
+                                    isFocusChanged = true;
                                     if (focusedWidget)
                                     {
                                         focusedWidget->setUnfocused();
@@ -194,6 +236,7 @@ namespace Win32Window
                             return false;
                         }
                     );
+
 
                     nbstl::dfs(
                         this->getLayoutRoot(),
@@ -224,8 +267,13 @@ namespace Win32Window
                         }
                     );
                     
+                    if (!isFocusChanged && focusedWidget)
+                    {
+                        focusedWidget->setUnfocused();
+                        focusedWidget = nullptr;
+                    }
 
-                   
+                    InvalidateRect(hWnd, nullptr, FALSE);
 
 
 
@@ -325,8 +373,9 @@ namespace Win32Window
                         }
 
 
-                        InvalidateRect(hWnd, NULL, FALSE);
                     }
+
+                    InvalidateRect(hWnd, NULL, FALSE);
                     return 0;
                 }
                 case WM_KEYDOWN:
@@ -343,7 +392,20 @@ namespace Win32Window
                         focusedWidget->onButtonClicked(wParam);
                     }
 
+                    InvalidateRect(hWnd, nullptr, FALSE);
+
                     return 0;
+                }
+                case WM_TIMER:
+                {
+                    if (focusedWidget != nullptr)
+                    {
+                        focusedWidget->onTimer();
+                    }
+                    InvalidateRect(hWnd, NULL, FALSE);
+                    //UpdateWindow(hWnd);
+
+                    return FALSE;
                 }
                 case WM_LBUTTONUP:
                 {
@@ -397,7 +459,6 @@ namespace Win32Window
             return DefWindowProc(hWnd, message, wParam, lParam);
         }
 
-
         inline static LRESULT CALLBACK staticWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             ChildWindow *pThis = reinterpret_cast<ChildWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
@@ -417,8 +478,9 @@ namespace Win32Window
         }
     private:
         bool isRenderable = true;
+        PTP_TIMER           timer;
 
     };
 };
 
-#endif////////////////////////////////////////////////////////////////
+#endif//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

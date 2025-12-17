@@ -5,6 +5,7 @@
 #include "../Renderer/Direct2dRenderer.hpp"
 
 #include "../Widgets/Button.hpp"
+#include "NewRenderer/Direct2dWindowRenderer.hpp"
 
 namespace Win32Window
 {
@@ -30,7 +31,6 @@ namespace Win32Window
         {
             throw std::runtime_error("Failed to register window class.");
         }
-
 
         state.setSize({800, 600});
 

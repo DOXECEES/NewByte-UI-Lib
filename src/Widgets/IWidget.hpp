@@ -31,6 +31,14 @@ namespace Widgets
         virtual void layout(const NbRect<int>& rect) noexcept {};
     };
 
+#if 0
+    dasdsa
+
+#endif 
+
+    // INTERFACE JUST PEICE OF SHIT /
+    // TODO: REWRITE
+    // CHILDRENS DO NOT WORKS 
     class IWidget : public IIndexable, public IMeasureLayout
     {
     public:
@@ -66,19 +74,33 @@ namespace Widgets
         virtual void onTimer() {};
 
         virtual bool hitTest(const NbPoint<int>& pos) = 0;
-        virtual bool hitTestClick(const NbPoint<int>& pos) noexcept { return false; } // temporary non abstractr
+        virtual bool hitTestClick(const NbPoint<int>& pos) noexcept 
+        {
+            for (auto& children : childrens)
+            {
+                if (children->hitTest(pos))
+                {
+                    children->setFocused();
+                    //Debug::debug("On unfocused in spinbox");
+                }
+                else
+                {
+                    children->setUnfocused();
+                }
+            }
+            return false;
+        } // temporary non abstract
 
         inline void setSize(const NbSize<int>& newSize) { rect.width = newSize.width; rect.height = newSize.height; isSizeChange = true; onSizeChangedSignal.emit(rect); }
         
         inline const NbRect<int>& getRect() const { return rect; }
-		inline void setRect(const NbRect<int>& rect) {
+		inline void setRect(const NbRect<int>& rect)
+        {
 			this->rect = rect;
             isSizeChange = true;
             onSizeChangedSignal.emit(rect);
 		};
 
-        //inline const NbColor& getColor() const { return color; }
-        //inline const NbColor& getHoverColor() const { return hoverColor; }
         
         virtual WidgetStyle& getStyle() noexcept 
         {
@@ -111,8 +133,8 @@ namespace Widgets
         inline void setOnClickCallback(const std::function<void()>& onClickCallback) { this->onClickCallback = onClickCallback; }
 
         inline bool getIsFocused() const noexcept { return isFocused; }
-        inline void setFocused() noexcept { isFocused = true; }
-        inline void setUnfocused() noexcept { isFocused = false; }
+        void setFocused() noexcept;
+        void setUnfocused() noexcept;
 
         virtual NbRect<int> getRequestedSize() const noexcept;
 
@@ -141,15 +163,14 @@ namespace Widgets
         Signal<void(const NbRect<int>&)> onSizeChangedSignal;
         Signal<void()> onPressedSignal;
         Signal<void()> onReleasedSignal;
-        
+        Signal<void()> onUnfocusedSignal;
+        Signal<void()> onFocusSignal;
 
     protected:
 
 
         std::vector<IWidget*>   childrens;
         NbRect<int>             rect                = { 0, 0, 0, 0 };
-        //NbColor                 color               = { 30, 30, 30 };
-        //NbColor                 hoverColor          = { 51, 51, 51 };
 
         Core::ZIndex            zIndex;
 
@@ -158,7 +179,7 @@ namespace Widgets
         WidgetStyle             style               = ThemeManager::getCurrent().widgetStyle;
         WidgetSizePolicy        sizePolicy          = { SizePolicy::EXPANDING, SizePolicy::EXPANDING };
         WidgetState             state               = WidgetState::DEFAULT;
-    // state
+        
         bool                    isHover_            = false;
         bool                    isFocused           = false;
         bool                    isHide_             = false;

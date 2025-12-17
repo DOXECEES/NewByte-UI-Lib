@@ -56,25 +56,32 @@ namespace Renderer
 
         NbRect<int> rightBorder = {windowSize.width - frameSize.right, frameSize.top, frameSize.right, windowSize.height - frameSize.top - frameSize.bot - radius  };
         renderTarget.fillRectangle(rightBorder, frameColor);
+        ////
+
+        ////NbPoint<int> start = {windowSize.width, windowSize.height - radius};
+        ////NbPoint<int> end = {windowSize.width - radius, windowSize.height};
+        ////renderTarget.drawArc(start, end, radius, frameColor);
         //
 
-        //NbPoint<int> start = {windowSize.width, windowSize.height - radius};
-        //NbPoint<int> end = {windowSize.width - radius, windowSize.height};
-        //renderTarget.drawArc(start, end, radius, frameColor);
-        
+        ////NbRect<int> botRightCorner = {windowSize.width - radius, windowSize.height - radius, radius, radius};
+        ////renderTarget.fillRectangle(botRightCorner, frameColor);
+        ////
 
-        //NbRect<int> botRightCorner = {windowSize.width - radius, windowSize.height - radius, radius, radius};
-        //renderTarget.fillRectangle(botRightCorner, frameColor);
-        //
         if(!frameSize.isEmpty())
             renderTarget.drawText(window->getTitle(), {0, 0, windowSize.width, frameSize.top}, window->getFontColor());
 
         renderTarget.drawText(window->getTitle(), {0, 0, windowSize.width, windowSize.height}, window->getFontColor());
+            
         captionButtonRenderer->render(window->getCaptionButtonsContainer());
 
-        std::vector<const NNsLayout::LayoutNode*> stack;
-        stack.push_back(window->getLayoutRoot());
 
+
+
+        //
+        static std::vector<const NNsLayout::LayoutNode*> stack;
+        
+        
+        stack.push_back(window->getLayoutRoot());
         while (!stack.empty()) 
         {
             const NNsLayout::LayoutNode* node = stack.back();
@@ -99,10 +106,11 @@ namespace Renderer
             }
         }
 
+        stack.shrink_to_fit();
 
      
 
-        widgetRenderer->renderPopUp();
+        //widgetRenderer->renderPopUp();
 
         HRESULT hr = renderTarget.endDraw();
 

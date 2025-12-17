@@ -11,10 +11,10 @@
 #include "Widgets/Label.hpp"
 #include "Widgets/CheckBox.hpp"
 #include "Widgets/ComboBox.hpp"
+#include "Widgets/SpinBox.hpp"
 
 #include "Direct2dGlobalWidgetMapper.hpp"
 
-#include "GeometryFactory.hpp"
 
 #include "../Widgets/WidgetStyle.hpp"
 
@@ -44,24 +44,29 @@ namespace Renderer
         }
         else if(strncmp(widgetName, TextEdit::CLASS_NAME, size) == 0 )
         {
-            renderTextEdit(widget);
+            renderTextEdit(widget, layoutStyle);
         }
         else if (strncmp(widgetName, TreeView::CLASS_NAME, size) == 0)
         {
-            renderTreeView(widget);
+            renderTreeView(widget, layoutStyle);
         }
         else if(strncmp(widgetName, Label::CLASS_NAME, size) == 0 )
         {
-            renderLabel(widget);
+            renderLabel(widget, layoutStyle);
         }
         else if (strncmp(widgetName, CheckBox::CLASS_NAME, size) == 0)
         {
-            renderCheckBox(widget);
+            renderCheckBox(widget, layoutStyle);
         }
         else if (strncmp(widgetName, ComboBox::CLASS_NAME, size) == 0)
         {
-            renderComboBox(widget);
+            renderComboBox(widget, layoutStyle);
         }
+        else if (strncmp(widgetName, SpinBox::CLASS_NAME , size) == 0)
+        {
+            renderSpinBox(widget, layoutStyle);
+        }
+
 
     }
 
@@ -121,7 +126,7 @@ namespace Renderer
                 {
                     if (mesh.geometries[i])
                     {
-                        renderTarget->drawGeometry(mesh.geometries[i], colors[i]);
+                        renderTarget->fillGeometry(mesh.geometries[i], colors[i]);
                     }
                 }
             };
@@ -272,7 +277,7 @@ namespace Renderer
     }
 
 
-    void Direct2dWidgetRenderer::renderTextEdit(IWidget *widget)
+    void Direct2dWidgetRenderer::renderTextEdit(IWidget *widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
         TextEdit* textEdit = castWidget<TextEdit>(widget);
         const NbRect<int> &widgetRect = textEdit->getRect();
@@ -289,7 +294,7 @@ namespace Renderer
 
         DWRITE_TEXT_METRICS textMetrics {};
 
-        IDWriteTextLayout *textLayout = Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit);
+        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout = Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit);
         textLayout->GetMetrics(&textMetrics);
         HRESULT hr = textLayout->GetMetrics(&textMetrics);
         if (SUCCEEDED(hr))
@@ -310,7 +315,7 @@ namespace Renderer
             }
         }
 
-        renderTarget->drawText(Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit), widgetRect, NbColor(255, 255, 255), TextAlignment::LEFT);
+        renderTarget->drawText(Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit).Get(), widgetRect, NbColor(255, 255, 255), TextAlignment::LEFT);
         
         
         if(textEdit->getIsCaretVisible() && textEdit->getIsFocused())
@@ -327,6 +332,8 @@ namespace Renderer
                 &hitTestMetrics
             );
 
+            caretY = (widgetRect.height - hitTestMetrics.height)/ 2;
+
             if (SUCCEEDED(hr))
             {
                 D2D1_RECT_F caretRect = D2D1::RectF(
@@ -341,7 +348,7 @@ namespace Renderer
     }
 
     
-    void Direct2dWidgetRenderer::renderTreeView(IWidget* widget)
+    void Direct2dWidgetRenderer::renderTreeView(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
         using namespace Widgets;
 
@@ -428,7 +435,7 @@ namespace Renderer
 
 
 
-    void Direct2dWidgetRenderer::renderLabel(IWidget *widget)
+    void Direct2dWidgetRenderer::renderLabel(IWidget *widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
         Label* label = castWidget<Label>(widget);
         const NbRect<int>& widgetRect = label->getRect();
@@ -450,14 +457,14 @@ namespace Renderer
         }
 
 
-        IDWriteTextLayout* textLayout =  Direct2dGlobalWidgetMapper::getTextLayoutByWidget(label);
+        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout =  Direct2dGlobalWidgetMapper::getTextLayoutByWidget(label);
         
         renderTarget->fillRectangle(widgetRect, style.baseColor);
-        renderTarget->drawText(textLayout, widgetRect, style.baseTextColor, static_cast<TextAlignment>(vTextAlign));
+        renderTarget->drawText(textLayout.Get(), widgetRect, style.baseTextColor, static_cast<TextAlignment>(vTextAlign));
     }
 
 
-	void Direct2dWidgetRenderer::renderCheckBox(IWidget* widget)
+	void Direct2dWidgetRenderer::renderCheckBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
 	{
 		using namespace Widgets;
 		CheckBox* checkBox = castWidget<CheckBox>(widget);
@@ -468,65 +475,27 @@ namespace Renderer
 		NbColor textColor;
 
         getWidgetThemeColorByState(checkBox, color, textColor);
-
-
-        // TODO: cache geometry & add to wrapper class
-        // smth like getArrowTextureForCheckBox
-        // mb add class figures
-
-        ID2D1PathGeometry* geometry;
-        ID2D1GeometrySink* sink;
-		HRESULT hr =  FactorySingleton::getFactory()->CreatePathGeometry(&geometry);
-         
-		if (SUCCEEDED(hr))
-		{
-			hr = geometry->Open(&sink);
-
-			if (SUCCEEDED(hr))
-			{
-                const NbRect<int>& boxRc = checkBox->getBoxRect();
-
-                auto vertex = GeometryFactory::create(ShapeType::CHECK_MARK, boxRc);
-
-				sink->BeginFigure(
-					D2D1::Point2F(vertex[0].x, vertex[0].y),
-					D2D1_FIGURE_BEGIN_FILLED
-				);
-
-                for(size_t i = 1; i < vertex.size(); ++i)
-                {
-					sink->AddLine(D2D1::Point2F(vertex[i].x, vertex[i].y));
-                }
-
-                sink->EndFigure(D2D1_FIGURE_END_CLOSED);
-
-				hr = sink->Close();
-			}
-			SafeRelease(&sink);
-		}
-        
-        // TODO: must be rewrited because of leaks and caching
-        auto rt = renderTarget->getRawContext();
-		D2D1_COLOR_F cc = { 1.0f,0.0f,0.0f,1.0f };
-        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> c;
-		rt->CreateSolidColorBrush(cc, c.GetAddressOf());
-
-
-
+		
 		renderTarget->fillRectangle(checkBox->getRect(), color);
         renderTarget->drawRectangle(checkBox->getBoxRect(), { 255,255,255 });
-        renderLabel(checkBox->getLabel());
+        renderLabel(checkBox->getLabel(), layoutStyle);
         
+        auto geometry = widgetsCache.getMesh(
+            Geometry::ShapeType::CHECK_MARK,
+            {checkBox->getBoxRect(), checkBox->getIndex()}
+        );
         
-        if(checkBox->getIsChecked()) // some pice of @@
-            rt->FillGeometry(geometry, c.Get());
+        if (checkBox->getIsChecked())
+        {
+            renderTarget->fillGeometry(geometry, { 255,0,0 });
 
-        SafeRelease(&geometry);
+        }
+
 
 	}
 
 
-	void Direct2dWidgetRenderer::renderComboBox(IWidget* widget)
+	void Direct2dWidgetRenderer::renderComboBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
 	{
 		using namespace Widgets;
 		ComboBox* comboBox = castWidget<ComboBox>(widget);
@@ -548,6 +517,44 @@ namespace Renderer
         }
 	}
 
+    void Direct2dWidgetRenderer::renderSpinBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
+    {
+        using namespace Widgets;
+
+        SpinBox* spinBox = castWidget<SpinBox>(widget);
+
+        const WidgetStyle& style = spinBox->getStyle();
+        WidgetState state = spinBox->getState();
+
+        NbColor backgroundColor;
+        NbColor textColor;
+
+        getWidgetThemeColorByState(spinBox, backgroundColor, textColor);
+
+        // Рисуем фон SpinBox
+        renderTarget->fillRectangle(spinBox->getRect(), backgroundColor);
+
+        // Рисуем рамку
+        //renderTarget->drawRectangle(spinBox->getRect(), style.borderColor);
+
+        // Рендерим вложенные виджеты
+        // Все три должны иметь собственные rect, уже рассчитанные layout
+        if (spinBox->getInput())
+        {
+            renderTextEdit(spinBox->getInput(), layoutStyle);
+        }
+
+        if (spinBox->getUpButton())
+        {
+            renderButton(spinBox->getUpButton(), layoutStyle);
+        }
+
+        if (spinBox->getDownButton())
+        {
+            renderButton(spinBox->getDownButton(), layoutStyle);
+        }
+    }
+
 
     void Direct2dWidgetRenderer::getWidgetThemeColorByState(IWidget* widget, NbColor& color, NbColor& textColor) const noexcept
     {
@@ -561,7 +568,7 @@ namespace Renderer
                 textColor = style.hoverTextColor;
                 break;
             }
-            case WidgetState::ACTIVE:
+                case WidgetState::ACTIVE:
             {
                 color = style.activeColor;
                 textColor = style.activeTextColor;
@@ -603,7 +610,7 @@ namespace Renderer
                 newData = data;
             }
 
-            IDWriteTextLayout *textLayout = nullptr;
+            Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout = nullptr;
             Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(textEdit);
             
             if(!textFormat)
@@ -642,7 +649,7 @@ namespace Renderer
     
 	void Direct2dWidgetRenderer::createTextLayoutForLabel(Label* label) noexcept
 	{
-		IDWriteTextLayout* textLayout = nullptr;
+        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout = nullptr;
 		Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(label);
         if (label->getFont().isDirty())
         {

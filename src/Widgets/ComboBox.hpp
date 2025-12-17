@@ -50,6 +50,21 @@ namespace Widgets
 		NB_NODISCARD size_t getHoverElementIndex() const noexcept;
 		NB_NODISCARD NbRect<int> getHoverElementRect() const noexcept;
 
+		virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
+		{
+			return {0, 0};
+		}
+
+		virtual void layout(const NbRect<int>& rect) noexcept override
+		{
+			this->rect = {
+				this->rect.x,
+				this->rect.y,
+				this->rect.width,
+				SIZE_OF_ELEMENT_IN_PIXEL * static_cast<int>(itemList.size())
+			};
+		}
+
 	private:
 		std::vector<ListItem>	itemList = {
 			{L"Hello"},
@@ -98,6 +113,65 @@ namespace Widgets
 
 		void closeAllDropDowns() noexcept;
 
+		virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
+		{
+			constexpr int charWidth = 50;
+			constexpr int lineHeight = 20;
+			constexpr int paddingLeft = 4;
+			constexpr int paddingRight = 4;
+			constexpr int paddingTop = 2;
+			constexpr int paddingBottom = 2;
+
+			//int width = static_cast<int>(text.size()) * charWidth + paddingLeft + paddingRight;
+			//int height = lineHeight + paddingTop + paddingBottom;
+			//
+			//width = (nbstl::min)(width, maxSize.width);
+			//height = (nbstl::min)(height, maxSize.height);
+
+			size.width = 100;
+			size.height = 30;
+
+			return size;
+		}
+
+		void layout(const NbRect<int>& rect) noexcept override
+		{
+			this->rect = rect;
+
+			constexpr int buttonWidth = 20; // WIDTH_OF_BUTTON_ELEMENT_IN_PIXEL = 20
+
+			// 1. Кнопка со стрелкой (справа)
+			buttonRect = NbRect<int>{
+				rect.x + rect.width - buttonWidth, // справа
+				rect.y,
+				buttonWidth,
+				rect.height
+			};
+
+			selectedItemRect = NbRect<int>{
+				rect.x,
+				rect.y,
+				rect.width - buttonWidth, 
+				rect.height
+			};
+
+			if (comboBoxState == ComboState::EXPANDED && dropdownList)
+			{
+				updateDropdownPosition();
+			}
+		}
+
+		void updateDropdownPosition()
+		{
+			NbRect<int> newRc = {
+				rect.x,
+				rect.y + rect.height,
+				rect.width,
+				0
+			};
+			dropdownList->setRect(newRc);
+		}
+
 	private:
 
 		void toggleComboState() noexcept;
@@ -110,6 +184,8 @@ namespace Widgets
 		ComboState						comboBoxState = ComboState::COLLAPSED;
 	
 		inline static ComboBox*			openedComboBox = nullptr;
+
+		NbSize<int> size;
 	
 	};
 

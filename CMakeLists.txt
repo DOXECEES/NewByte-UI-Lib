@@ -77,13 +77,34 @@ set (SRC
         src/Renderer/Direct2dFont.hpp
         src/Renderer/Font.cpp
         src/Renderer/Font.hpp
-        src/Renderer/GeometryFactory.cpp
-        src/Renderer/GeometryFactory.hpp
+        src/Renderer/Geometry/GeometryFactory.cpp
+        src/Renderer/Geometry/GeometryFactory.hpp
 
         src/Renderer/Geometry/BorderGeometryBuilder.cpp
         src/Renderer/Geometry/BorderGeometryBuilder.hpp
         src/Renderer/Geometry/BorderGeometryCache.cpp
         src/Renderer/Geometry/BorderGeometryCache.hpp
+        src/Renderer/Geometry/WidgetsGeometryBuilder.cpp
+        src/Renderer/Geometry/WidgetsGeometryBuilder.hpp
+        src/Renderer/Geometry/WidgetsGeometryCache.cpp
+        src/Renderer/Geometry/WidgetsGeometryCache.hpp
+
+
+        src/RendererInterface/IRenderContext.cpp
+        src/RendererInterface/IRenderContext.hpp
+        src/RendererInterface/IResourceManager.cpp
+        src/RendererInterface/IResourceManager.hpp
+        src/RendererInterface/RenderTypes.hpp
+        
+        src/NewRenderer/Direct2dRenderContext.cpp
+        src/NewRenderer/Direct2dRenderContext.hpp
+        src/NewRenderer/Direct2dFactory.cpp
+        src/NewRenderer/Direct2dFactory.hpp
+        src/NewRenderer/Direct2dResourceManager.cpp
+        src/NewRenderer/Direct2dResourceManager.hpp
+        src/NewRenderer/Direct2dWindowRenderer.cpp
+        src/NewRenderer/Direct2dWindowRenderer.hpp
+
 
         src/Widgets/IWidget.cpp
         src/Widgets/IWidget.hpp
@@ -122,6 +143,8 @@ set (SRC
 
         src/Utils/Windows/WindowPositionQueue.cpp
         src/Utils/Windows/WindowPositionQueue.hpp
+        src/Utils/Validator.cpp
+        src/Utils/Validator.hpp
 
         src/Core/ZIndex.cpp
         src/Core/ZIndex.hpp

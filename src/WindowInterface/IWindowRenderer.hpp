@@ -13,7 +13,7 @@ namespace WindowInterface
     class ICaptionButtonRenderer
     {
     public:
-
+        virtual ~ICaptionButtonRenderer() noexcept = default;
         virtual void render(CaptionButtonsContainer* container) = 0;
     };
 

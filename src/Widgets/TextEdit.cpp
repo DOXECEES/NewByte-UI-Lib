@@ -37,30 +37,27 @@ namespace Widgets
 
     void TextEdit::onButtonClicked(const wchar_t symbol, SpecialKeyCode specialCode)
     {
+        wchar_t effectiveSymbol = symbol;
+
+        // Если включен RTL, инвертируем физические стрелки для логического движения
+        // 0x25 - Left, 0x27 - Right
+        if (isRTL)
+        {
+            if (symbol == 0x25) effectiveSymbol = 0x27;
+            else if (symbol == 0x27) effectiveSymbol = 0x25;
+        }
+
+
         switch (symbol)
         {
-        case 0x25:
-            if(specialCode == SpecialKeyCode::CTRL)
-            {
-                decrementCaretPosOnWord();
-            }
-            else
-            {
-                decrementCaretPos();
-            }
+        case 0x25: // Движение назад по строке
+            if (specialCode == SpecialKeyCode::CTRL) decrementCaretPosOnWord();
+            else decrementCaretPos();
             break;
-        case 0x27:
-        {
-            if(specialCode == SpecialKeyCode::CTRL)
-            {
-                incrementCaretPosOnWord();
-            }
-            else
-            {
-                incrementCaretPos();
-            }
+        case 0x27: // Движение вперед по строке
+            if (specialCode == SpecialKeyCode::CTRL) incrementCaretPosOnWord();
+            else incrementCaretPos();
             break;
-        }
         case 0x08:
         {
             if(specialCode == SpecialKeyCode::CTRL)
@@ -248,24 +245,29 @@ namespace Widgets
 
     void TextEdit::layout(const NbRect<int>& newRect) noexcept
     {
-        // Ты правильно хранишь rect в IWidget, так что просто обновляем
+        if (rect.width != newRect.width || rect.height != newRect.height)
+        {
+            isDataChanged = true; 
+        }
         rect = newRect;
         isSizeChange = true;
 
-        // И раз уж это текстовое поле...
-        // Каретка должна всегда быть в диапазоне
         if (caretPosition > data.size())
         {
             caretPosition = static_cast<uint32_t>(data.size());
         }
-
-        // Можно обновить внутреннее состояние
-        // но без лишней логики: рендер сам посмотрит isDataChanged/isCaretVisible
     }
+
 
     void TextEdit::addValidator(Utils::Validator valid) noexcept
     {
         validator = valid;
+    }
+
+    void TextEdit::setIsRTL(bool rtl) noexcept
+    {
+        isRTL = rtl;
+        isDataChanged = true;
     }
 
 };

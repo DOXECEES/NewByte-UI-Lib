@@ -20,7 +20,7 @@ namespace Widgets
         Button() noexcept : IWidget({}) {};
         Button(const NbRect<int>& rect) : IWidget(rect) {};
         
-        bool hitTest(const NbPoint<int>& pos) override; // 
+        bool hitTest(const NbPoint<int>& pos) override;  
         virtual bool hitTestClick(const NbPoint<int>& pos) noexcept override;
 
         virtual const char* getClassName() const override { return CLASS_NAME; }

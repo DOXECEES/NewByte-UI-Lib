@@ -137,6 +137,8 @@ set (SRC
         src/Widgets/SideBar.cpp
         src/Widgets/SideBar.hpp
         src/Widgets/ILayoutable.hpp
+        src/Widgets/Calendar.cpp
+        src/Widgets/Calendar.hpp
 
         src/Layout/LayoutNode.cpp
         src/Layout/LayoutNode.hpp
@@ -148,6 +150,31 @@ set (SRC
 
         src/Core/ZIndex.cpp
         src/Core/ZIndex.hpp
+
+        src/Localization/LocalizableText.cpp
+        src/Localization/LocalizableText.hpp
+        src/Localization/Locale.cpp
+        src/Localization/Locale.hpp
+        src/Localization/LocaleLoader.cpp
+        src/Localization/LocaleLoader.hpp
+        src/Localization/LocaleManager.cpp
+        src/Localization/LocaleManager.hpp
+        src/Localization/Formatter.cpp
+        src/Localization/Formatter.hpp
+        src/Localization/Translation.cpp
+        src/Localization/Translation.hpp
+        src/Localization/PluralEngine.cpp
+        src/Localization/PluralEngine.hpp
+        src/Localization/Calendars/CalendarDate.cpp
+        src/Localization/Calendars/CalendarDate.hpp
+        src/Localization/Calendars/ICalendar.cpp
+        src/Localization/Calendars/ICalendar.hpp
+        src/Localization/Calendars/GregorianCalendar.cpp
+        src/Localization/Calendars/GregorianCalendar.hpp
+        src/Localization/Calendars/JulianCalendar.cpp
+        src/Localization/Calendars/JulianCalendar.hpp
+        src/Localization/Calendars/EthiopicCalendar.cpp
+        src/Localization/Calendars/EthiopicCalendar.hpp
 )
 
 

@@ -12,6 +12,7 @@
 #include "Widgets/CheckBox.hpp"
 #include "Widgets/ComboBox.hpp"
 #include "Widgets/SpinBox.hpp"
+#include "Widgets/Calendar.hpp"
 
 #include "Direct2dGlobalWidgetMapper.hpp"
 
@@ -65,6 +66,10 @@ namespace Renderer
         else if (strncmp(widgetName, SpinBox::CLASS_NAME , size) == 0)
         {
             renderSpinBox(widget, layoutStyle);
+        }
+        else if (strncmp(widgetName, CalendarWidget::CLASS_NAME, size) == 0)
+        {
+            renderCalendar(widget, layoutStyle);
         }
 
 
@@ -230,119 +235,108 @@ namespace Renderer
     }
 
 
-    void Direct2dWidgetRenderer::renderButton(IWidget *widget, const NNsLayout::LayoutStyle& layoutStyle)
+    void Direct2dWidgetRenderer::renderButton(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
         using namespace Widgets;
         Button* button = castWidget<Button>(widget);
 
-        const WidgetStyle& style = button->getStyle();
-        const ButtonStyle& buttonStyle = button->getButtonStyle();
+        const ButtonStyle& bStyle = button->getButtonStyle();
         WidgetState state = button->getState();
-        NbColor color;
-        NbColor textColor;
 
-        switch (widget->getState())
-        {
-            case WidgetState::HOVER:
-            {
-                color = buttonStyle.hoverColor();
-                textColor = buttonStyle.hoverTextColor();
-                break;
-            }
-            case WidgetState::ACTIVE:
-            {
-                color = buttonStyle.activeColor();
-                textColor = buttonStyle.activeTextColor();
-                break;
-            }
-            case WidgetState::DISABLE:
-            {
-                color = buttonStyle.disableColor();
-                textColor = buttonStyle.disableTextColor();
-                break;
-            }
-            default:
-            {
-                color = buttonStyle.baseColor();
-                textColor = buttonStyle.baseTextColor();
-                break;
-            }
+        NbColor color, textColor;
+
+        // Определяем цвета в зависимости от состояния
+        switch (state) {
+        case WidgetState::HOVER:   color = bStyle.hoverColor();   textColor = bStyle.hoverTextColor();   break;
+        case WidgetState::ACTIVE:  color = bStyle.activeColor();  textColor = bStyle.activeTextColor();  break;
+        case WidgetState::DISABLE: color = bStyle.disableColor(); textColor = bStyle.disableTextColor(); break;
+        default:                   color = bStyle.baseColor();    textColor = bStyle.baseTextColor();    break;
         }
 
+        NbRect<int> rect = button->getRect();
+
+        // 1. Рисуем фон кнопки
+        renderTarget->fillRectangle(rect, color);
+
+        // 2. Рисуем легкую внутреннюю тень или блик (для объема)
+        if (state != WidgetState::ACTIVE && state != WidgetState::DISABLE) {
+            NbRect<int> highlight = { rect.x, rect.y, rect.width, 1 };
+            renderTarget->fillRectangle(highlight, NbColor(255, 255, 255, 30)); // Белый полупрозрачный блик сверху
+        }
+
+        // 3. Рисуем границу (используем ваш drawBorder)
         drawBorder(button, layoutStyle.border);
 
+        // 4. Эффект нажатия: смещаем текст вниз на 1 пиксель, если кнопка активна
+        NbRect<int> textRect = rect;
+        if (state == WidgetState::ACTIVE) {
+            textRect.y += 1;
+        }
 
-        renderTarget->fillRectangle(button->getRect(), color);
-        renderTarget->drawText(button->getText(), button->getRect(), textColor);
+        renderTarget->drawText(button->getText().c_str(), textRect, textColor);
     }
 
 
-    void Direct2dWidgetRenderer::renderTextEdit(IWidget *widget, const NNsLayout::LayoutStyle& layoutStyle)
+    void Direct2dWidgetRenderer::renderTextEdit(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
+        using namespace Widgets;
         TextEdit* textEdit = castWidget<TextEdit>(widget);
-        const NbRect<int> &widgetRect = textEdit->getRect();
-
+        const NbRect<int>& widgetRect = textEdit->getRect();
         const WidgetStyle& style = textEdit->getStyle();
 
-        renderTarget->drawRectangle(widgetRect, style.baseColor);        
+        renderTarget->drawRectangle(widgetRect, style.baseColor);
 
-        if(textEdit->getIsDataChanged())
+        if (textEdit->getIsDataChanged())
         {
             createTextLayoutForWidget(textEdit);
+
+            auto textLayout = Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit);
+
+            if (textEdit->getIsRTL())
+            {
+                textLayout->SetReadingDirection(DWRITE_READING_DIRECTION_RIGHT_TO_LEFT);
+                textLayout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+            }
+            else
+            {
+                textLayout->SetReadingDirection(DWRITE_READING_DIRECTION_LEFT_TO_RIGHT);
+                textLayout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            }
+
             textEdit->resetIsDataChanged();
         }
 
-        DWRITE_TEXT_METRICS textMetrics {};
+        auto textLayout = Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit);
 
-        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout = Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit);
-        textLayout->GetMetrics(&textMetrics);
-        HRESULT hr = textLayout->GetMetrics(&textMetrics);
-        if (SUCCEEDED(hr))
-        {
-            float width = textMetrics.widthIncludingTrailingWhitespace;
-            float height = textMetrics.height;
+        renderTarget->drawText(textLayout.Get(), widgetRect, NbColor(255, 255, 255), TextAlignment::LEFT);
 
-            if(width > widgetRect.width)
-            {
-                int caretPos = textEdit->getCaretPos();
-
-                int halfOfRectWidth = widgetRect.width / 2;
-
-                int startOfString = std::max(0, caretPos - halfOfRectWidth);
-                std::wstring temp = textEdit->getData().substr(startOfString, halfOfRectWidth * 2);
-
-                createTextLayoutForWidget(textEdit, temp);
-            }
-        }
-
-        renderTarget->drawText(Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit).Get(), widgetRect, NbColor(255, 255, 255), TextAlignment::LEFT);
-        
-        
-        if(textEdit->getIsCaretVisible() && textEdit->getIsFocused())
+        if (textEdit->getIsCaretVisible() && textEdit->getIsFocused())
         {
             FLOAT caretX = 0.0f;
             FLOAT caretY = 0.0f;
-            DWRITE_HIT_TEST_METRICS hitTestMetrics {};
+            DWRITE_HIT_TEST_METRICS hitTestMetrics{};
 
-            HRESULT hr = Direct2dGlobalWidgetMapper::getTextLayoutByWidget(textEdit)->HitTestTextPosition(
+            HRESULT hr = textLayout->HitTestTextPosition(
                 static_cast<UINT32>(textEdit->getCaretPos()),
-                FALSE,
+                FALSE, 
                 &caretX,
                 &caretY,
                 &hitTestMetrics
             );
 
-            caretY = (widgetRect.height - hitTestMetrics.height)/ 2;
-
             if (SUCCEEDED(hr))
             {
-                D2D1_RECT_F caretRect = D2D1::RectF(
-                    widgetRect.x + caretX,
-                    widgetRect.y + caretY,
-                    widgetRect.x + caretX + 2.0f,
-                    widgetRect.y + caretY + hitTestMetrics.height);
+                float caretHeight = hitTestMetrics.height;
+                caretY = (widgetRect.height - caretHeight) / 2.0f;
 
-                renderTarget->drawRectangle(Utils::toNbRect<int>(caretRect), NbColor(255, 0, 0));
+                NbRect<float> caretRect = {
+                    (float)widgetRect.x + caretX,
+                    (float)widgetRect.y + caretY,
+                    2.0f, 
+                    caretHeight
+                };
+                
+                renderTarget->drawRectangle(caretRect.to<int>(), NbColor(255, 0, 0));
             }
         }
     }
@@ -490,9 +484,81 @@ namespace Renderer
             renderTarget->fillGeometry(geometry, { 255,0,0 });
 
         }
-
-
 	}
+
+    void Direct2dWidgetRenderer::renderCalendar(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
+    {
+        using namespace Widgets;
+        CalendarWidget* calendar = castWidget<CalendarWidget>(widget);
+        if (!calendar) return;
+
+        const auto& grid = calendar->getGrid();
+        if (grid.empty()) return;
+
+        // --- Стилизация ---
+        const NbColor colBG = { 25, 25, 25, 255 };
+        const NbColor colAccent = { 0, 120, 215, 255 };
+        const NbColor colText = { 245, 245, 245, 255 };
+        const NbColor colMuted = { 100, 100, 100, 255 };
+        const NbColor colHover = { 255, 255, 255, 20 };
+        const NbColor colBorder = { 45, 45, 45, 255 };
+
+        const NbRect<int>& rect = calendar->getRect();
+
+        // 1. Фон
+        renderTarget->fillRectangle(rect, colBG);
+
+        // 2. Шапка
+        renderTarget->drawText(calendar->getHeaderText().c_str(), calendar->getTitleRect(), colText);
+        renderTarget->drawText(L"<", calendar->getBtnPrevRect(), colMuted);
+        renderTarget->drawText(L">", calendar->getBtnNextRect(), colMuted);
+
+        // 3. Разделитель
+        NbRect<int> sep = { rect.x + 8, calendar->getTitleRect().y + calendar->getTitleRect().height, rect.width - 16, 1 };
+        renderTarget->fillRectangle(sep, colBorder);
+
+        // 4. Дни недели (только в режиме DAYS)
+        if (calendar->getViewMode() == CalendarViewMode::DAYS) {
+            int cellW = rect.width / calendar->getWeekLength();
+            int dowY = sep.y + 5;
+            for (int i = 0; i < calendar->getWeekLength(); ++i) {
+                NbRect<int> dowRect = { rect.x + (i * cellW), dowY, cellW, 20 };
+                renderTarget->drawText(calendar->getDayName(i).c_str(), dowRect, colMuted);
+            }
+        }
+
+        // 5. Сетка данных
+        for (const auto& cell : grid) {
+            // "Внутренняя" область ячейки для визуальных эффектов
+            NbRect<int> vRect = cell.rect;
+            vRect.x += 2; vRect.y += 2; vRect.width -= 4; vRect.height -= 4;
+
+            if (cell.isSelected) {
+                renderTarget->fillRectangle(vRect, colAccent);
+            }
+            else if (cell.isHovered && cell.isCurrentRange) {
+                renderTarget->fillRectangle(vRect, colHover);
+            }
+
+            NbColor curColor = colText;
+            if (!cell.isCurrentRange) curColor = colMuted;
+            if (cell.isSelected)      curColor = { 255, 255, 255, 255 };
+
+            renderTarget->drawText(cell.text.c_str(), cell.rect, curColor);
+
+            // Индикатор "Сегодня"
+            if (cell.isToday) {
+                if (cell.isSelected) {
+                    renderTarget->drawRectangle(vRect, { 255, 255, 255, 180 });
+                }
+                else {
+                    NbRect<int> indicator = { cell.rect.x + cell.rect.width / 2 - 7, cell.rect.y + cell.rect.height - 5, 14, 2 };
+                    renderTarget->fillRectangle(indicator, colAccent);
+                }
+            }
+        }
+    }
+
 
 
 	void Direct2dWidgetRenderer::renderComboBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
@@ -520,39 +586,48 @@ namespace Renderer
     void Direct2dWidgetRenderer::renderSpinBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
         using namespace Widgets;
-
         SpinBox* spinBox = castWidget<SpinBox>(widget);
+        if (!spinBox) return;
 
+        NbColor bgColor, textColor;
+        getWidgetThemeColorByState(spinBox, bgColor, textColor);
+
+        const NbRect<int>& rect = spinBox->getRect();
         const WidgetStyle& style = spinBox->getStyle();
-        WidgetState state = spinBox->getState();
 
-        NbColor backgroundColor;
-        NbColor textColor;
+        renderTarget->fillRectangle(rect, bgColor);
 
-        getWidgetThemeColorByState(spinBox, backgroundColor, textColor);
-
-        // Рисуем фон SpinBox
-        renderTarget->fillRectangle(spinBox->getRect(), backgroundColor);
-
-        // Рисуем рамку
-        //renderTarget->drawRectangle(spinBox->getRect(), style.borderColor);
-
-        // Рендерим вложенные виджеты
-        // Все три должны иметь собственные rect, уже рассчитанные layout
         if (spinBox->getInput())
         {
             renderTextEdit(spinBox->getInput(), layoutStyle);
         }
 
-        if (spinBox->getUpButton())
+        if (spinBox->getUpButton()) 
         {
             renderButton(spinBox->getUpButton(), layoutStyle);
         }
 
-        if (spinBox->getDownButton())
+        if (spinBox->getDownButton()) 
         {
             renderButton(spinBox->getDownButton(), layoutStyle);
         }
+
+
+        if (spinBox->getUpButton()) 
+        {
+            int separatorX = spinBox->getUpButton()->getRect().x;
+            NbRect<int> separator = { separatorX - 1, rect.y + 2, 1, rect.height - 4 };
+            renderTarget->fillRectangle(separator, NbColor(100, 100, 100, 100)); 
+        }
+
+            renderTarget->drawRectangle(rect, NbColor(80, 80, 80));
+        //if (spinBox->getInput() && spinBox->getInput()->getIsFocused()) {
+        //    // Рисуем внешнюю рамку толщиной 2 пикселя (акцентную)
+        //    renderTarget->drawRectangle(rect, NbColor(0, 120, 215));
+        //}
+        //else {
+        //    // Обычная рамка
+        //}
     }
 
 

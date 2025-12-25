@@ -53,6 +53,9 @@ namespace Widgets
 
         void addValidator(Utils::Validator valid) noexcept;
 
+        inline bool getIsRTL() const noexcept { return isRTL; }
+        void setIsRTL(bool rtl) noexcept;
+        
 
     private:
         Utils::Validator validator;
@@ -60,6 +63,7 @@ namespace Widgets
 
         bool            isDataChanged   = true; // only for renderer
         bool            isCaretVisible  = true;
+        bool            isRTL           = false; 
         uint32_t        caretPosition   = 0;
     };
 };

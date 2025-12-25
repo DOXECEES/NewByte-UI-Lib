@@ -7,6 +7,11 @@
 namespace Widgets
 {
 
+    // SetText - ID
+    // locales 
+    // ru 
+    // eng - default 
+    //
     TreeView::TreeView(const NbRect<int>& rect) noexcept
         : IWidget(rect)
     {

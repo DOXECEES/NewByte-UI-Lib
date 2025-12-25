@@ -10,6 +10,7 @@
 #include <cmath>
 #include <sstream>
 #include <ostream>
+#include <Windows.h> // TODO 
 
 #define DCX_USESTYLE 0x00010000
 
@@ -22,6 +23,17 @@ inline std::string toStdString(const T& val) noexcept
 	oss << val;
 	return oss.str();
 }
+
+inline std::wstring toWstring(const std::string str) noexcept
+{
+    std::wstring utf16;
+    utf16.resize(str.size());
+    int len = MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), utf16.data(), (int)utf16.size());
+    utf16.resize(len);
+    return utf16;
+}
+
+
 
 enum class SpecialKeyCode
 {
@@ -230,6 +242,16 @@ struct NbRect
             static_cast<float>(this->y),
             static_cast<float>(this->width),
             static_cast<float>(this->height)
+        );
+    }
+    template<typename U>
+    constexpr NbRect<U> to() const noexcept
+    {
+        return NbRect<U>(
+            static_cast<U>(this->x),
+            static_cast<U>(this->y),
+            static_cast<U>(this->width),
+            static_cast<U>(this->height)
         );
     }
 

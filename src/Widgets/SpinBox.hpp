@@ -42,10 +42,10 @@ namespace Widgets
 
     private:
         // State
-        int value = 0;
-        int minValue = 0;
-        int maxValue = 100;
-        int step = 1;
+        int value       = 1;
+        int minValue    = 1;
+        int maxValue    = 100;
+        int step        = 1;
 
         // Widgets
         std::unique_ptr<TextEdit> input;

@@ -30,9 +30,9 @@ namespace Widgets
         input = std::make_unique<TextEdit>(NbRect<int>{0, 0, 0, 0});
         input->addValidator(Utils::Validator().required().numericOnly());
         upButton = std::make_unique<Button>(NbRect<int>{0, 0, 0, 0});
-        upButton->setText(L"U");
+        upButton->setText(L"\u25B4");
         downButton = std::make_unique<Button>(NbRect<int>{0, 0, 0, 0});
-        downButton->setText(L"D");
+        downButton->setText(L"\u25BE");
         addChildrenWidget(input.get());
         addChildrenWidget(upButton.get());
         addChildrenWidget(downButton.get());
@@ -46,7 +46,6 @@ namespace Widgets
 
         input->onUnfocusedSignal.connect([this]() {
             input->setIsCaretVisible(false);
-            Debug::debug("On unfocused in spinbox");
         });
       
         upButton->onPressedSignal.connect([&]() {
@@ -62,7 +61,6 @@ namespace Widgets
     void SpinBox::syncText()
     {
         input->setData(std::to_wstring(value));
-
     }
 
     void SpinBox::onInputEdited()
@@ -114,6 +112,8 @@ namespace Widgets
 
     void SpinBox::layout(const NbRect<int>& rect) noexcept
     {
+        setRect(rect);
+
         NbRect<int> inputRect = rect;
         int btnWidth = rect.height;
 
@@ -126,14 +126,13 @@ namespace Widgets
         input->layout(inputRect);
         upButton->layout(upRect);
         downButton->layout(downRect);
-
-        setRect(rect);
     }
 
     void SpinBox::onTimer()
     {
         input->setFocused();
         input->onTimer();
+        syncText();
     }
 
     void SpinBox::onButtonClicked(const wchar_t symbol, SpecialKeyCode code)
@@ -144,10 +143,32 @@ namespace Widgets
     bool SpinBox::hitTest(const NbPoint<int>& pos)
     {
         const auto& r = getRect();
-        return pos.x >= r.x &&
-            pos.y >= r.y &&
-            pos.x < r.x + r.width &&
-            pos.y < r.y + r.height;
+        bool childHit = true;
+        if (upButton->hitTest(pos))
+        {
+            upButton->setHover();
+            childHit = false;
+        }
+        else
+        {
+            upButton->setDefault();
+        }
+
+        if (downButton->hitTest(pos))
+        {
+            downButton->setHover();
+            childHit = false;
+        }
+        else
+        {
+            downButton->setDefault();
+        }
+
+        if (!childHit)
+        {
+            return childHit;
+        }
+        return r.isInside(pos);
     }
 
     bool SpinBox::hitTestClick(const NbPoint<int>& pos) noexcept

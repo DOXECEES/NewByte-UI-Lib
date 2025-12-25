@@ -43,6 +43,8 @@ namespace Renderer
         void renderCheckBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
         void renderComboBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
         void renderSpinBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
+        void renderCalendar(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
+
 
         template<typename T>
         T* castWidget(IWidget* widget) const noexcept

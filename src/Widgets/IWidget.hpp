@@ -31,11 +31,6 @@ namespace Widgets
         virtual void layout(const NbRect<int>& rect) noexcept {};
     };
 
-#if 0
-    dasdsa
-
-#endif 
-
     // INTERFACE JUST PEICE OF SHIT /
     // TODO: REWRITE
     // CHILDRENS DO NOT WORKS 

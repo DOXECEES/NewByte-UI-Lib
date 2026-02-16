@@ -8,6 +8,8 @@
 #include <algorithm>
 
 #include <Utility.hpp>
+#include "Widgets/CheckBox.hpp"
+
 #pragma comment(lib, "winmm.lib")
 
 namespace Win32Window
@@ -83,7 +85,7 @@ namespace Win32Window
                         return 0;
                     }*/
 
-                    if(state.title != L"SCENE")
+                    if(state.title != L"SCENE" && state.title != L"SideBarTest")
                     {
                         renderer->render(this);
                     }
@@ -113,7 +115,6 @@ namespace Win32Window
                     if (renderer)
                     {
                         renderer->resize(this);
-                        //renderer->render(this);
                         InvalidateRect(hWnd, nullptr, FALSE);
 
                     }
@@ -187,135 +188,95 @@ namespace Win32Window
                 case WM_LBUTTONDOWN:
                 {
                     SetCapture(hWnd);
-
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
-                    POINT p = { point.x, point.y };
-                    MapWindowPoints(hWnd, GetParent(hWnd), &p, 1);
-                    NbPoint<int> pp = Utils::toNbPoint<int>(p);
 
-                    // widgets no longer use
-                    std::sort(widgets.begin(), widgets.end(), [](Widgets::IWidget* widget1, Widgets::IWidget* widget2) -> bool {
-                        return widget1->getZIndex() > widget2->getZIndex();
-                    });
+                    // Функция-помощник для получения ZIndex из узла лейаута
+                    auto getZIndex = [](const NNsLayout::LayoutNode* node) -> Core::ZIndex {
+                        if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node)) {
+                            if (auto widget = widgetLayout->getWidget().get()) {
+                                return widget->getZIndex();
+                            }
+                        }
+                        return Core::ZIndex(Core::ZIndex::ZType::MAIN, 0); // Для контейнеров без виджетов
+                        };
 
-                    //
+                    // Лямбда для получения детей, отсортированных по ZIndex (сначала верхние)
+                    auto getSortedChildren = [&](const NNsLayout::LayoutNode* node) {
+                        nbstl::Vector<const NNsLayout::LayoutNode*> children;
+                        int count = node->getChildrenSize();
+                        children.reserve(count);
+                        for (int i = 0; i < count; i++) {
+                            children.pushBack(node->getChildrenAt(i));
+                        }
+
+                        // Сортируем детей по ZIndex. 
+                        // Если ZIndex одинаковый, сохраняем порядок отрисовки (кто позже добавлен — тот выше)
+                        std::stable_sort(children.begin(), children.end(), [&](const NNsLayout::LayoutNode* a, const NNsLayout::LayoutNode* b) {
+                            return getZIndex(a) > getZIndex(b);
+                            });
+
+                        return children;
+                        };
 
                     bool isFocusChanged = false;
 
+                    // ПЕРВЫЙ ПРОХОД: Поиск виджета под курсором с учетом ZIndex
                     nbstl::dfs(
                         this->getLayoutRoot(),
-                        [](const NNsLayout::LayoutNode* node)
-                        {
-                            nbstl::Vector<const NNsLayout::LayoutNode*> children;
-                            children.reserve(node->getChildrenSize());
-                            for (int i = 0; i < node->getChildrenSize(); i++)
-                            {
-                                children.pushBack(node->getChildrenAt(i));
-                            }
-                            return children;
-                        },
+                        getSortedChildren, // Используем сортировку здесь
                         [&](const NNsLayout::LayoutNode* node)
                         {
                             if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
                             {
                                 auto widget = widgetLayout->getWidget().get();
+                                // hitTest должен проверять и внутренних детей (как мы писали для ComboBox)
                                 if (widget && !widget->isHide() && widget->hitTest(point))
                                 {
                                     isFocusChanged = true;
-                                    if (focusedWidget)
-                                    {
+                                    if (focusedWidget && focusedWidget != widget) {
                                         focusedWidget->setUnfocused();
                                     }
                                     focusedWidget = widget;
                                     focusedWidget->setFocused();
                                     clicked = true;
                                     widget->onClick();
-                                    return true;
+                                    return true; // Нашли самый верхний виджет, прерываем DFS
                                 }
                             }
                             return false;
                         }
                     );
 
-
+                    // ВТОРОЙ ПРОХОД: Логика клика (ComboBox toggle и т.д.)
                     nbstl::dfs(
                         this->getLayoutRoot(),
-                        [](const NNsLayout::LayoutNode* node)
-                        {
-                            nbstl::Vector<const NNsLayout::LayoutNode*> children;
-                            children.reserve(node->getChildrenSize());
-                            for (int i = 0; i < node->getChildrenSize(); i++)
-                            {
-                                children.pushBack(node->getChildrenAt(i));
-                            }
-                            return children;
-                        },
+                        getSortedChildren, // И здесь тоже
                         [&](const NNsLayout::LayoutNode* node)
                         {
                             if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
                             {
                                 auto widget = widgetLayout->getWidget().get();
-                                if (widget)
+                                if (widget && !widget->isHide() && widget->hitTestClick(point))
                                 {
-                                    if (!widget->isHide() && widget->hitTestClick(point))
-                                    {
-                                        return true;
-                                    }
+                                    return true; // Событие обработано самым верхним виджетом
                                 }
                             }
                             return false;
                         }
                     );
-                    
-                    if (!isFocusChanged && focusedWidget)
+
+                    if (!isFocusChanged)
                     {
-                        focusedWidget->setUnfocused();
-                        focusedWidget = nullptr;
+                        if (focusedWidget) {
+                            focusedWidget->setUnfocused();
+                            focusedWidget = nullptr;
+                        }
+                        // Закрываем все выпадающие списки, если кликнули по пустому месту
+                        // (убедитесь, что метод объявлен как static в ComboBox.hpp)
+                        //::Widgets::ComboBox::closeAllDropDowns();
                     }
 
                     InvalidateRect(hWnd, nullptr, FALSE);
-
-
-
-
-
-                    //
-                    /*for (const auto& widget : widgets)
-                    {
-                        if (!widget->isHide() && widget->hitTest(point))
-                        {
-                            if (focusedWidget) focusedWidget->setUnfocused();
-
-                            focusedWidget = widget;
-                            focusedWidget->setFocused();
-                            clicked = true;
-                            widget->onClick();
-                            break;
-                        }
-                    }*/
-
-                    /*for (const auto& widget : widgets)
-                    {
-                        
-                        if (!widget->isHide() && widget->hitTestClick(point))
-                        {
-                            break;
-                        }
-                    }*/
-
-                    // for (auto& i : DockManager::splitterList)
-                    // {
-                    //     if (i->hitTest(pp))
-                    //     {
-                    //         activeSplitter = i;
-
-                    //         // ��������� ����� �������
-                    //         dragOffset.x = pp.x - i->rect.x;
-                    //         dragOffset.y = pp.y - i->rect.y;
-                    //         dragging = true;
-                    //         break;
-                    //     }
-                    // }
                     return 0;
                 }
                 case WM_APP + 1:
@@ -327,7 +288,16 @@ namespace Win32Window
                     Debug::debug("Resize finished");
                     return 0;
                 }
-
+                case WM_SETCURSOR:
+                {
+                    static HCURSOR defaultCursor = LoadCursor(NULL, IDC_ARROW);
+                    if (LOWORD(lParam) == HTCLIENT)
+                    {
+                        SetCursor(defaultCursor);
+                        return TRUE;
+                    }
+                    return DefWindowProc(hWnd, message, wParam, lParam);
+                }
                 case WM_MOUSEMOVE:
                 {
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
@@ -453,7 +423,9 @@ namespace Win32Window
                     return 0;
                 }
                 case WM_ERASEBKGND:
+                {
                     return 1;
+                }
 
             }
             return DefWindowProc(hWnd, message, wParam, lParam);

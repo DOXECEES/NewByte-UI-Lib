@@ -73,6 +73,7 @@ namespace Win32Window
 
 	void ChildWindow::show()
     {
+        recalculateLayout();
         notifyAllListeners();
         ShowWindow(handle.as<HWND>(), TRUE);
         InvalidateRect(handle.as<HWND>(), nullptr, TRUE);
@@ -88,10 +89,12 @@ namespace Win32Window
 	void ChildWindow::addCaption() noexcept
     {
         state.frameSize = FrameSize();
-        /*state.clientRect = NbRect<int>(state.clientRect.x + state.frameSize.left
-            , state.clientRect.y + state.frameSize.top
-            , 400 - state.frameSize.left - state.frameSize.right
-            , 300 - state.frameSize.top - state.frameSize.bot);*/
+        state.clientRect = NbRect<int>(
+            state.clientRect.x + state.frameSize.left,
+            state.clientRect.y + state.frameSize.top,
+            state.clientRect.width - state.frameSize.left - state.frameSize.right,
+            state.clientRect.height - state.frameSize.top - state.frameSize.bot
+        );
 
     }
 

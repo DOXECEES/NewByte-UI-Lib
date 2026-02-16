@@ -13,7 +13,6 @@ namespace Localization
     class PersianCalendar final : public ICalendar
     {
     private:
-        // Вспомогательные математические функции для корректной работы с отрицательными датами
         static inline int64_t mathMod(int64_t a, int64_t b) noexcept {
             int64_t r = a % b;
             return r < 0 ? r + b : r;
@@ -29,7 +28,6 @@ namespace Localization
         static constexpr int32              DAYS_IN_WEEK = 7;
         static constexpr int32              MONTHS_IN_YEAR = 12;
 
-        // Эпоха: 19 марта 622 года н.э. (Григорианский) = Fixed Day 226896
         static constexpr int64 PERSIAN_EPOCH = 226896;
 
         static constexpr std::array<std::string_view, MONTHS_IN_YEAR> MONTHS_KEYS = {
@@ -63,7 +61,6 @@ namespace Localization
 
         bool isLeapYear(int32 year) const noexcept override
         {
-            // Алгоритмический цикл (33 года): високосные 1, 5, 9, 13, 17, 22, 26, 30
             return mathMod((static_cast<int64>(year) + 38) * 31, 128) < 31;
         }
 
@@ -105,7 +102,7 @@ namespace Localization
             }
 
             int32 year = static_cast<int32>(474 + 2820 * cycle + yCycle);
-            if (year <= 0) year--; // Обработка отсутствия нулевого года
+            if (year <= 0) year--; 
 
             const int64 dayOfYear = fixed - dateToFixed(year, 1, 1) + 1;
             int32 month, day;
@@ -124,16 +121,13 @@ namespace Localization
 
         CalendarDate timeToCalendarDate(time_t unixTime) const noexcept override
         {
-            // Unix Time 1970-01-01 (Gregorian) = Fixed Day 719163
             int64 fixedDay = 719163 + mathFloorDiv(static_cast<int64>(unixTime), 86400);
             return fixedToDate(fixedDay);
         }
 
         int32 getDayOfWeekIndex(int64 fixed) const noexcept override
         {
-            // Общий цикл недель для всех календарей
-            // fixed=1 (1.1.0001 Gregorian) был Понедельником.
-            // Приводим к индексу Monday = 0
+            
             return static_cast<int32>(mathMod(fixed + 5, 7));
         }
 

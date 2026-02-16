@@ -110,7 +110,7 @@ namespace Renderer
 
      
 
-        //widgetRenderer->renderPopUp();
+        widgetRenderer->renderPopUp();
 
         HRESULT hr = renderTarget.endDraw();
 

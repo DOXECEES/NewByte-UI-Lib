@@ -96,7 +96,6 @@ namespace Widgets
             onSizeChangedSignal.emit(rect);
 		};
 
-        
         virtual WidgetStyle& getStyle() noexcept 
         {
             return style;

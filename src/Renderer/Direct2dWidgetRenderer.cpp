@@ -269,7 +269,8 @@ namespace Renderer
 
         // 4. Эффект нажатия: смещаем текст вниз на 1 пиксель, если кнопка активна
         NbRect<int> textRect = rect;
-        if (state == WidgetState::ACTIVE) {
+        if (state == WidgetState::ACTIVE)
+        {
             textRect.y += 1;
         }
 
@@ -561,27 +562,72 @@ namespace Renderer
 
 
 
-	void Direct2dWidgetRenderer::renderComboBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
-	{
-		using namespace Widgets;
-		ComboBox* comboBox = castWidget<ComboBox>(widget);
+    void Direct2dWidgetRenderer::renderComboBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
+    {
+        using namespace Widgets;
+        ComboBox* comboBox = castWidget<ComboBox>(widget);
 
-		const WidgetStyle& style = comboBox->getStyle();
+        const NbRect<int>& rect = comboBox->getRect();
+        const NbRect<int>& buttonRect = comboBox->getButtonRect();
         const NbRect<int>& selectedItemRect = comboBox->getSelectedItemRect();
-        WidgetState state = comboBox->getState();
-		NbColor color;
-		NbColor textColor;
-		
-        getWidgetThemeColorByState(comboBox, color, textColor);
 
-        renderTarget->fillRectangle(comboBox->getButtonRect(), {128,128,128});
-        renderTarget->fillRectangle(comboBox->getSelectedItemRect(), color);
+        NbColor bgColor, textColor;
+        getWidgetThemeColorByState(comboBox, bgColor, textColor);
 
+        // 1. Фон
+        renderTarget->fillRectangle(rect, bgColor);
+
+        // 2. Текст
+        NbRect<int> textRect = selectedItemRect;
+        textRect.x += 8;
+        textRect.width -= 8;
+        renderTarget->drawText(comboBox->getSelectedItem().getText(), textRect, textColor);
+
+        // 3. Цвет кнопки (Исправляем narrowing conversion для uint8_t)
+        auto adjust = [](uint8_t val) -> uint8_t {
+            return static_cast<uint8_t>(val > 20 ? val - 20 : val + 20);
+            };
+        NbColor buttonColor = { adjust(bgColor.r), adjust(bgColor.g), adjust(bgColor.b) };
+
+        renderTarget->fillRectangle(buttonRect, buttonColor);
+
+        // 4. Стрелочка (Исправляем narrowing conversion из float в int для точек)
+        float centerX = static_cast<float>(buttonRect.x) + static_cast<float>(buttonRect.width) / 2.0f;
+        float centerY = static_cast<float>(buttonRect.y) + static_cast<float>(buttonRect.height) / 2.0f;
+        float size = 4.0f;
+
+       
         if (comboBox->getComboState() == ComboBox::ComboState::EXPANDED)
         {
+            renderTarget->drawLine(
+                nbui::makePoint<int>(centerX - size, centerY + size / 2.0f),
+                nbui::makePoint<int>(centerX, centerY - size / 2.0f),
+                textColor
+            );
+            renderTarget->drawLine(
+                nbui::makePoint<int>(centerX, centerY - size / 2.0f),
+                nbui::makePoint<int>(centerX + size, centerY + size / 2.0f),
+                textColor
+            );
+
             addWidgetPopUpToQueue(comboBox);
         }
-	}
+        else
+        {
+            renderTarget->drawLine(
+                nbui::makePoint<int>(centerX - size, centerY - size / 2.0f),
+                nbui::makePoint<int>(centerX, centerY + size / 2.0f),
+                textColor
+            );
+            renderTarget->drawLine(
+                nbui::makePoint<int>(centerX, centerY + size / 2.0f),
+                nbui::makePoint<int>(centerX + size, centerY - size / 2.0f), 
+                textColor
+            );
+        }
+
+        renderTarget->drawRectangle(rect, textColor, 1.0f);
+    }
 
     void Direct2dWidgetRenderer::renderSpinBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
     {

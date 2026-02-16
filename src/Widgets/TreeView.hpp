@@ -15,6 +15,7 @@
 #include <optional>
 #include <unordered_map>
 #include <string>
+#include <Alghorithm.hpp>
 
 namespace Widgets
 {
@@ -99,7 +100,7 @@ namespace Widgets
         };
 
         explicit TreeView(const NbRect<int>& rect) noexcept;
-        ~TreeView() override = default;
+        ~TreeView() override;
 
         bool hitTest(const NbPoint<int>& pos) override;
         bool hitTestClick(const NbPoint<int>& pos) noexcept override;
@@ -131,12 +132,64 @@ namespace Widgets
         ModelIndex getLastClickIndex() const noexcept;
         ModelIndex getLastHitIndex() const noexcept;
 
+        virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
+        {
+            if (!model)
+            {
+                measuredSize = { 0, 0 };
+                return measuredSize;
+            }
+
+            const size_t visibleCount = getVisibleCount();
+
+            const int contentHeight =
+                static_cast<int>(visibleCount * HEIGHT_OF_ITEM_IN_PIXEL);
+
+            measuredSize.width = maxSize.width;
+            measuredSize.height = nbstl::min(contentHeight, maxSize.height);
+
+            return measuredSize;
+        }
+
+        virtual void layout(const NbRect<int>& rect) noexcept override
+        {
+            this->rect= rect;
+
+            const int itemHeight = static_cast<int>(HEIGHT_OF_ITEM_IN_PIXEL);
+
+            const size_t totalVisible = getVisibleCount();
+
+            if (totalVisible == 0)
+            {
+                range = { 0, 0 };
+                return;
+            }
+
+            const size_t firstVisible =
+                static_cast<size_t>(nbstl::max(0, rect.y / itemHeight));
+
+            const size_t visibleItemsCount =
+                static_cast<size_t>((rect.height + itemHeight - 1) / itemHeight);
+
+            const size_t lastVisible =
+                nbstl::min(firstVisible + visibleItemsCount, totalVisible);
+
+            range.first = firstVisible;
+            range.second = lastVisible;
+
+        }
+
+
     public: 
         Signal<void(const ModelIndex&)> onItemClickSignal;
         Signal<void(const ModelIndex&)> onItemButtonClickSignal;
         Signal<void(const ModelIndex&)> onItemChangeSignal;
 
     private:
+        NbRect<int> geometry;
+        NbSize<int> measuredSize;
+
+
 
         TreeViewStyle                                       treeViewStyle = ThemeManager::getCurrent().treeViewStyle;
 

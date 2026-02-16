@@ -36,22 +36,40 @@ namespace Widgets
 		});
 	}
 
-	bool ComboBox::hitTest(const NbPoint<int>& pos)
-	{
-		return pos.x >= rect.x && pos.x < rect.x + rect.width 
-			&& pos.y >= rect.y && pos.y < rect.y + rect.height;
+	bool ComboBox::hitTest(const NbPoint<int>& pos) {
+		// 1. Проверяем сам заголовок комбобокса
+		if (rect.isInside(pos)) return true;
+
+		// 2. Если список открыт, проверяем попадание в него
+		if (comboBoxState == ComboState::EXPANDED && dropdownList) {
+			if (dropdownList->getRect().isInside(pos)) return true;
+		}
+		return false;
 	}
 
-	bool ComboBox::hitTestClick(const NbPoint<int>& pos) noexcept
-	{
-		bool flag = buttonRect.isInside(pos);
-		if (flag)
-		{
+	bool ComboBox::hitTestClick(const NbPoint<int>& pos) noexcept {
+		// Клик по основному полю или кнопке
+		if (buttonRect.isInside(pos) || selectedItemRect.isInside(pos)) {
 			toggleComboState();
+			return true;
 		}
 
-		return flag;
+		// Клик по элементу в выпадающем списке
+		if (comboBoxState == ComboState::EXPANDED && dropdownList)
+		{
+			if (dropdownList->getRect().isInside(pos))
+			{
+
+				dropdownList->hitTest(pos);
+
+				
+				toggleComboState(); // Закрываем после выбора
+				return true;
+			}
+		}
+		return false;
 	}
+
 
 	NB_NODISCARD const NbRect<int>& ComboBox::getButtonRect() const noexcept
 	{
@@ -88,6 +106,11 @@ namespace Widgets
 		return dropdownList->getAllItems();
 	}
 
+	const ListItem& ComboBox::getSelectedItem() const noexcept
+	{
+		return dropdownList->getListItem();
+	}
+
 	NbRect<int> ComboBox::getRequestedSize() const noexcept
 	{
 		NbRect<int> requestedRect;
@@ -103,6 +126,11 @@ namespace Widgets
 		//return applyScaleOnlyPadding(requestedRect, Padding());
 	}
 
+	void ComboBox::registerDropdown(DropdownList* dropdown) noexcept
+	{
+		dropdowns.insert(std::make_pair(dropdown->getIndex(), dropdown));
+	}
+
 	void ComboBox::closeAllDropDowns() noexcept
 	{
 		if (openedComboBox)
@@ -111,6 +139,8 @@ namespace Widgets
 			openedComboBox = nullptr;
 		}
 	}
+
+	
 
 	void ComboBox::toggleComboState() noexcept
 	{
@@ -142,8 +172,8 @@ namespace Widgets
 
 	DropdownList::DropdownList() noexcept
 		: IWidget({}, 1)
-	{
-	
+	{	
+		ComboBox::registerDropdown(this);
 	}
 
 	void DropdownList::add(ListItem item) noexcept
@@ -208,6 +238,11 @@ namespace Widgets
 		};
 	}
 
+	const ListItem& DropdownList::getListItem() const noexcept
+	{
+		return itemList.at(hoverElement);
+	}
+
 
 	void DropdownList::setHoverForElement(const size_t hoverIndex) noexcept
 	{
@@ -215,14 +250,6 @@ namespace Widgets
 	}
 	
 
-	ListItem::ListItem(std::wstring_view str) noexcept
-		: text(str)
-	{}
 
-
-	NB_NODISCARD const std::wstring& ListItem::getText() const noexcept
-	{
-		return text;
-	}
 
 };

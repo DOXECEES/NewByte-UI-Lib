@@ -16,6 +16,38 @@ namespace Widgets
         : IWidget(rect)
     {
         range.second = rect.height;
+
+		subscribe(this, &Widgets::TreeView::onItemButtonClickSignal, [this](Widgets::ModelIndex index) {
+            if (!index.isValid())
+            {
+				return;
+            }
+
+			auto model = this->getModel();
+            if (!model)
+            {
+                return;
+            }
+
+			auto itemOpt = model->findById(index.getUuid());
+            if (!itemOpt)
+            {
+                return;
+            }
+
+			const auto& item = itemOpt;
+
+			auto currentState = this->getItemState(*item);
+			auto newState = (currentState == Widgets::TreeView::ItemState::EXPANDED)
+				? Widgets::TreeView::ItemState::COLLAPSED
+				: Widgets::TreeView::ItemState::EXPANDED;
+			this->setItemState(index, newState);
+	    });
+    }
+
+    TreeView::~TreeView()
+    {
+        // TODO: unsubscribe
     }
 
     bool TreeView::hitTest(const NbPoint<int>& pos)

@@ -15,10 +15,8 @@ namespace Localization
         static constexpr std::string_view SYSTEM_NAME = "hebrew";
         static constexpr int32 DAYS_IN_WEEK = 7;
 
-        // Эпоха: 1 Тишрея 1 года (7 октября 3761 г. до н.э. по Григорианскому)
         static constexpr int64 HEBREW_EPOCH = -1373427;
 
-        // Названия месяцев (ключи для локализации)
         static constexpr std::array<std::string_view, 14> MONTHS_KEYS = {
             "Calendar.Hebrew.Month_Tishrei",   // 1
             "Calendar.Hebrew.Month_Cheshvan",  // 2
@@ -40,7 +38,6 @@ namespace Localization
         int32 getDaysInWeek() const noexcept override { return DAYS_IN_WEEK; }
 
         bool isLeapYear(int32 year) const noexcept override {
-            // 19-летний цикл (Метонов цикл): 3, 6, 8, 11, 14, 17, 19 годы - високосные
             return ((7 * static_cast<int64>(year) + 1) % 19) < 7;
         }
 
@@ -48,16 +45,13 @@ namespace Localization
             return isLeapYear(year) ? 13 : 12;
         }
 
-        // --- Математическое ядро ---
 
-        // Проверка переноса нового года (Dechiyot)
         int64 elapsedDays(int32 year) const noexcept {
             int64 months = (235LL * year - 234) / 19;
             int64 parts = 12084LL + 13753LL * months;
             int64 day = 29LL * months + parts / 25920;
             parts %= 25920;
 
-            // Правило 1: Rosh Hashanah не может быть в Вс, Ср, Пт
             int64 dayOfWeek = day % 7;
             if (dayOfWeek == 2 || dayOfWeek == 4 || dayOfWeek == 6) {
                 day++;
@@ -88,11 +82,10 @@ namespace Localization
         }
 
         int32 getDaysInMonth(int32 year, int32 month) const noexcept override {
-            // 1. Стандартные месяцы
+
             if (month == 1 || month == 5 || month == 8 || month == 10 || month == 12) return 30; // Tishrei, Shevat, Nisan, Sivan, Av
             if (month == 4 || month == 7 || month == 9 || month == 11 || month == 13) return 29; // Tevet, Adar II, Iyar, Tammuz, Elul
 
-            // 2. Месяцы с переменной длиной (зависят от длины года)
             int32 yearDays = getDaysInYear(year);
             bool isLongYear = (yearDays % 10 == 5);
             bool isShortYear = (yearDays % 10 == 3);
@@ -100,7 +93,6 @@ namespace Localization
             if (month == 2) return isLongYear ? 30 : 29; // Cheshvan
             if (month == 3) return isShortYear ? 29 : 30; // Kislev
 
-            // 3. Адар (6-й и 7-й месяцы)
             if (month == 6) return isLeapYear(year) ? 30 : 29; // Adar I (30) или Adar (29)
 
             return 29;
@@ -136,14 +128,11 @@ namespace Localization
             if (month < 1 || month > 13) return {};
 
             bool leap = isLeapYear(year);
-            // Индексы ключей:
-            // В обычном году: 1-5 (Tish-Shev), 6 (Adar), 9-14 (Nis-Elul)
-            // В високосном: 1-5, 7 (Adar I), 8 (Adar II), 9-14
 
             if (!leap) {
                 if (month < 6) return Translation::fromKey(MONTHS_KEYS[month - 1].data());
-                if (month == 6) return Translation::fromKey(MONTHS_KEYS[5].data()); // Adar
-                return Translation::fromKey(MONTHS_KEYS[month].data()); // Сдвиг на 1, пропуская Adar I/II
+                if (month == 6) return Translation::fromKey(MONTHS_KEYS[5].data()); 
+                return Translation::fromKey(MONTHS_KEYS[month].data()); //
             }
             else {
                 if (month < 6) return Translation::fromKey(MONTHS_KEYS[month - 1].data());

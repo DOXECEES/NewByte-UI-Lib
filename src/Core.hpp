@@ -10,36 +10,33 @@
 #include <cmath>
 #include <sstream>
 #include <ostream>
-#include <Windows.h> // TODO 
+#include <Windows.h> // TODO
 
 #define DCX_USESTYLE 0x00010000
 
-
-
-template<typename T>
+template <typename T>
 inline std::string toStdString(const T& val) noexcept
 {
-	std::ostringstream oss;
-	oss << val;
-	return oss.str();
+    std::ostringstream oss;
+    oss << val;
+    return oss.str();
 }
 
 inline std::wstring toWstring(const std::string str) noexcept
 {
     std::wstring utf16;
     utf16.resize(str.size());
-    int len = MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), utf16.data(), (int)utf16.size());
+    int len = MultiByteToWideChar(
+        CP_UTF8, 0, str.data(), (int)str.size(), utf16.data(), (int)utf16.size()
+    );
     utf16.resize(len);
     return utf16;
 }
-
-
 
 enum class SpecialKeyCode
 {
     NONE,
     CTRL,
-
 };
 
 // get from boost::hash_combine
@@ -47,49 +44,72 @@ template <class T>
 inline void hash_combine(std::size_t& seed, const T& v)
 {
     std::hash<T> hasher;
-    seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+    seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
 template <typename T>
 struct NbPoint
 {
     constexpr NbPoint() = default;
-    constexpr NbPoint(const T& x, const T& y) : x(x), y(y) {}
+    constexpr NbPoint(const T& x, const T& y) : x(x), y(y)
+    {
+    }
 
     T x = {};
     T y = {};
 
-    auto operator==(const NbPoint<T>& other) const { return x == other.x && y == other.y; }
+    auto operator==(const NbPoint<T>& other) const
+    {
+        return x == other.x && y == other.y;
+    }
 
     NbPoint<T> scale(double scale)
     {
-        return NbPoint<T>(static_cast<int>((double)x * scale), static_cast<int>((double)y * scale));
+        return NbPoint<T>(
+            static_cast<int>((double)x * scale),
+            static_cast<int>((double)y * scale)
+        );
     }
 
-    constexpr NbPoint<T> operator+(const NbPoint<T>& oth) const 
+    constexpr NbPoint<T> operator+(const NbPoint<T>& oth) const
     {
-        return NbPoint<T>(x + oth.x, y + oth.y); 
+        return NbPoint<T>(x + oth.x, y + oth.y);
     }
 
-    constexpr NbPoint<T> operator-(const NbPoint<T>& oth) const 
+    constexpr NbPoint<T> operator-(const NbPoint<T>& oth) const
     {
-        return NbPoint<T>(x - oth.x, y - oth.y); 
+        return NbPoint<T>(x - oth.x, y - oth.y);
     }
 };
+
+namespace nbui
+{
+    template <typename T, typename U>
+    static constexpr NbPoint<T> makePoint(U x, U y) noexcept
+    {
+        return {static_cast<T>(x), static_cast<T>(y)};
+    };
+} // namespace nbui
 
 template <typename T>
 struct NbSize
 {
 
     constexpr NbSize() = default;
-    constexpr NbSize(const T& width, const T& height) : width(width), height(height) {}
+    constexpr NbSize(const T& width, const T& height)
+        : width(width), height(height)
+    {
+    }
 
     T width  = {};
     T height = {};
 
     NbSize<T> scale(double scale)
     {
-        return NbSize<T>(static_cast<T>((double)width * scale), static_cast<T>((double)height * scale));
+        return NbSize<T>(
+            static_cast<T>((double)width * scale),
+            static_cast<T>((double)height * scale)
+        );
     }
 
     NbSize<T>& operator-=(const NbSize<T>& oth)
@@ -102,18 +122,13 @@ struct NbSize
     bool isEmpty() const
     {
         return width == 0 || height == 0;
-	}
+    }
 
     bool operator==(const NbSize<T>& other) const
     {
-        return width == other.width &&
-            height == other.height;
+        return width == other.width && height == other.height;
     }
-
-
-
 };
-
 
 struct NbColor
 {
@@ -123,8 +138,12 @@ struct NbColor
     uint8_t a = {};
 
     constexpr NbColor() = default;
-    constexpr NbColor(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha = 255) 
-        : r(red), g(green), b(blue), a(alpha) {}
+    constexpr NbColor(
+        uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha = 255
+    )
+        : r(red), g(green), b(blue), a(alpha)
+    {
+    }
 
     constexpr NbColor addMask(uint8_t value) const noexcept
     {
@@ -138,54 +157,47 @@ struct NbColor
         };
     }
 
-
     bool operator==(const NbColor& other) const
-    { 
-        return r == other.r 
-            && g == other.g
-            && b == other.b 
-            && a == other.a; 
+    {
+        return r == other.r && g == other.g && b == other.b && a == other.a;
     }
 
     // связать с движком
 };
 
-template<typename T>
+template <typename T>
 struct NbRect
 {
     constexpr NbRect() = default;
 
     NbRect(const T x, const T y, const T width, const T height)
-    : x(x)
-    , y(y)
-    , width(width)
-    , height(height) 
-    {} 
+        : x(x), y(y), width(width), height(height)
+    {
+    }
 
-
-    T x         = {};
-    T y         = {};
-    T width     = {};
-    T height    = {};
+    T x      = {};
+    T y      = {};
+    T width  = {};
+    T height = {};
 
     NB_NODISCARD constexpr NbPoint<T> getTopLeft() const noexcept
     {
-        return { x, y };
+        return {x, y};
     }
 
     NB_NODISCARD constexpr NbPoint<T> getTopRight() const noexcept
     {
-        return { x + width, y };
+        return {x + width, y};
     }
 
     NB_NODISCARD constexpr NbPoint<T> getBottomLeft() const noexcept
     {
-        return { x, y + height };
+        return {x, y + height};
     }
 
     NB_NODISCARD constexpr NbPoint<T> getBottomRight() const noexcept
     {
-        return { x + width, y + height };
+        return {x + width, y + height};
     }
 
     constexpr NbRect<T> expand(const T& coef) const noexcept
@@ -198,14 +210,13 @@ struct NbRect
         };
     }
 
-
     constexpr bool isEmpty() const
-    { 
-        return std::fabs(width) < std::numeric_limits<float>::epsilon()
-                || std::fabs(height) < std::numeric_limits<float>::epsilon();
+    {
+        return std::fabs(width) < std::numeric_limits<float>::epsilon() ||
+            std::fabs(height) < std::numeric_limits<float>::epsilon();
     }
 
-    constexpr void scale(const float scaleFactor) 
+    constexpr void scale(const float scaleFactor)
     {
         x *= scaleFactor;
         y *= scaleFactor;
@@ -244,7 +255,7 @@ struct NbRect
             static_cast<float>(this->height)
         );
     }
-    template<typename U>
+    template <typename U>
     constexpr NbRect<U> to() const noexcept
     {
         return NbRect<U>(
@@ -257,49 +268,46 @@ struct NbRect
 
     constexpr bool isInside(const NbPoint<T>& point) const noexcept
     {
-        return point.x >= this->x && point.x < this->x + this->width
-            && point.y >= this->y && point.y < this->y + this->height;
+        return point.x >= this->x && point.x < this->x + this->width &&
+            point.y >= this->y && point.y < this->y + this->height;
     }
 
-    constexpr bool operator==(const NbRect<T>& other) const noexcept {
-        return x == other.x && y == other.y &&
-            width == other.width && height == other.height;
+    constexpr bool operator==(const NbRect<T>& other) const noexcept
+    {
+        return x == other.x && y == other.y && width == other.width &&
+            height == other.height;
     }
 
-    constexpr bool operator!=(const NbRect<T>& other) const noexcept {
+    constexpr bool operator!=(const NbRect<T>& other) const noexcept
+    {
         return !(*this == other);
     }
-
-
 };
-
-
 
 template <>
 struct std::hash<NbColor>
 {
-  std::size_t operator()(const NbColor& color) const
-  {
-    using std::size_t;
-    using std::hash;
-    using std::string;
+    std::size_t operator()(const NbColor& color) const
+    {
+        using std::hash;
+        using std::size_t;
+        using std::string;
 
+        size_t seed = 0;
+        hash_combine(seed, color.r);
+        hash_combine(seed, color.g);
+        hash_combine(seed, color.b);
+        hash_combine(seed, color.a);
 
-    size_t seed = 0;
-    hash_combine(seed, color.r);
-    hash_combine(seed, color.g);
-    hash_combine(seed, color.b);
-    hash_combine(seed, color.a);
-
-    return seed;
-  }
+        return seed;
+    }
 };
 
-
-
-template<typename T>
-void SafeRelease(T** ppT) {
-    if (*ppT) {
+template <typename T>
+void SafeRelease(T** ppT)
+{
+    if (*ppT)
+    {
         (*ppT)->Release();
         *ppT = nullptr;
     }
@@ -311,6 +319,5 @@ struct MouseButtons
     bool isLmbHolds;
 };
 /// @brief //
-
 
 #endif

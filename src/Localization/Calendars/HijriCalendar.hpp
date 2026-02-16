@@ -32,8 +32,6 @@ namespace Localization
             "Calendar.Hijri.Month_12"  // Dhu al-Hijjah
         };
 
-        // ƒни недели (в исламской культуре первым днем считаетс€ воскресенье, 
-        // но индекс в вашей системе остаетс€ прежним дл€ совместимости)
         static constexpr std::array<std::string_view, DAYS_IN_WEEK> WEEK_KEYS = {
             "Calendar.Gregorian.Weekday_01_Full",
             "Calendar.Gregorian.Weekday_02_Full",
@@ -50,8 +48,6 @@ namespace Localization
 
         bool isLeapYear(int32 year) const noexcept override
         {
-            // »спользуетс€ стандартный 30-летний цикл (11 високосных лет)
-            // ¬исокосные годы: 2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29
             return ((11 * (int64)year + 14) % 30) < 11;
         }
 
@@ -59,8 +55,6 @@ namespace Localization
         {
             if (month < 1 || month > 12) return 0;
 
-            // Ќечетные мес€цы - 30 дней, четные - 29.
-            // ¬ високосный год 12-й мес€ц имеет 30 дней.
             if (month == 12) return isLeapYear(year) ? 30 : 29;
             return (month % 2 != 0) ? 30 : 29;
         }
@@ -68,13 +62,12 @@ namespace Localization
         int64 dateToFixed(int32 year, int32 month, int32 day) const noexcept override
         {
             int64 y = year;
-            // Ёпоха ’иджры: 16 июл€ 622 года н.э. = Fixed Day 227015
-            return day                      // ƒни в текущем мес€це
-                + (month - 1) * 29          // Ѕазово 29 дней на мес€ц
-                + month / 2                 // ƒобавл€ем 1 день дл€ каждого нечетного мес€ца
-                + (y - 1) * 354             // Ѕазово 354 дн€ в году
-                + (11 * y + 3) / 30         // ƒобавл€ем високосные дни из цикла
-                + 227014;                   // —мещение относительно абсолютной эры
+            return day                      
+                + (month - 1) * 29          
+                + month / 2                 
+                + (y - 1) * 354             
+                + (11 * y + 3) / 30         
+                + 227014;                   
         }
 
         CalendarDate fixedToDate(int64 fixed) const noexcept override
@@ -100,14 +93,12 @@ namespace Localization
 
         CalendarDate timeToCalendarDate(time_t unixTime) const noexcept override
         {
-            // ѕеревод через абсолютные дни (Rata Die)
             int64 fixedDay = 719163 + (static_cast<int64>(unixTime) / 86400);
             return fixedToDate(fixedDay);
         }
 
         int32 getDayOfWeekIndex(int64 fixed) const noexcept override
         {
-            // ÷икл недель неизменен
             return static_cast<int32>((fixed + 6) % 7);
         }
 

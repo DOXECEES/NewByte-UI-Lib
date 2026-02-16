@@ -39,9 +39,12 @@ namespace Widgets
         Button* getUpButton() noexcept { return upButton.get(); }
         Button* getDownButton() noexcept { return downButton.get(); }
 
+        Signal<void(int)> onValueChanged;
+        Signal<void(int)> onValueChangedByStep;
 
     private:
         // State
+        int prevValue   = 1;
         int value       = 1;
         int minValue    = 1;
         int maxValue    = 100;

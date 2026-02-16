@@ -360,7 +360,7 @@ public:
         {
             r = window->getClientRect();
         }
-        auto frame = window->getFrameSize();
+        const auto& frame = window->getFrameSize();
 
         struct Element 
         { 

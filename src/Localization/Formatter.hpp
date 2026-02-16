@@ -100,37 +100,37 @@ namespace Localization
 
                 switch (symbol)
                 {
-                case 'y': // --- ÃÎÄ ---
+                case 'y': 
                     if (count == 2) out += pad(year % 100, 2);
                     else out += std::to_string(year);
                     break;
 
-                case 'M': // --- ÌÅÑßÖ ---
+                case 'M': 
                     if (count >= 3) out += getTranslated("DateTime.Month", month, count == 4);
                     else            out += pad(month, count);
                     break;
 
-                case 'd': // --- ÄÅÍÜ ---
+                case 'd': 
                     out += pad(day, count);
                     break;
 
-                case 'E': // --- ÄÅÍÜ ÍÅÄÅËÈ ---
+                case 'E': 
                     out += getTranslated("DateTime.Weekday", weekday, count == 4);
                     break;
 
-                case 'Q': // --- ÊÂÀĞÒÀË ---
+                case 'Q': 
                     if (count >= 3) out += getTranslated("DateTime.Quarter", quarter, count == 4);
                     else            out += pad(quarter, count);
                     break;
 
-                case 'w': // --- ÍÅÄÅËß ÃÎÄÀ ---
+                case 'w': 
                 {
                     int week = (tm.tm_yday + 7 - (tm.tm_wday ? tm.tm_wday - 1 : 6)) / 7;
                     out += pad(week, count);
                     break;
                 }
 
-                default: // --- ĞÀÇÄÅËÈÒÅËÈ (ïğîáåëû, òî÷êè, çàïÿòûå) ---
+                default: 
                     out.append(count, symbol);
                     break;
                 }

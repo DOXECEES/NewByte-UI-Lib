@@ -14,6 +14,12 @@ namespace Widgets
         syncText();
     }
 
+    void SpinBox::setRange(int minVal, int maxVal) noexcept
+    {
+        minValue = minVal;
+        maxValue = maxVal;
+    }
+
     void SpinBox::setStep(int s) noexcept
     {
         step = s;
@@ -61,6 +67,8 @@ namespace Widgets
     void SpinBox::syncText()
     {
         input->setData(std::to_wstring(value));
+        onValueChanged.emit(value);
+        onValueChangedByStep.emit(value - prevValue);
     }
 
     void SpinBox::onInputEdited()
@@ -69,6 +77,7 @@ namespace Widgets
 
         if (txt.empty())
         {
+            prevValue = value;
             value = minValue;
             syncText();
             return;
@@ -77,6 +86,7 @@ namespace Widgets
         try
         {
             int parsed = std::stoi(txt);
+            prevValue = value;
             value = clamp(parsed);
         }
         catch (...)
@@ -89,12 +99,14 @@ namespace Widgets
 
     void SpinBox::onUpClicked()
     {
+        prevValue = value;
         value = clamp(value + step);
         syncText();
     }
 
     void SpinBox::onDownClicked()
     {
+        prevValue = value;
         value = clamp(value - step);
         syncText();
     }

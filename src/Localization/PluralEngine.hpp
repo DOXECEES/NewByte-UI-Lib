@@ -11,6 +11,7 @@
 #include <variant>
 #include <optional>
 #include <charconv>
+
 namespace Localization
 {
     enum class PluralCategory { Zero, One, Two, Few, Many, Other };
@@ -46,12 +47,12 @@ namespace Localization
     };
 
 
-    class Locale;
+    class LocalePlural;
 
     class Node {
     public:
         virtual ~Node() = default;
-        virtual std::string evaluate(const FormatterArgs& args, const Locale& loc) const = 0;
+        virtual std::string evaluate(const FormatterArgs& args, const LocalePlural& loc) const = 0;
     };
 
     using NodePtr = std::unique_ptr<Node>;
@@ -61,14 +62,14 @@ namespace Localization
         std::string text;
     public:
         explicit TextNode(std::string_view t) : text(t) {}
-        std::string evaluate(const FormatterArgs&, const Locale&) const override { return text; }
+        std::string evaluate(const FormatterArgs&, const LocalePlural&) const override { return text; }
     };
 
     class VariableNode : public Node {
         std::string name;
     public:
         explicit VariableNode(std::string_view n) : name(n) {}
-        std::string evaluate(const FormatterArgs& args, const Locale&) const override {
+        std::string evaluate(const FormatterArgs& args, const LocalePlural&) const override {
             if (auto it = args.find(name); it != args.end()) {
                 if (auto d = std::get_if<double>(&it->second)) return std::to_string(static_cast<int64_t>(*d));
                 if (auto s = std::get_if<std::string>(&it->second)) return *s;
@@ -82,7 +83,7 @@ namespace Localization
         std::string varName;
         std::unordered_map<std::string, NodeList> branches;
 
-        std::string evaluateBranch(std::string_view key, const FormatterArgs& args, const Locale& loc, std::optional<double> hashValue = std::nullopt) const {
+        std::string evaluateBranch(std::string_view key, const FormatterArgs& args, const LocalePlural& loc, std::optional<double> hashValue = std::nullopt) const {
             auto it = branches.find(std::string(key));
             if (it == branches.end()) it = branches.find("other");
             if (it == branches.end()) return "";
@@ -111,13 +112,13 @@ namespace Localization
     class PluralNode : public BranchNode {
     public:
         using BranchNode::BranchNode;
-        std::string evaluate(const FormatterArgs& args, const Locale& loc) const override;
+        std::string evaluate(const FormatterArgs& args, const LocalePlural& loc) const override;
     };
 
     class SelectNode : public BranchNode {
     public:
         using BranchNode::BranchNode;
-        std::string evaluate(const FormatterArgs& args, const Locale& loc) const override {
+        std::string evaluate(const FormatterArgs& args, const LocalePlural& loc) const override {
             std::string key = "other";
             if (auto it = args.find(varName); it != args.end()) {
                 if (auto s = std::get_if<std::string>(&it->second)) key = *s;
@@ -129,18 +130,18 @@ namespace Localization
 
     using PluralRuleFunc = std::function<PluralCategory(const PluralOperands&)>;
 
-    class Locale {
+    class LocalePlural {
         std::string id;
         PluralRuleFunc rule;
     public:
-        Locale() = default;
-        Locale(std::string_view lang, PluralRuleFunc f) : id(lang), rule(std::move(f)) {}
+        LocalePlural() = default;
+        LocalePlural(std::string_view lang, PluralRuleFunc f) : id(lang), rule(std::move(f)) {}
 
         PluralCategory getCategory(double n) const { return rule(PluralOperands::fromDouble(n)); }
         std::string_view langId() const { return id; }
     };
 
-    inline std::string PluralNode::evaluate(const FormatterArgs& args, const Locale& loc) const {
+    inline std::string PluralNode::evaluate(const FormatterArgs& args, const LocalePlural& loc) const {
         double val = 0;
         if (auto it = args.find(varName); it != args.end()) {
             if (auto d = std::get_if<double>(&it->second)) val = *d;
@@ -228,13 +229,13 @@ namespace Localization
 
     class PluralEngine
     {
-        std::unordered_map<std::string, Locale> locales;
+        std::unordered_map<std::string, LocalePlural> locales;
         std::unordered_map<std::string, NodeList> astCache;
 
     public:
         void registerLocale(std::string_view id, PluralRuleFunc rule)
         {
-            locales.emplace(id, Locale(id, std::move(rule)));
+            locales.emplace(id, LocalePlural(id, std::move(rule)));
         }
 
         std::string format(std::string_view lang, std::string_view pattern, const FormatterArgs& args)
@@ -256,7 +257,8 @@ namespace Localization
     };
 
 
-    namespace rules {
+    namespace rules
+    {
         inline PluralCategory Russian(const PluralOperands& o) {
             if (o.v > 0) return PluralCategory::Other;
             if (o.i % 10 == 1 && o.i % 100 != 11) return PluralCategory::One;

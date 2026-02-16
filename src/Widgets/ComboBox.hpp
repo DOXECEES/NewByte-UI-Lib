@@ -6,17 +6,27 @@
 #include "IWidget.hpp"
 
 #include <vector>
+#include <Vector.hpp>
+#include <any>
 
 namespace Widgets
 {
 	class ListItem
 	{
 	public:
-		ListItem(std::wstring_view str) noexcept;
+		template<typename T>
+		ListItem(std::wstring_view label, T&& val) noexcept
+			: text(label), value(std::forward<T>(val))
+		{}
+
+		NB_NODISCARD const std::wstring& getText() const noexcept { return text; }
 		
-		NB_NODISCARD const std::wstring& getText() const noexcept;
+		template<typename T>
+		NB_NODISCARD T getValue() const { return std::any_cast<T>(value); }
+
 	private:
 		std::wstring	text;
+		std::any		value;
 	};
 
 	class DropdownList : public IWidget
@@ -50,6 +60,8 @@ namespace Widgets
 		NB_NODISCARD size_t getHoverElementIndex() const noexcept;
 		NB_NODISCARD NbRect<int> getHoverElementRect() const noexcept;
 
+		const ListItem& getListItem() const noexcept;
+
 		virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
 		{
 			return {0, 0};
@@ -58,20 +70,21 @@ namespace Widgets
 		virtual void layout(const NbRect<int>& rect) noexcept override
 		{
 			this->rect = {
-				this->rect.x,
-				this->rect.y,
-				this->rect.width,
+				rect.x,
+				rect.y,
+				rect.width,
 				SIZE_OF_ELEMENT_IN_PIXEL * static_cast<int>(itemList.size())
 			};
 		}
 
 	private:
-		std::vector<ListItem>	itemList = {
+		/*std::vector<ListItem>	itemList = {
 			{L"Hello"},
 			{L"HI" },
 			{L"Whatsup"},
 			{L"Sup"}
-		};
+		};*/
+		std::vector<ListItem> itemList;
 
 		size_t					hoverElement = 0;
 	};
@@ -109,9 +122,9 @@ namespace Widgets
 		NB_NODISCARD size_t getSize() const noexcept;
 		NB_NODISCARD const std::vector<ListItem>& getAllItems() const noexcept;
 
-		NbRect<int> getRequestedSize() const noexcept override;
+		const ListItem& getSelectedItem() const noexcept;
 
-		void closeAllDropDowns() noexcept;
+		NbRect<int> getRequestedSize() const noexcept override;
 
 		virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
 		{
@@ -134,30 +147,31 @@ namespace Widgets
 			return size;
 		}
 
-		void layout(const NbRect<int>& rect) noexcept override
-		{
+		// В ComboBox::layout
+		void layout(const NbRect<int>& rect) noexcept override {
 			this->rect = rect;
 
-			constexpr int buttonWidth = 20; // WIDTH_OF_BUTTON_ELEMENT_IN_PIXEL = 20
-
-			// 1. Кнопка со стрелкой (справа)
 			buttonRect = NbRect<int>{
-				rect.x + rect.width - buttonWidth, // справа
+				rect.x + rect.width - WIDTH_OF_BUTTON_ELEMENT_IN_PIXEL,
 				rect.y,
-				buttonWidth,
+				WIDTH_OF_BUTTON_ELEMENT_IN_PIXEL,
 				rect.height
 			};
 
 			selectedItemRect = NbRect<int>{
 				rect.x,
 				rect.y,
-				rect.width - buttonWidth, 
+				rect.width - WIDTH_OF_BUTTON_ELEMENT_IN_PIXEL,
 				rect.height
 			};
 
-			if (comboBoxState == ComboState::EXPANDED && dropdownList)
-			{
-				updateDropdownPosition();
+			if (dropdownList) {
+				dropdownList->setRect({
+					rect.x,
+					rect.y + rect.height, // Сразу под комбобоксом
+					rect.width,
+					DropdownList::SIZE_OF_ELEMENT_IN_PIXEL * static_cast<int>(dropdownList->size())
+					});
 			}
 		}
 
@@ -171,6 +185,9 @@ namespace Widgets
 			};
 			dropdownList->setRect(newRc);
 		}
+
+		static void registerDropdown(DropdownList* dropdown) noexcept;
+		static void closeAllDropDowns() noexcept;
 
 	private:
 
@@ -187,6 +204,7 @@ namespace Widgets
 
 		NbSize<int> size;
 	
+		inline static std::unordered_map<int, DropdownList*> dropdowns;
 	};
 
 };

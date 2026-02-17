@@ -448,6 +448,11 @@ public:
 
         for (int i = 0; i < count; i++)
         {
+            if (count - 1 == 0)
+            {
+                continue;
+            }
+
             float t = static_cast<float>(i) / (count - 1);
             float dist = t * len;
 

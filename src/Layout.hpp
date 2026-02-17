@@ -114,7 +114,7 @@ public:
 		if (linkedWidgets.empty()) return;
 
 		auto clientRect = applyPaddingToRect(window->getClientRect(), OldPadding());
-		clientRect.y + 35;
+		clientRect.y += 35;
 		int currentY = 5;
 
 		int fixedHeight = 0;
@@ -337,8 +337,8 @@ private:
     nbstl::DynamicFlatMatrix<Widgets::IWidget*> grid;
     NbSize<int> cellPadding = { 5, 5 };
 
-    int desiredHeight;
-    int desiredWidth;
+    int desiredHeight   = 1;
+    int desiredWidth    = 1;
 };
 
 class FlexLayout : public Layout

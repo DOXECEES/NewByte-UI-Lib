@@ -77,6 +77,8 @@ namespace Widgets
 			};
 		}
 
+		Signal<void(const ListItem&)> onItemChecked;
+
 	private:
 		/*std::vector<ListItem>	itemList = {
 			{L"Hello"},
@@ -147,7 +149,7 @@ namespace Widgets
 			return size;
 		}
 
-		// В ComboBox::layout
+		// Р’ ComboBox::layout
 		void layout(const NbRect<int>& rect) noexcept override {
 			this->rect = rect;
 
@@ -168,7 +170,7 @@ namespace Widgets
 			if (dropdownList) {
 				dropdownList->setRect({
 					rect.x,
-					rect.y + rect.height, // Сразу под комбобоксом
+					rect.y + rect.height, // РЎСЂР°Р·Сѓ РїРѕРґ РєРѕРјР±РѕР±РѕРєСЃРѕРј
 					rect.width,
 					DropdownList::SIZE_OF_ELEMENT_IN_PIXEL * static_cast<int>(dropdownList->size())
 					});
@@ -189,9 +191,15 @@ namespace Widgets
 		static void registerDropdown(DropdownList* dropdown) noexcept;
 		static void closeAllDropDowns() noexcept;
 
+	public:
+
+		Signal<void(const ListItem&)> onItemChecked;
+
 	private:
 
 		void toggleComboState() noexcept;
+		
+
 
 	private:
 		NbRect<int>						buttonRect;

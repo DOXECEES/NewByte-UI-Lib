@@ -10,6 +10,8 @@ namespace Win32Window
 {
     ChildWindow::ChildWindow(WindowInterface::IWindow* parentWindow, bool setOwnDC)
     {
+        isRenderable = !setOwnDC;
+
         state.frameSize = { 0, 0, 0, 0 }; // no frame on clild window 
         style.setBorderRadius(0);
         WNDCLASS wc = {};

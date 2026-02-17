@@ -83,7 +83,7 @@ namespace Renderer
         if (!createDeviceResources())
             return false;
 
-        // Создаём swap chain и target bitmap через resize
+        // РЎРѕР·РґР°С‘Рј swap chain Рё target bitmap С‡РµСЂРµР· resize
         RECT rect;
         GetClientRect(hwnd, &rect);
         return resize(rect.right - rect.left, rect.bottom - rect.top);
@@ -94,18 +94,18 @@ namespace Renderer
         if (!swapChain)
             return false;
 
-        // Приостанавливаем рендеринг
+        // РџСЂРёРѕСЃС‚Р°РЅР°РІР»РёРІР°РµРј СЂРµРЅРґРµСЂРёРЅРі
         d2dContext->SetTarget(nullptr);
         targetBitmap.Reset();
 
-        // Убедимся, что размеры не равны нулю
+        // РЈР±РµРґРёРјСЃСЏ, С‡С‚Рѕ СЂР°Р·РјРµСЂС‹ РЅРµ СЂР°РІРЅС‹ РЅСѓР»СЋ
         if (width == 0 || height == 0)
             return true;
 
         HRESULT hr = swapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0);
         if (FAILED(hr))
         {
-            // Попробуем обработать потерю устройства
+            // РџРѕРїСЂРѕР±СѓРµРј РѕР±СЂР°Р±РѕС‚Р°С‚СЊ РїРѕС‚РµСЂСЋ СѓСЃС‚СЂРѕР№СЃС‚РІР°
             onDeviceLost();
             return false;
         }
@@ -156,7 +156,7 @@ namespace Renderer
             hr = swapChain->Present(1, 0);
             if (FAILED(hr) && hr != DXGI_ERROR_WAS_STILL_DRAWING)
             {
-                // Обработка потери устройства или изменений размера
+                // РћР±СЂР°Р±РѕС‚РєР° РїРѕС‚РµСЂРё СѓСЃС‚СЂРѕР№СЃС‚РІР° РёР»Рё РёР·РјРµРЅРµРЅРёР№ СЂР°Р·РјРµСЂР°
                 if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
                 {
                     onDeviceLost();
@@ -279,13 +279,13 @@ namespace Renderer
     }
 
     // -------------------------
-    // Приватные методы
+    // РџСЂРёРІР°С‚РЅС‹Рµ РјРµС‚РѕРґС‹
     // -------------------------
     bool Direct2DRenderContext::createDeviceResources() noexcept
     {
         HRESULT hr = S_OK;
 
-        // --- Создаём D3D11 device ---
+        // --- РЎРѕР·РґР°С‘Рј D3D11 device ---
         UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
         creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
@@ -315,7 +315,7 @@ namespace Renderer
         if (FAILED(hr))
             return false;
 
-        // --- Получаем DXGI device ---
+        // --- РџРѕР»СѓС‡Р°РµРј DXGI device ---
         hr = d3dDevice.As(&dxgiDevice);
         if (FAILED(hr))
             return false;
@@ -323,7 +323,7 @@ namespace Renderer
         auto& factory = Direct2DFactory::getInstance();
         d2dFactory = factory.getD2DFactory();
 
-        // --- Создаём D2D device и context ---
+        // --- РЎРѕР·РґР°С‘Рј D2D device Рё context ---
         ComPtr<ID2D1Device> device;
         hr = d2dFactory->CreateDevice(dxgiDevice.Get(), &device);
         if (FAILED(hr)) return false;
@@ -334,7 +334,7 @@ namespace Renderer
         hr = d2dDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &d2dContext);
         if (FAILED(hr)) return false;
 
-        // --- Создаём swap chain ---
+        // --- РЎРѕР·РґР°С‘Рј swap chain ---
         ComPtr<IDXGIAdapter> dxgiAdapter;
         hr = dxgiDevice->GetAdapter(&dxgiAdapter);
         if (FAILED(hr)) return false;
@@ -370,9 +370,9 @@ namespace Renderer
         if (FAILED(hr))
             return false;
 
-        // --- Устанавливаем DPI ---
+        // --- РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј DPI ---
         dpi = static_cast<float>(GetDpiForWindow(hwnd));
-        if (dpi == 0.0f) // На случай ошибки
+        if (dpi == 0.0f) // РќР° СЃР»СѓС‡Р°Р№ РѕС€РёР±РєРё
             dpi = 96.0f;
 
         d2dContext->SetDpi(dpi, dpi);
@@ -423,10 +423,10 @@ namespace Renderer
     {
         releaseDeviceResources();
 
-        // Попробуем пересоздать устройство
+        // РџРѕРїСЂРѕР±СѓРµРј РїРµСЂРµСЃРѕР·РґР°С‚СЊ СѓСЃС‚СЂРѕР№СЃС‚РІРѕ
         if (!createDeviceResources())
         {
-            // Если не удалось, ждем следующего изменения размера
+            // Р•СЃР»Рё РЅРµ СѓРґР°Р»РѕСЃСЊ, Р¶РґРµРј СЃР»РµРґСѓСЋС‰РµРіРѕ РёР·РјРµРЅРµРЅРёСЏ СЂР°Р·РјРµСЂР°
             return;
         }
 
@@ -434,7 +434,7 @@ namespace Renderer
         GetClientRect(hwnd, &rect);
         resize(rect.right - rect.left, rect.bottom - rect.top);
 
-        // Уведомляем менеджер ресурсов о потере устройства
+        // РЈРІРµРґРѕРјР»СЏРµРј РјРµРЅРµРґР¶РµСЂ СЂРµСЃСѓСЂСЃРѕРІ Рѕ РїРѕС‚РµСЂРµ СѓСЃС‚СЂРѕР№СЃС‚РІР°
         if (resourceManager)
             resourceManager->onDeviceLost();
     }
@@ -447,7 +447,7 @@ namespace Renderer
             if (d2dContext)
                 d2dContext->SetDpi(dpi, dpi);
 
-            // Пересоздаем target bitmap с новым DPI
+            // РџРµСЂРµСЃРѕР·РґР°РµРј target bitmap СЃ РЅРѕРІС‹Рј DPI
             if (swapChain && d2dContext)
                 createTargetBitmap();
         }
@@ -481,13 +481,13 @@ namespace Renderer
         if (!nativeBrush || !nativeGeometry)
             return;
 
-        // Устанавливаем fill mode если поддерживается
+        // РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј fill mode РµСЃР»Рё РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ
         ComPtr<ID2D1DeviceContext> dc;
         if (SUCCEEDED(d2dContext.As(&dc)))
         {
             D2D1_FILL_MODE d2dFillMode = (fillMode == FillMode::Winding) ?
                 D2D1_FILL_MODE_WINDING : D2D1_FILL_MODE_ALTERNATE;
-            // Для ID2D1Geometry нужно установить fill mode в самой геометрии
+            // Р”Р»СЏ ID2D1Geometry РЅСѓР¶РЅРѕ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ fill mode РІ СЃР°РјРѕР№ РіРµРѕРјРµС‚СЂРёРё
         }
 
         d2dContext->FillGeometry(nativeGeometry, nativeBrush);
@@ -495,7 +495,7 @@ namespace Renderer
     }
 
     // -----------------------------
-    // Прямоугольники
+    // РџСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРєРё
     // -----------------------------
     void Direct2DRenderContext::drawRectangle(const NbRect<int>& rect, BrushHandle brush) noexcept
     {
@@ -526,7 +526,7 @@ namespace Renderer
     }
 
     // -----------------------------
-    // Скругленные прямоугольники
+    // РЎРєСЂСѓРіР»РµРЅРЅС‹Рµ РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРєРё
     // -----------------------------
     void Direct2DRenderContext::drawRoundedRectangle(const NbRect<int>& rect, float radius, BrushHandle brush) noexcept
     {
@@ -563,7 +563,7 @@ namespace Renderer
     }
 
     // -----------------------------
-    // Эллипсы
+    // Р­Р»Р»РёРїСЃС‹
     // -----------------------------
     void Direct2DRenderContext::drawEllipse(const NbPoint<int>& center, float radiusX, float radiusY, BrushHandle brush) noexcept
     {
@@ -600,7 +600,7 @@ namespace Renderer
     }
 
     // -----------------------------
-    // Линии
+    // Р›РёРЅРёРё
     // -----------------------------
     void Direct2DRenderContext::drawLine(const NbPoint<int>& start, const NbPoint<int>& end, BrushHandle brush, float strokeWidth) noexcept
     {
@@ -618,7 +618,7 @@ namespace Renderer
     }
 
     // -----------------------------
-    // Текст
+    // РўРµРєСЃС‚
     // -----------------------------
     void Direct2DRenderContext::drawText(const std::wstring& text, const NbRect<int>& layoutRect, TextFormatHandle format, BrushHandle brush) noexcept
     {
@@ -645,7 +645,7 @@ namespace Renderer
         if (!nativeFormat)
             return NbSize<int>{0, 0};
 
-        // Получаем фабрику DWrite
+        // РџРѕР»СѓС‡Р°РµРј С„Р°Р±СЂРёРєСѓ DWrite
         auto& factory = Direct2DFactory::getInstance();
         IDWriteFactory* dwriteFactory = factory.getDWriteFactory();
         if (!dwriteFactory)
@@ -709,7 +709,7 @@ namespace Renderer
     }
 
     // -----------------------------
-    // Статистика
+    // РЎС‚Р°С‚РёСЃС‚РёРєР°
     // -----------------------------
     IRenderContext::RenderStats Direct2DRenderContext::getStats() const noexcept
     {
@@ -733,7 +733,7 @@ namespace Renderer
     }
 
     // -----------------------------
-    // Вспомогательные методы
+    // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ РјРµС‚РѕРґС‹
     // -----------------------------
 
 
@@ -741,7 +741,7 @@ namespace Renderer
 
     
 
-    // Вспомогательные методы для получения нативных ресурсов
+    // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ РјРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РЅР°С‚РёРІРЅС‹С… СЂРµСЃСѓСЂСЃРѕРІ
     ID2D1Brush* Direct2DRenderContext::getNativeBrush(BrushHandle handle) const noexcept
     {
         return resourceManager ? static_cast<ID2D1Brush*>(resourceManager->getNativeBrush(handle)) : nullptr;
@@ -759,5 +759,5 @@ namespace Renderer
 
     
 
-    // Остальные методы остаются без изменений...
+    // РћСЃС‚Р°Р»СЊРЅС‹Рµ РјРµС‚РѕРґС‹ РѕСЃС‚Р°СЋС‚СЃСЏ Р±РµР· РёР·РјРµРЅРµРЅРёР№...
 }

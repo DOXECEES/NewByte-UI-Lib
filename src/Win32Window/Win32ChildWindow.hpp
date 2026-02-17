@@ -85,8 +85,9 @@ namespace Win32Window
                         return 0;
                     }*/
 
-                    if(state.title != L"SCENE" && state.title != L"SideBarTest")
+                    if(isRenderable)
                     {
+                        state.title;
                         renderer->render(this);
                     }
 
@@ -102,11 +103,11 @@ namespace Win32Window
 
                     state.setSize({xSize, ySize});
                     
-                    if (isRenderable == false)
-                    {
-                        wasNonRenderable = true;
-                        isRenderable = true;
-                    }
+                    //if (isRenderable == false)
+                    //{
+                    //    wasNonRenderable = true;
+                    //    isRenderable = true;
+                    //}
 
 
                     recalculateLayout();

@@ -29,20 +29,20 @@ namespace NNsLayout
 
     struct LayoutStyle
     {
-        NbColor         color;
-        NbSize<int>     minSize;
-        NbSize<int>     maxSize;
+        NbColor         color           ;
+        NbSize<int>     minSize         ;
+        NbSize<int>     maxSize         ;
 
-        SizeType        widthSizeType;
-        SizeType        heightSizeType;
+        SizeType        widthSizeType   ;
+        SizeType        heightSizeType  ;
 
-        float           width;
-        float           height;
+        float           width           ;
+        float           height          ;
 
-        Border          border;
+        Border          border          ;
 
-        Margin<float>   margin;
-        Padding<float>  padding;
+        Margin<float>   margin          ;
+        Padding<float>  padding         ;
     };
 
     class LayoutNode
@@ -50,6 +50,8 @@ namespace NNsLayout
     public:
         explicit LayoutNode(Widgets::IWidget* owner) noexcept
             : ownerWidget(owner)
+            
+            
         {
         }
 

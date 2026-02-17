@@ -18,7 +18,7 @@
 namespace Renderer
 {
     // -------------------------
-    // Утилиты для преобразований типов Nb -> Direct2D
+    // РЈС‚РёР»РёС‚С‹ РґР»СЏ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёР№ С‚РёРїРѕРІ Nb -> Direct2D
     // -------------------------
     struct Direct2DUtils
     {
@@ -50,7 +50,7 @@ namespace Renderer
     };
 
     // -------------------------
-    // Сам контекст рендеринга
+    // РЎР°Рј РєРѕРЅС‚РµРєСЃС‚ СЂРµРЅРґРµСЂРёРЅРіР°
     // -------------------------
     class Direct2DRenderContext final : public IRenderContext
     {
@@ -96,7 +96,7 @@ namespace Renderer
         NB_NODISCARD NbSize<int> getSize() const noexcept override;
         NB_NODISCARD bool isValid() const noexcept override;
 
-        // Direct2D-специфичные методы
+        // Direct2D-СЃРїРµС†РёС„РёС‡РЅС‹Рµ РјРµС‚РѕРґС‹
         NB_NODISCARD ID2D1DeviceContext* getNativeDeviceContext() const noexcept;
         NB_NODISCARD ID2D1Factory2* getNativeFactory() const noexcept;
 

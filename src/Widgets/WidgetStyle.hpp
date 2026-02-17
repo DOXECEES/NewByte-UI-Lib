@@ -22,7 +22,7 @@ struct Border
     Style   style   = Style::NONE;
     int     width   = 1;
     int     radius  = 0;
-    NbColor color;
+    NbColor color   = {255, 255, 255};
 };
 
 

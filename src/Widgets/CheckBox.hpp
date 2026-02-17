@@ -39,14 +39,14 @@ namespace Widgets
 	
         virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
         {
-            constexpr int checkBoxSize = 16;   // размер квадратика
-            constexpr int charWidth = 50;      // ширина одного символа
-            constexpr int lineHeight = 20;     // высота строки
+            constexpr int checkBoxSize = 16;   // СЂР°Р·РјРµСЂ РєРІР°РґСЂР°С‚РёРєР°
+            constexpr int charWidth = 50;      // С€РёСЂРёРЅР° РѕРґРЅРѕРіРѕ СЃРёРјРІРѕР»Р°
+            constexpr int lineHeight = 20;     // РІС‹СЃРѕС‚Р° СЃС‚СЂРѕРєРё
             constexpr int paddingLeft = 4;
             constexpr int paddingRight = 4;
             constexpr int paddingTop = 2;
             constexpr int paddingBottom = 2;
-            constexpr int spacing = 4;         // расстояние между квадратиком и текстом
+            constexpr int spacing = 4;         // СЂР°СЃСЃС‚РѕСЏРЅРёРµ РјРµР¶РґСѓ РєРІР°РґСЂР°С‚РёРєРѕРј Рё С‚РµРєСЃС‚РѕРј
 
             int textWidth = static_cast<int>(label->getText().size()) * charWidth;
             int width = checkBoxSize + spacing + textWidth + paddingLeft + paddingRight;
@@ -65,18 +65,18 @@ namespace Widgets
         {
             this->rect = rect;
 
-            // Позиция квадратика внутри rect
+            // РџРѕР·РёС†РёСЏ РєРІР°РґСЂР°С‚РёРєР° РІРЅСѓС‚СЂРё rect
             boxRect.x = rect.x + 4; // paddingLeft
             boxRect.y = rect.y + (rect.height - 16) / 2;
             boxRect.width = 16;
             boxRect.height = 16;
 
-            // Позиция текста
+            // РџРѕР·РёС†РёСЏ С‚РµРєСЃС‚Р°
             NbRect<int> textRect;
 
             textRect.x = boxRect.x + boxRect.width + 4; // spacing
             textRect.y = rect.y + 2; // paddingTop
-            textRect.width = rect.width - textRect.x + rect.x - 4; // остаток ширины
+            textRect.width = rect.width - textRect.x + rect.x - 4; // РѕСЃС‚Р°С‚РѕРє С€РёСЂРёРЅС‹
             textRect.height = rect.height - 4; // paddingTop + paddingBottom
             label->setRect(textRect);
         }

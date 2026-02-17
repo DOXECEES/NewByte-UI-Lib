@@ -308,7 +308,7 @@ namespace Widgets
             nodeState.expanded = true;
             break;
         case ItemState::SELECTED:
-            // Снимаем выделение со всех, если нужно single-select
+            // РЎРЅРёРјР°РµРј РІС‹РґРµР»РµРЅРёРµ СЃРѕ РІСЃРµС…, РµСЃР»Рё РЅСѓР¶РЅРѕ single-select
             for (auto& [uuid, st] : nodeStates)
                 st.selected = false;
             nodeState.selected = true;

@@ -154,6 +154,31 @@ namespace Temp
             recalcChildLayouts();
         }
 
+        NB_NODISCARD size_t childCount() const noexcept
+        {
+            return children.size();
+        }
+
+        NB_NODISCARD Percent getSize(size_t index) const noexcept
+        {
+            assert(index < sizes.size());
+            return sizes[index];
+        }
+
+        void replaceChild(size_t index,
+            const std::shared_ptr<DockNode>& newChild,
+            Percent newSize) noexcept
+        {
+            assert(index < children.size());
+            assert(index < sizes.size());
+
+            children[index] = newChild;
+            sizes[index] = newSize;
+
+            newChild->setParent(shared_from_this());
+        }
+
+
     private:
         void recalcChildLayouts() noexcept
         {
@@ -183,6 +208,19 @@ namespace Temp
                 children[i]->updateLayout(childRect);
                 accumulated += sizePx;
             }
+
+            if (!children.empty())
+            {
+                NbRect<int> lastRect = children.back()->getRect();
+
+                if (orientation == Orientation::HORIZONTAL)
+                    lastRect.width = rect.width - (accumulated - lastRect.width);
+                else
+                    lastRect.height = rect.height - (accumulated - lastRect.height);
+
+                children.back()->updateLayout(lastRect);
+            }
+
         }
 
 
@@ -451,7 +489,8 @@ namespace Temp
         }
 
         // --- Доковать относительно другого окна (split) ---
-        std::shared_ptr<DockNode> dockRelative(std::shared_ptr<WindowInterface::IWindow> window,
+        std::shared_ptr<DockNode> dockRelative(
+            std::shared_ptr<WindowInterface::IWindow> window,
             DockPosition position,
             std::shared_ptr<WindowInterface::IWindow> targetWindow = nullptr,
             Percent size = Percent(50))
@@ -462,12 +501,13 @@ namespace Temp
             if (!targetNode)
                 targetNode = rootNode->getChildren().empty() ? nullptr : rootNode->getChildren()[0];
 
-            if (!targetNode) return dockAsTab(window, nullptr); // если нет ничего, просто вкладка
+            if (!targetNode)
+                return dockAsTab(window, nullptr);
 
             if (position == DockPosition::TAB)
                 return dockAsTab(window, targetWindow);
 
-            // Если targetNode — TabNode, берем его родителя
+            // Если target — TAB, берём его группу
             if (targetNode->getType() == DockNodeType::TAB)
                 targetNode = targetNode->getParent();
 
@@ -478,45 +518,68 @@ namespace Temp
                 ? SplitNode::Orientation::HORIZONTAL
                 : SplitNode::Orientation::VERTICAL;
 
-            auto split = std::make_shared<SplitNode>(orientation);
+            auto newSplit = std::make_shared<SplitNode>(orientation);
 
-            // Вставляем split вместо targetNode
-            if (oldParent)
+            // --- создаём TabGroup ---
+            auto newGroup = std::make_shared<TabGroupNode>();
+            auto newTab = std::make_shared<TabNode>();
+            newTab->setWindow(window);
+            newGroup->addTab(newTab);
+
+            manager->registerNode(newSplit);
+            manager->registerNode(newGroup);
+            manager->registerNode(newTab);
+
+            // --- заменяем targetNode в родителе ---
+            if (oldParent && oldParent->getType() == DockNodeType::SPLIT)
+            {
+                auto parentSplit = std::dynamic_pointer_cast<SplitNode>(oldParent);
+                auto& siblings = parentSplit->getChildren();
+
+                auto it = std::find(siblings.begin(), siblings.end(), targetNode);
+                if (it != siblings.end())
+                {
+                    size_t index = std::distance(siblings.begin(), it);
+                    Percent oldSize = parentSplit->getSize(index);
+
+                    parentSplit->replaceChild(index, newSplit, oldSize);
+                }
+            }
+            else if (oldParent)
             {
                 auto& siblings = oldParent->getChildren();
                 auto it = std::find(siblings.begin(), siblings.end(), targetNode);
+
                 if (it != siblings.end())
-                    *it = split;
-                split->setParent(oldParent);
+                {
+                    *it = newSplit;
+                    newSplit->setParent(oldParent);
+                }
             }
             else
             {
-                rootNode->addChild(split);
-                split->setParent(rootNode);
+                rootNode->addChild(newSplit);
+                newSplit->setParent(rootNode);
             }
 
-            // Новый TabNode
-            auto newTab = std::make_shared<TabNode>();
-            newTab->setWindow(window);
-
+            // --- делим target область ---
             Percent targetPercent = Percent(100 - size.get());
+
             if (position == DockPosition::LEFT || position == DockPosition::TOP)
             {
-                split->addChild(newTab, size);
-                split->addChild(targetNode, targetPercent);
+                newSplit->addChild(newGroup, size);
+                newSplit->addChild(targetNode, targetPercent);
             }
             else
             {
-                split->addChild(targetNode, targetPercent);
-                split->addChild(newTab, size);
+                newSplit->addChild(targetNode, targetPercent);
+                newSplit->addChild(newGroup, size);
             }
-
-            manager->registerNode(split);
-            manager->registerNode(newTab);
 
             rootNode->updateLayout(rootNode->getRect());
             return newTab;
         }
+
 
         void onSize(int width, int height)
         {

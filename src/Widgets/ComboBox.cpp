@@ -33,6 +33,12 @@ namespace Widgets
 				rc.width,
 				DropdownList::SIZE_OF_ELEMENT_IN_PIXEL * static_cast<int>(dropdownList->size())
 			});
+
+			
+		});
+
+		subscribe(*dropdownList, &DropdownList::onItemChecked, [&](const ListItem& item) {
+			this->onItemChecked.emit(item);
 		});
 	}
 
@@ -247,6 +253,7 @@ namespace Widgets
 	void DropdownList::setHoverForElement(const size_t hoverIndex) noexcept
 	{
 		hoverElement = hoverIndex;
+		onItemChecked.emit(getListItem());
 	}
 	
 

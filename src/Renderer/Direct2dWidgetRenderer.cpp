@@ -274,7 +274,7 @@ namespace Renderer
             textRect.y += 1;
         }
 
-        renderTarget->drawText(button->getText().c_str(), textRect, textColor);
+        renderTarget->drawText(button->getText(), textRect, textColor);
     }
 
 
@@ -475,13 +475,13 @@ namespace Renderer
         renderTarget->drawRectangle(checkBox->getBoxRect(), { 255,255,255 });
         renderLabel(checkBox->getLabel(), layoutStyle);
         
-        auto geometry = widgetsCache.getMesh(
-            Geometry::ShapeType::CHECK_MARK,
-            {checkBox->getBoxRect(), checkBox->getIndex()}
-        );
-        
         if (checkBox->getIsChecked())
         {
+            auto geometry = widgetsCache.getMesh(
+                Geometry::ShapeType::CHECK_MARK,
+                { checkBox->getBoxRect(), checkBox->getIndex() }
+            );
+
             renderTarget->fillGeometry(geometry, { 255,0,0 });
 
         }
@@ -510,7 +510,7 @@ namespace Renderer
         renderTarget->fillRectangle(rect, colBG);
 
         // 2. Шапка
-        renderTarget->drawText(calendar->getHeaderText().c_str(), calendar->getTitleRect(), colText);
+        renderTarget->drawText(calendar->getHeaderText(), calendar->getTitleRect(), colText);
         renderTarget->drawText(L"<", calendar->getBtnPrevRect(), colMuted);
         renderTarget->drawText(L">", calendar->getBtnNextRect(), colMuted);
 
@@ -524,7 +524,7 @@ namespace Renderer
             int dowY = sep.y + 5;
             for (int i = 0; i < calendar->getWeekLength(); ++i) {
                 NbRect<int> dowRect = { rect.x + (i * cellW), dowY, cellW, 20 };
-                renderTarget->drawText(calendar->getDayName(i).c_str(), dowRect, colMuted);
+                renderTarget->drawText(calendar->getDayName(i), dowRect, colMuted);
             }
         }
 
@@ -545,7 +545,7 @@ namespace Renderer
             if (!cell.isCurrentRange) curColor = colMuted;
             if (cell.isSelected)      curColor = { 255, 255, 255, 255 };
 
-            renderTarget->drawText(cell.text.c_str(), cell.rect, curColor);
+            renderTarget->drawText(cell.text, cell.rect, curColor);
 
             // Индикатор "Сегодня"
             if (cell.isToday) {

@@ -176,8 +176,9 @@ namespace NNsLayout
         {
         }
 
-        void setWidget(std::shared_ptr<Widgets::IWidget> w) noexcept {
-            widget = w;
+        void setWidget(std::shared_ptr<Widgets::IWidget> w) noexcept
+        {
+            widget = std::move(w);
             dirty = true;
         }
 

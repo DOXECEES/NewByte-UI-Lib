@@ -1,4 +1,7 @@
-    #include "LayoutNode.hpp"
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+#include "LayoutNode.hpp"
 
     #include "Widgets/IWidget.hpp"
     #include "WindowInterface/IWindow.hpp"
@@ -46,11 +49,24 @@
 
             for (auto& child : children)
             {
-                switch (child->style.widthSizeType)
+                const NNsLayout::LayoutStyle& style = child->style;
+                switch (style.widthSizeType)
                 {
-                case SizeType::RELATIVE: totalRelative += child->style.width; break;
-                case SizeType::ABSOLUTE: totalFixed += static_cast<int>(child->style.width); break;
-                case SizeType::AUTO: totalFixed += child->getMeasuredSize().width; break;
+                    case SizeType::RELATIVE:
+                    {
+                        totalRelative += style.width;
+                        break;
+                    }
+                    case SizeType::ABSOLUTE:
+                    {
+                        totalFixed += static_cast<int>(style.width);
+                        break;
+                    }
+                    case SizeType::AUTO:
+                    {
+                        totalFixed += child->getMeasuredSize().width;
+                        break;
+                    }
                 }
             }
 
@@ -59,20 +75,45 @@
             for (auto& child : children)
             {
                 int width = 0;
+                const NNsLayout::LayoutStyle& style = child->style;
 
-                switch (child->style.widthSizeType)
+                switch (style.widthSizeType)
                 {
-                case SizeType::ABSOLUTE: width = static_cast<int>(child->style.width); break;
-                case SizeType::RELATIVE: width = static_cast<int>(remainingWidth * (child->style.width / totalRelative)); break;
-                case SizeType::AUTO: width = child->getMeasuredSize().width; break;
+                    case SizeType::ABSOLUTE:
+                    {
+                        width = static_cast<int>(style.width);
+                        break;
+                    }
+                    case SizeType::RELATIVE:
+                    {
+                        width = static_cast<int>(remainingWidth * (style.width / totalRelative));
+                        break;
+                    }
+                    case SizeType::AUTO:
+                    {
+                        width = child->getMeasuredSize().width;
+                        break;
+                    }
                 }
 
                 int height = bounds.height;
-                switch (child->style.heightSizeType)
+                switch (style.heightSizeType)
                 {
-                case SizeType::ABSOLUTE: height = static_cast<int>(child->style.height); break;
-                case SizeType::RELATIVE: height = static_cast<int>(bounds.height * child->style.height); break;
-                case SizeType::AUTO: height = child->getMeasuredSize().height; break;
+                    case SizeType::ABSOLUTE:
+                    {
+                        height = static_cast<int>(style.height);
+                        break;
+                    }
+                    case SizeType::RELATIVE:
+                    {
+                        height = static_cast<int>(bounds.height * style.height);
+                        break;
+                    }
+                    case SizeType::AUTO:
+                    {
+                        height = child->getMeasuredSize().height;
+                        break;
+                    }
                 }
 
                 NbRect<int> childRect{ x, bounds.y, width, height };
@@ -93,7 +134,8 @@
             {
                 auto& st = child->style;
 
-                if (st.heightSizeType == SizeType::RELATIVE) {
+                if (st.heightSizeType == SizeType::RELATIVE)
+                {
                     totalRelative += st.height;
                     continue;
                 }
@@ -305,10 +347,11 @@
                 return;
             }
 
-            NbRect<int> client = ownerWindow->getClientRect();
 
             if (!children.empty())
             {
+                NbRect<int> client = ownerWindow->getClientRect();
+
                 children[0]->layout(client);
             }
         }

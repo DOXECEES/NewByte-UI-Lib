@@ -371,12 +371,12 @@ public:
         std::vector<Element> elements;
         for (auto& w : linkedWidgets)
         {
-            elements.push_back({ w, nullptr });
+            elements.emplace_back(w, nullptr );
         }
 
         for (auto& l : linkedLayouts)
         {
-            elements.push_back({ nullptr, l });
+            elements.emplace_back( nullptr, l );
         }
 
         if (elements.empty())

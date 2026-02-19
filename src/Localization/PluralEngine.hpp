@@ -1,6 +1,7 @@
 #ifndef NB_SRC_LOCALIZATION_PLURALENGINE_HPP
 #define NB_SRC_LOCALIZATION_PLURALENGINE_HPP
 
+#include <NbCore.hpp>
 #include <unordered_map>
 #include <string>
 #include <string_view>
@@ -130,12 +131,22 @@ namespace Localization
 
     using PluralRuleFunc = std::function<PluralCategory(const PluralOperands&)>;
 
-    class LocalePlural {
+    class LocalePlural 
+    {
         std::string id;
         PluralRuleFunc rule;
     public:
         LocalePlural() = default;
-        LocalePlural(std::string_view lang, PluralRuleFunc f) : id(lang), rule(std::move(f)) {}
+
+        LocalePlural(
+            std::string_view lang,
+            PluralRuleFunc f
+        ) 
+            : id(lang)
+            , rule(std::move(f))
+        {}
+
+        NB_COPYMOVABLE(LocalePlural);
 
         PluralCategory getCategory(double n) const { return rule(PluralOperands::fromDouble(n)); }
         std::string_view langId() const { return id; }
@@ -195,11 +206,11 @@ namespace Localization
                 if (content[i] == '{') depth++;
                 else if (content[i] == '}') depth--;
                 else if (content[i] == ',' && depth == 0) {
-                    parts.push_back(trim(content.substr(last, i - last)));
+                    parts.emplace_back(trim(content.substr(last, i - last)));
                     last = i + 1;
                 }
             }
-            parts.push_back(trim(content.substr(last)));
+            parts.emplace_back(trim(content.substr(last)));
 
             if (parts.size() == 1) return std::make_unique<VariableNode>(parts[0]);
 
@@ -235,7 +246,7 @@ namespace Localization
     public:
         void registerLocale(std::string_view id, PluralRuleFunc rule)
         {
-            locales.emplace(id, LocalePlural(id, std::move(rule)));
+            locales.try_emplace(std::string(id), id, std::move(rule));
         }
 
         std::string format(std::string_view lang, std::string_view pattern, const FormatterArgs& args)

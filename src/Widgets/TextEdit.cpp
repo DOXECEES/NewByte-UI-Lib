@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "TextEdit.hpp"
 
 #include <Alghorithm.hpp>
@@ -259,7 +262,7 @@ namespace Widgets
     }
 
 
-    void TextEdit::addValidator(Utils::Validator valid) noexcept
+    void TextEdit::addValidator(const Utils::Validator& valid) noexcept
     {
         validator = valid;
     }

@@ -47,7 +47,7 @@ namespace Widgets
 		DropdownList& operator=(DropdownList&&) noexcept = default;
 
 
-		void add(ListItem item) noexcept;
+		void add(const ListItem& item) noexcept;
 		NB_NODISCARD size_t size() const noexcept;
 		NB_NODISCARD const std::vector<ListItem>& getAllItems() const noexcept;
 

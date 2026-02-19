@@ -22,7 +22,7 @@ inline std::string toStdString(const T& val) noexcept
     return oss.str();
 }
 
-inline std::wstring toWstring(const std::string str) noexcept
+inline std::wstring toWstring(const std::string& str) noexcept
 {
     std::wstring utf16;
     utf16.resize(str.size());

@@ -19,14 +19,17 @@ namespace Renderer
     }
 
 
-    void Direct2dGlobalWidgetMapper::addTextlayout(Widgets::IWidget *widget, Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout)
+    void Direct2dGlobalWidgetMapper::addTextlayout(
+        Widgets::IWidget *widget,
+        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout
+    )
     {
         const int widgetId = widget->getIndex();
         if(textLayoutMapper.find(widgetId) != textLayoutMapper.end() && textLayoutMapper[widgetId] != nullptr)
         {
            textLayoutMapper[widgetId].Reset();
         }
-        textLayoutMapper[widgetId] = textLayout;
+        textLayoutMapper[widgetId] = std::move(textLayout);
     }
 
 

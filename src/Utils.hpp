@@ -43,7 +43,10 @@ namespace Utils
         return ret;
     }
 
-    bool isPointInsideRect(const NbPoint<int> pos, const RECT &rect);
+    bool isPointInsideRect(
+        const NbPoint<int>& pos,
+        RECT rect
+    );
 
     int getWidthFromRect(const RECT &rect) noexcept;
 

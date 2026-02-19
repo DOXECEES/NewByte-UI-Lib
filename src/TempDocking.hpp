@@ -259,7 +259,7 @@ namespace Temp
 
         void setTitle(const std::string& newTitle) noexcept { title = newTitle; }
 
-        void setWindow(std::shared_ptr<WindowInterface::IWindow> win) noexcept { window = win; }
+        void setWindow(std::shared_ptr<WindowInterface::IWindow> win) noexcept { window = std::move(win); }
         std::shared_ptr<WindowInterface::IWindow> getWindow() noexcept { return window; }
 
     private:
@@ -338,7 +338,7 @@ namespace Temp
                 child->updateLayout(newRect);
         }
 
-        void setWindow(std::shared_ptr<WindowInterface::IWindow> win) noexcept { window = win; }
+        void setWindow(std::shared_ptr<WindowInterface::IWindow> win) noexcept { window = std::move(win); }
         NB_NODISCARD std::shared_ptr<WindowInterface::IWindow> getWindow() noexcept { return window; }
 
     private:

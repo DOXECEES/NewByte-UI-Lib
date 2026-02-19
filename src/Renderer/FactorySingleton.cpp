@@ -50,10 +50,11 @@ namespace Renderer
 
     ID2D1PathGeometry* FactorySingleton::getPathGeometry() noexcept
     {
-        Microsoft::WRL::ComPtr<ID2D1Factory> factory = getFactory();
         static ID2D1PathGeometry* pathGeometry = nullptr;
         if (!pathGeometry)
         {
+            Microsoft::WRL::ComPtr<ID2D1Factory> factory = getFactory();
+
             HRESULT hr = factory->CreatePathGeometry(&pathGeometry);
 
             if (hr != S_OK)

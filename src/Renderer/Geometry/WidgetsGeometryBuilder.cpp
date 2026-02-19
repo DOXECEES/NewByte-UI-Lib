@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "WidgetsGeometryBuilder.hpp"
 
 #include "GeometryFactory.hpp"
@@ -7,7 +10,6 @@ namespace Renderer::Geometry
 {
     Microsoft::WRL::ComPtr<ID2D1Geometry> WidgetsGeometryBuilder::createCheckBoxArrow(const NbRect<int>& rect) noexcept
     {
-        nbstl::Vector<NbPoint<float>> vertex = GeometryFactory::create(ShapeType::CHECK_MARK, rect);
         
 		Microsoft::WRL::ComPtr<ID2D1PathGeometry> geometry;
 		Microsoft::WRL::ComPtr<ID2D1GeometrySink> sink;
@@ -17,6 +19,8 @@ namespace Renderer::Geometry
 
 		if (SUCCEEDED(hr))
 		{
+			nbstl::Vector<NbPoint<float>> vertex = GeometryFactory::create(ShapeType::CHECK_MARK, rect);
+
 			sink->BeginFigure(
 				D2D1::Point2F(vertex[0].x, vertex[0].y),
 				D2D1_FIGURE_BEGIN_FILLED

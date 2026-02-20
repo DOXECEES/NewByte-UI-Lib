@@ -50,8 +50,6 @@ namespace NNsLayout
     public:
         explicit LayoutNode(Widgets::IWidget* owner) noexcept
             : ownerWidget(owner)
-            
-            
         {
         }
 

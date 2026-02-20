@@ -16,10 +16,10 @@
 template<typename T>
 struct OldMargin
 {
-    T left  = T(0);
-    T right = T(0);
-    T top   = T(0);
-    T bot   = T(0);
+    T left  = static_cast<T>(0);
+    T right = static_cast<T>(0);
+    T top   = static_cast<T>(0);
+    T bot   = static_cast<T>(0);
 };
 
 

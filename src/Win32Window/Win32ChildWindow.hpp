@@ -87,7 +87,6 @@ namespace Win32Window
 
                     if(isRenderable)
                     {
-                        state.title;
                         renderer->render(this);
                     }
 
@@ -172,7 +171,6 @@ namespace Win32Window
                     if (point.y > rc.bottom - state.frameSize.bot)
                         return HTBOTTOM;
 
-                    LoadCursor(nullptr, IDC_ARROW);
                     return HTCLIENT;
                 }
                 case WM_CHAR:

@@ -41,14 +41,6 @@ namespace Win32Window
                     return 0;
                 }
         
-               
-                case WM_CLOSE:
-                {
-                    ShowWindow(hWnd, SW_HIDE);
-
-                    return 0;
-
-                }
                 case WM_SHOWWINDOW:
                 {
                     if (static_cast<bool>(wParam) == true)
@@ -64,6 +56,8 @@ namespace Win32Window
                     return DefWindowProc(hWnd, message, wParam, lParam);
                 }
 
+                case WM_CLOSE:
+                    NB_FALLTHROUGH;
                 case WM_DESTROY:
                 {        
                     ShowWindow(hWnd, SW_HIDE);

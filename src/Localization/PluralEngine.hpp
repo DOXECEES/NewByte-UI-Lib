@@ -244,23 +244,35 @@ namespace Localization
         std::unordered_map<std::string, NodeList> astCache;
 
     public:
-        void registerLocale(std::string_view id, PluralRuleFunc rule)
+        void registerLocale(
+            std::string_view id,
+            PluralRuleFunc rule
+        )
         {
             locales.try_emplace(std::string(id), id, std::move(rule));
         }
 
-        std::string format(std::string_view lang, std::string_view pattern, const FormatterArgs& args)
+        std::string format(
+            std::string_view lang,
+            std::string_view pattern,
+            const FormatterArgs& args
+        )
         {
             auto itLoc = locales.find(std::string(lang));
-            if (itLoc == locales.end()) return "Locale Not Found";
+            if (itLoc == locales.end())
+            {
+                return "Locale Not Found";
+            }
 
             const std::string key(pattern);
-            if (astCache.find(key) == astCache.end()) {
+            if (astCache.find(key) == astCache.end())
+            {
                 astCache[key] = MessageCompiler::compile(pattern);
             }
 
             std::string result;
-            for (const auto& node : astCache[key]) {
+            for (const auto& node : astCache[key])
+            {
                 result += node->evaluate(args, itLoc->second);
             }
             return result;
@@ -270,26 +282,65 @@ namespace Localization
 
     namespace rules
     {
-        inline PluralCategory Russian(const PluralOperands& o) {
-            if (o.v > 0) return PluralCategory::Other;
-            if (o.i % 10 == 1 && o.i % 100 != 11) return PluralCategory::One;
-            if (o.i % 10 >= 2 && o.i % 10 <= 4 && (o.i % 100 < 12 || o.i % 100 > 14)) return PluralCategory::Few;
-            if (o.i % 10 == 0 || (o.i % 10 >= 5 && o.i % 10 <= 9) || (o.i % 100 >= 11 && o.i % 100 <= 14)) return PluralCategory::Many;
+        inline PluralCategory Russian(const PluralOperands& o)
+        {
+            if (o.v > 0)
+            {
+                return PluralCategory::Other;
+            }
+            if (o.i % 10 == 1 && o.i % 100 != 11)
+            {
+                return PluralCategory::One;
+            }
+            if (o.i % 10 >= 2 
+                && o.i % 10 <= 4 
+                && (o.i % 100 < 12 || o.i % 100 > 14))
+            {
+                return PluralCategory::Few;
+            }
+            if (o.i % 10 == 0 
+                || (o.i % 10 >= 5 && o.i % 10 <= 9)
+                || (o.i % 100 >= 11 && o.i % 100 <= 14))
+            {
+                return PluralCategory::Many;
+            }
             return PluralCategory::Other;
         }
 
-        inline PluralCategory English(const PluralOperands& o) {
+        inline PluralCategory English(const PluralOperands& o)
+        {
             return (o.i == 1 && o.v == 0) ? PluralCategory::One : PluralCategory::Other;
         }
 
-        inline PluralCategory Arabic(const PluralOperands& o) {
-            if (o.v > 0) return PluralCategory::Few;
-            if (o.i == 0) return PluralCategory::Zero;
-            if (o.i == 1) return PluralCategory::One;
-            if (o.i == 2) return PluralCategory::Two;
+        inline PluralCategory Arabic(const PluralOperands& o)
+        {
+            if (o.v > 0)
+            {
+                return PluralCategory::Few;
+            }
+            if (o.i == 0)
+            {
+                return PluralCategory::Zero;
+            }
+            if (o.i == 1)
+            {
+                return PluralCategory::One;
+            }
+            if (o.i == 2)
+            {
+                return PluralCategory::Two;
+            }
+
             const auto m100 = o.i % 100;
-            if (m100 >= 3 && m100 <= 10) return PluralCategory::Few;
-            if (m100 >= 11 && m100 <= 99) return PluralCategory::Many;
+            
+            if (m100 >= 3 && m100 <= 10)
+            {
+                return PluralCategory::Few;
+            }
+            if (m100 >= 11)
+            {
+                return PluralCategory::Many;
+            }
             return PluralCategory::Other;
         }
     }

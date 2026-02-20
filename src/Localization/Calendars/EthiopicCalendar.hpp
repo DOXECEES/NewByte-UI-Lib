@@ -45,7 +45,7 @@ namespace Localization
             "Calendar.Ethiopic.Month_13"
         };
 
-        std::string_view getSystemName() const noexcept;
+        std::string_view getSystemName() const noexcept override;
 
         int32 getDaysInWeek() const noexcept override;
 

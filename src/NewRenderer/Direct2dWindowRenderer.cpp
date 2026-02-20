@@ -15,7 +15,7 @@ namespace Renderer
         auto& factory = Direct2DFactory::getInstance();
         // Создаём контекст Direct2D для этого окна
         ctx = new Direct2DRenderContext(window->getHandle().as<HWND>(), resourceManager);
-        ctx->initialize();
+        //ctx->initialize();
         resourceManager = new Direct2DResourceManager(
             ctx->getNativeDeviceContext(),
             factory.getDWriteFactory(),

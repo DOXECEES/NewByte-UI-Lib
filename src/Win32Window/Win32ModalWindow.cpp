@@ -42,19 +42,19 @@ namespace Win32Window
             { L"🗕", 30, 35 },
         };
 
-       captionButtons[0].setFunc([this]()
+        captionButtons[0].setFunc([this]()
         {
-            ShowWindow(handle.as<HWND>(), false);
+            ShowWindow(handle.as<HWND>(), SW_HIDE);
 
         });
         captionButtons[1].setFunc([this]()
         {  
-            ShowWindow(handle.as<HWND>(), false);
+            ShowWindow(handle.as<HWND>(), SW_HIDE);
 
         });
         captionButtons[2].setFunc([this]()
         {
-            ShowWindow(handle.as<HWND>(), false);
+            ShowWindow(handle.as<HWND>(), SW_HIDE);
         });
 
         //widgets.push_back(new Widgets::Button(NbRect<int>(100, 100, 100, 100)));

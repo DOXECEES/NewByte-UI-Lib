@@ -24,7 +24,7 @@ namespace Widgets
 
         virtual void onClick() override;
         virtual void onButtonClicked(const wchar_t symbol, SpecialKeyCode specialCode = SpecialKeyCode::NONE) override;
-        virtual void onSymbolButtonClicked(const wchar_t symbol);
+        virtual void onSymbolButtonClicked(const wchar_t symbol) override;
         virtual void onTimer() override;
 
         inline bool getIsDataChanged() const noexcept { return isDataChanged; }

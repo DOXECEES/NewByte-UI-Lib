@@ -13,6 +13,7 @@
 #include "Widgets/ComboBox.hpp"
 #include "Widgets/SpinBox.hpp"
 #include "Widgets/Calendar.hpp"
+#include "Widgets/Section.hpp"
 
 #include "Direct2dGlobalWidgetMapper.hpp"
 
@@ -63,13 +64,17 @@ namespace Renderer
         {
             renderComboBox(widget, layoutStyle);
         }
-        else if (strncmp(widgetName, SpinBox::CLASS_NAME , size) == 0)
+        else if (strncmp(widgetName, SpinBoxBase::CLASS_NAME , size) == 0)
         {
             renderSpinBox(widget, layoutStyle);
         }
         else if (strncmp(widgetName, CalendarWidget::CLASS_NAME, size) == 0)
         {
             renderCalendar(widget, layoutStyle);
+        }
+        else if (strncmp(widgetName, SectionWidget::CLASS_NAME, size) == 0)
+        {
+            renderSection(widget, layoutStyle);
         }
 
 
@@ -235,7 +240,10 @@ namespace Renderer
     }
 
 
-    void Direct2dWidgetRenderer::renderButton(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
+    void Direct2dWidgetRenderer::renderButton(
+        IWidget* widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    )
     {
         using namespace Widgets;
         Button* button = castWidget<Button>(widget);
@@ -245,29 +253,42 @@ namespace Renderer
 
         NbColor color, textColor;
 
-        // Определяем цвета в зависимости от состояния
-        switch (state) {
-        case WidgetState::HOVER:   color = bStyle.hoverColor();   textColor = bStyle.hoverTextColor();   break;
-        case WidgetState::ACTIVE:  color = bStyle.activeColor();  textColor = bStyle.activeTextColor();  break;
-        case WidgetState::DISABLE: color = bStyle.disableColor(); textColor = bStyle.disableTextColor(); break;
-        default:                   color = bStyle.baseColor();    textColor = bStyle.baseTextColor();    break;
+        switch (state)
+        {
+        case WidgetState::HOVER:
+            color = bStyle.hoverColor();
+            textColor = bStyle.hoverTextColor();
+            break;
+        case WidgetState::ACTIVE:
+            color = bStyle.activeColor();
+            textColor = bStyle.activeTextColor();
+            break;
+        case WidgetState::DISABLE:
+            color = bStyle.disableColor();
+            textColor = bStyle.disableTextColor();
+            break;
+        default:
+            color = bStyle.baseColor();
+            textColor = bStyle.baseTextColor();
+            break;
         }
 
         NbRect<int> rect = button->getRect();
 
-        // 1. Рисуем фон кнопки
         renderTarget->fillRectangle(rect, color);
 
-        // 2. Рисуем легкую внутреннюю тень или блик (для объема)
-        if (state != WidgetState::ACTIVE && state != WidgetState::DISABLE) {
-            NbRect<int> highlight = { rect.x, rect.y, rect.width, 1 };
-            renderTarget->fillRectangle(highlight, NbColor(255, 255, 255, 30)); // Белый полупрозрачный блик сверху
+        if (state != WidgetState::ACTIVE 
+            && state != WidgetState::DISABLE)
+        {
+            NbRect<int> highlight = {rect.x, rect.y, rect.width, 1};
+            renderTarget->fillRectangle(
+                highlight,
+                NbColor(255, 255, 255, 30)
+            ); 
         }
 
-        // 3. Рисуем границу (используем ваш drawBorder)
         drawBorder(button, layoutStyle.border);
 
-        // 4. Эффект нажатия: смещаем текст вниз на 1 пиксель, если кнопка активна
         NbRect<int> textRect = rect;
         if (state == WidgetState::ACTIVE)
         {
@@ -275,6 +296,73 @@ namespace Renderer
         }
 
         renderTarget->drawText(button->getText(), textRect, textColor);
+    }
+
+    void Direct2dWidgetRenderer::renderSection(
+        IWidget* widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    )
+    {
+        using namespace Widgets;
+        SectionWidget* section = castWidget<SectionWidget>(widget);
+
+        NbRect<int> rect = section->getRect();
+        bool isExpanded = section->isExpanded();
+        WidgetState state = section->getState();
+
+        NbColor headerBgColor = NbColor(45, 45, 45); // РўРµРјРЅРѕ-СЃРµСЂС‹Р№ С„РѕРЅ С€Р°РїРєРё
+        NbColor textColor = NbColor(200, 200, 200);  // РЎРІРµС‚Р»Рѕ-СЃРµСЂС‹Р№ С‚РµРєСЃС‚
+        NbColor arrowColor = NbColor(150, 150, 150); // Р¦РІРµС‚ СЃС‚СЂРµР»РѕС‡РєРё
+
+        if (state == WidgetState::HOVER)
+        {
+            headerBgColor = NbColor(55, 55, 55); // Р§СѓС‚СЊ СЃРІРµС‚Р»РµРµ РїСЂРё РЅР°РІРµРґРµРЅРёРё
+        }
+
+        int headerHeight = 24;
+        NbRect<int> headerRect = {rect.x, rect.y, rect.width, headerHeight};
+
+        renderTarget->fillRectangle(headerRect, headerBgColor);
+
+        std::wstring arrowSymbol = isExpanded ? L"в–ј" : L"в–¶";
+
+        NbRect<int> arrowRect = {headerRect.x + 5, headerRect.y, 20, headerHeight};
+        renderTarget->drawText(arrowSymbol.c_str(), arrowRect, arrowColor);
+
+        // 4. Р РёСЃСѓРµРј С‚РµРєСЃС‚ Р·Р°РіРѕР»РѕРІРєР° (СЃ РѕС‚СЃС‚СѓРїРѕРј РѕС‚ СЃС‚СЂРµР»РѕС‡РєРё)
+        NbRect<int> textRect
+            = {headerRect.x + 25, headerRect.y, headerRect.width - 25, headerHeight};
+        renderTarget->drawText(section->getTitle().c_str(), textRect, textColor);
+
+        NbRect<int> separatorLine = {
+            headerRect.x,
+            headerRect.y + headerHeight - 1,
+            headerRect.width,
+            1
+        };
+        renderTarget->fillRectangle(separatorLine, NbColor(30, 30, 30, 255));
+
+        if (isExpanded)
+        {
+            NbRect<int> contentRect= {
+                rect.x,
+                rect.y + headerHeight,
+                rect.width,
+                rect.height - headerHeight
+            };
+
+            renderTarget->fillRectangle(
+                contentRect,
+                NbColor(35, 255, 255)
+            ); 
+
+            for (auto& child : section->getChildrens())
+            {
+                render(child, layoutStyle);
+            }
+        }
+
+        drawBorder(section, layoutStyle.border);
     }
 
 
@@ -414,12 +502,12 @@ namespace Renderer
 
                 if (!expanded)
                 {
-                    renderTarget->drawLine({ box.x + 4, box.y + 2 }, { box.x + 4, box.y + 6 }, treeViewStyle.inButtonColor); // вертикаль
+                    renderTarget->drawLine({ box.x + 4, box.y + 2 }, { box.x + 4, box.y + 6 }, treeViewStyle.inButtonColor); // РІРµСЂС‚РёРєР°Р»СЊ
                 }
-                renderTarget->drawLine({ box.x + 2, box.y + 4 }, { box.x + 6, box.y + 4 }, treeViewStyle.inButtonColor); // горизонталь
+                renderTarget->drawLine({ box.x + 2, box.y + 4 }, { box.x + 6, box.y + 4 }, treeViewStyle.inButtonColor); // РіРѕСЂРёР·РѕРЅС‚Р°Р»СЊ
             }
 
-            // Текст
+            // РўРµРєСЃС‚
             std::wstring text = Utils::toWstring(model->data(*item));
             renderTarget->drawText(text, itemRect, style.baseTextColor,
                 TextAlignment::LEFT, ParagraphAlignment::TOP);
@@ -496,7 +584,7 @@ namespace Renderer
         const auto& grid = calendar->getGrid();
         if (grid.empty()) return;
 
-        // --- Стилизация ---
+        // --- РЎС‚РёР»РёР·Р°С†РёСЏ ---
         const NbColor colBG = { 25, 25, 25, 255 };
         const NbColor colAccent = { 0, 120, 215, 255 };
         const NbColor colText = { 245, 245, 245, 255 };
@@ -506,19 +594,19 @@ namespace Renderer
 
         const NbRect<int>& rect = calendar->getRect();
 
-        // 1. Фон
+        // 1. Р¤РѕРЅ
         renderTarget->fillRectangle(rect, colBG);
 
-        // 2. Шапка
+        // 2. РЁР°РїРєР°
         renderTarget->drawText(calendar->getHeaderText(), calendar->getTitleRect(), colText);
         renderTarget->drawText(L"<", calendar->getBtnPrevRect(), colMuted);
         renderTarget->drawText(L">", calendar->getBtnNextRect(), colMuted);
 
-        // 3. Разделитель
+        // 3. Р Р°Р·РґРµР»РёС‚РµР»СЊ
         NbRect<int> sep = { rect.x + 8, calendar->getTitleRect().y + calendar->getTitleRect().height, rect.width - 16, 1 };
         renderTarget->fillRectangle(sep, colBorder);
 
-        // 4. Дни недели (только в режиме DAYS)
+        // 4. Р”РЅРё РЅРµРґРµР»Рё (С‚РѕР»СЊРєРѕ РІ СЂРµР¶РёРјРµ DAYS)
         if (calendar->getViewMode() == CalendarViewMode::DAYS) {
             int cellW = rect.width / calendar->getWeekLength();
             int dowY = sep.y + 5;
@@ -528,9 +616,9 @@ namespace Renderer
             }
         }
 
-        // 5. Сетка данных
+        // 5. РЎРµС‚РєР° РґР°РЅРЅС‹С…
         for (const auto& cell : grid) {
-            // "Внутренняя" область ячейки для визуальных эффектов
+            // "Р’РЅСѓС‚СЂРµРЅРЅСЏСЏ" РѕР±Р»Р°СЃС‚СЊ СЏС‡РµР№РєРё РґР»СЏ РІРёР·СѓР°Р»СЊРЅС‹С… СЌС„С„РµРєС‚РѕРІ
             NbRect<int> vRect = cell.rect;
             vRect.x += 2; vRect.y += 2; vRect.width -= 4; vRect.height -= 4;
 
@@ -547,7 +635,7 @@ namespace Renderer
 
             renderTarget->drawText(cell.text, cell.rect, curColor);
 
-            // Индикатор "Сегодня"
+            // РРЅРґРёРєР°С‚РѕСЂ "РЎРµРіРѕРґРЅСЏ"
             if (cell.isToday) {
                 if (cell.isSelected) {
                     renderTarget->drawRectangle(vRect, { 255, 255, 255, 180 });
@@ -574,16 +662,16 @@ namespace Renderer
         NbColor bgColor, textColor;
         getWidgetThemeColorByState(comboBox, bgColor, textColor);
 
-        // 1. Фон
+        // 1. Р¤РѕРЅ
         renderTarget->fillRectangle(rect, bgColor);
 
-        // 2. Текст
+        // 2. РўРµРєСЃС‚
         NbRect<int> textRect = selectedItemRect;
         textRect.x += 8;
         textRect.width -= 8;
         renderTarget->drawText(comboBox->getSelectedItem().getText(), textRect, textColor);
 
-        // 3. Цвет кнопки (Исправляем narrowing conversion для uint8_t)
+        // 3. Р¦РІРµС‚ РєРЅРѕРїРєРё (РСЃРїСЂР°РІР»СЏРµРј narrowing conversion РґР»СЏ uint8_t)
         auto adjust = [](uint8_t val) -> uint8_t {
             return static_cast<uint8_t>(val > 20 ? val - 20 : val + 20);
             };
@@ -591,7 +679,7 @@ namespace Renderer
 
         renderTarget->fillRectangle(buttonRect, buttonColor);
 
-        // 4. Стрелочка (Исправляем narrowing conversion из float в int для точек)
+        // 4. РЎС‚СЂРµР»РѕС‡РєР° (РСЃРїСЂР°РІР»СЏРµРј narrowing conversion РёР· float РІ int РґР»СЏ С‚РѕС‡РµРє)
         float centerX = static_cast<float>(buttonRect.x) + static_cast<float>(buttonRect.width) / 2.0f;
         float centerY = static_cast<float>(buttonRect.y) + static_cast<float>(buttonRect.height) / 2.0f;
         float size = 4.0f;
@@ -632,7 +720,7 @@ namespace Renderer
     void Direct2dWidgetRenderer::renderSpinBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
         using namespace Widgets;
-        SpinBox* spinBox = castWidget<SpinBox>(widget);
+        SpinBoxBase* spinBox = castWidget<SpinBoxBase>(widget);
         if (!spinBox) return;
 
         NbColor bgColor, textColor;
@@ -668,11 +756,11 @@ namespace Renderer
 
             renderTarget->drawRectangle(rect, NbColor(80, 80, 80));
         //if (spinBox->getInput() && spinBox->getInput()->getIsFocused()) {
-        //    // Рисуем внешнюю рамку толщиной 2 пикселя (акцентную)
+        //    // Р РёСЃСѓРµРј РІРЅРµС€РЅСЋСЋ СЂР°РјРєСѓ С‚РѕР»С‰РёРЅРѕР№ 2 РїРёРєСЃРµР»СЏ (Р°РєС†РµРЅС‚РЅСѓСЋ)
         //    renderTarget->drawRectangle(rect, NbColor(0, 120, 215));
         //}
         //else {
-        //    // Обычная рамка
+        //    // РћР±С‹С‡РЅР°СЏ СЂР°РјРєР°
         //}
     }
 

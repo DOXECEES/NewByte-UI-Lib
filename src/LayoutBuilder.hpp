@@ -46,6 +46,9 @@ namespace nbui
         LayoutBuilder&& relativeHeight(float h)&&;
         LayoutBuilder&& absoluteWidth(int w)&&;
         LayoutBuilder&& absoluteHeight(int h)&&;
+        LayoutBuilder&& autoWidth() &&;
+        LayoutBuilder&& autoHeight() &&;
+
 
         LayoutBuilder&& text(const std::wstring& t)&&;
         LayoutBuilder&& style(std::function<void(NNsLayout::LayoutStyle&)> f)&&;

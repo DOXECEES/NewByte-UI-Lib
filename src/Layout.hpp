@@ -71,8 +71,8 @@ public:
         window->linkWidget(widget);
         linkedWidgets.push_back(widget);
 
-        for (auto& child : widget->getChildrens())
-            window->linkWidget(child);
+        //for (auto& child : widget->getChildrens())
+        //    window->linkWidget(child);
     }
 
     void addLayout(Layout* layout)
@@ -147,7 +147,11 @@ public:
 			}
 
 			//rect = applyHeightOnlyPaddingToRect(rect, Padding());
-			widget->setRect(rect);
+			//widget->setRect(rect);
+
+            auto size = widget->measure({rect.width, rect.height});
+                        widget->layout({rect.x, rect.y, rect.width, size.height});
+
 			currentY += rect.height;
 		}
 	}

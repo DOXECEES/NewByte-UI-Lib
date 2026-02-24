@@ -15,7 +15,12 @@ namespace Widgets
 		isHide_ = false;
 	}
 
-	bool IWidget::isHover() const noexcept
+	void IWidget::hide(bool flag) noexcept
+    {
+        isHide_ = flag;
+    }
+
+    bool IWidget::isHover() const noexcept
 	{
 		return state == WidgetState::HOVER;
 	}

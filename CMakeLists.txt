@@ -143,6 +143,9 @@ set (SRC
         src/Widgets/Calendar.hpp
         src/Widgets/Spacer.cpp
         src/Widgets/Spacer.hpp
+        src/Widgets/FloatSpinBox.cpp
+        src/Widgets/FloatSpinBox.hpp
+        src/Widgets/Section.hpp
 
         src/Layout/LayoutNode.cpp
         src/Layout/LayoutNode.hpp

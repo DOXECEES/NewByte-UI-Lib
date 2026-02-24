@@ -67,7 +67,13 @@ namespace NNsLayout
             static_assert(std::is_base_of<LayoutNode, T>::value, "T must derive from LayoutNode");
             child->parent = this;
             children.emplace_back(std::move(child));
+            dirty = true;
             return children.back().get();
+        }
+
+        void clearChilds() noexcept
+        {
+            children.clear();
         }
 
 
@@ -169,18 +175,14 @@ namespace NNsLayout
     class LayoutWidget : public LayoutNode
     {
     public:
-        explicit LayoutWidget(Widgets::IWidget* w) noexcept
-            : LayoutNode(w), widget(w)
-        {
-        }
+        explicit LayoutWidget(Widgets::IWidget* w) noexcept;
+       
 
-        void setWidget(std::shared_ptr<Widgets::IWidget> w) noexcept
-        {
-            widget = std::move(w);
-            dirty = true;
-        }
+        void setWidget(std::shared_ptr<Widgets::IWidget> w) noexcept;
+       
 
-        std::shared_ptr<Widgets::IWidget> getWidget() const noexcept {
+        std::shared_ptr<Widgets::IWidget> getWidget() const noexcept
+        {
             return widget;
         }
 

@@ -167,6 +167,26 @@ namespace nbui
         return std::move(*this);
     }
 
+    LayoutBuilder&& LayoutBuilder::autoWidth() &&
+    {
+        if (currentNode)
+        {
+            currentNode->style.widthSizeType = NNsLayout::SizeType::AUTO;
+            //currentNode->style.width = static_cast<float>(w);
+        }
+        return std::move(*this);
+    }
+
+    LayoutBuilder&& LayoutBuilder::autoHeight() &&
+    {
+        if (currentNode)
+        {
+            currentNode->style.heightSizeType = NNsLayout::SizeType::AUTO;
+            // currentNode->style.width = static_cast<float>(w);
+        }
+        return std::move(*this);
+    }
+
     LayoutBuilder&& LayoutBuilder::text(const std::wstring& t)&&
     {
         auto owner = currentNode->getOwner();

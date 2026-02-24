@@ -84,7 +84,7 @@ namespace Win32Window
                         EndPaint(hWnd, &ps);
                         return 0;
                     }*/
-
+                    recalculateLayout();
                     if(isRenderable)
                     {
                         renderer->render(this);

@@ -44,7 +44,10 @@ namespace Renderer
         void renderComboBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
         void renderSpinBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
         void renderCalendar(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle);
-
+        void renderSection(
+            IWidget* widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        );
 
         template<typename T>
         T* castWidget(IWidget* widget) const noexcept
@@ -85,8 +88,11 @@ namespace Renderer
                 if (comboBox->getChildrens()[0]->isHover())
                 {
                     color = { 23, 44, 55 };
-                    addictionalRect.push_back(dynamic_cast<DropdownList*>(comboBox->getChildrens()[0])->getHoverElementRect());
-                    addictionalColor.push_back({ 128,92,64 });
+                    addictionalRect.emplace_back(
+                        dynamic_cast<DropdownList*>(comboBox->getChildrens()[0])->getHoverElementRect()
+                    );
+                    
+                    addictionalColor.emplace_back(128,92,64);
                     
                 }
 

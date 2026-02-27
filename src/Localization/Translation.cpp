@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "Translation.hpp"
 #include <fstream>
 #include <filesystem>
@@ -31,7 +34,6 @@ namespace Localization
             buffer.erase(0, 3);
         }
 
-        std::string currentSection;
         size_t pos = 0;
         size_t lineStart = 0;
 

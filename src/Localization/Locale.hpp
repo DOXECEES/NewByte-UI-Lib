@@ -33,34 +33,34 @@ namespace Localization
     public:
         Locale() noexcept = default;
 
-        // ID локали (language, country, script)
+        // ID Р»РѕРєР°Р»Рё (language, country, script)
         void setId(const LocaleId& id) noexcept { localeId = id; }
         const LocaleId& id() const noexcept { return localeId; }
 
-        // [names] — человекочитаемые имена
+        // [names] вЂ” С‡РµР»РѕРІРµРєРѕС‡РёС‚Р°РµРјС‹Рµ РёРјРµРЅР°
         void setDisplayName(const std::string& name) noexcept { displayName = name; }
         const std::string& getDisplayName() const noexcept { return displayName; }
 
         void setNativeName(const std::string& name) noexcept { nativeName = name; }
         const std::string& getNativeName() const noexcept { return nativeName; }
 
-        // [number] — формат чисел
+        // [number] вЂ” С„РѕСЂРјР°С‚ С‡РёСЃРµР»
         NumberFormat& number() noexcept { return numberFormat; }
         const NumberFormat& number() const noexcept { return numberFormat; }
 
-        // [datetime] — формат даты и времени
+        // [datetime] вЂ” С„РѕСЂРјР°С‚ РґР°С‚С‹ Рё РІСЂРµРјРµРЅРё
         DateTimeFormat& dateTime() noexcept { return dateTimeFormat; }
         const DateTimeFormat& dateTime() const noexcept { return dateTimeFormat; }
 
-        // [meta] — направление текста
+        // [meta] вЂ” РЅР°РїСЂР°РІР»РµРЅРёРµ С‚РµРєСЃС‚Р°
         void setTextDirection(const std::string& dir) noexcept { textDirection = dir; }
         const std::string& getTextDirection() const noexcept { return textDirection; }
 
-        // [plural] — правило плюрализации
+        // [plural] вЂ” РїСЂР°РІРёР»Рѕ РїР»СЋСЂР°Р»РёР·Р°С†РёРё
         void setPluralRule(const std::string& rule) noexcept { pluralRule = rule; }
         const std::string& getPluralRule() const noexcept { return pluralRule; }
 
-        // [fallback] — цепочка локалей
+        // [fallback] вЂ” С†РµРїРѕС‡РєР° Р»РѕРєР°Р»РµР№
         void setFallbackChain(const nbstl::Vector<std::string>& chain) noexcept { fallbackChain = chain; }
         const nbstl::Vector<std::string>& getFallbackChain() const noexcept { return fallbackChain; }
 

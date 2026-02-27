@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "LocaleLoader.hpp"
 
 #include <String.hpp>
@@ -21,12 +24,12 @@ namespace Localization
             return Locale{};
         }
 
-        // Читаем весь файл в буфер
+        // Р§РёС‚Р°РµРј РІРµСЃСЊ С„Р°Р№Р» РІ Р±СѓС„РµСЂ
         std::stringstream bufferStream;
         bufferStream << file.rdbuf();
         std::string buffer = bufferStream.str();
 
-        // Убираем BOM если есть
+        // РЈР±РёСЂР°РµРј BOM РµСЃР»Рё РµСЃС‚СЊ
         if (buffer.size() >= 3 &&
             static_cast<unsigned char>(buffer[0]) == 0xEF &&
             static_cast<unsigned char>(buffer[1]) == 0xBB &&
@@ -52,7 +55,7 @@ namespace Localization
                 if (line.empty() || line[0] == '#' || line[0] == ';')
                     continue;
 
-                // новая секция
+                // РЅРѕРІР°СЏ СЃРµРєС†РёСЏ
                 if (line.front() == '[' && line.back() == ']')
                 {
                     currentSection = nbstl::trim(line.substr(1, line.size() - 2));

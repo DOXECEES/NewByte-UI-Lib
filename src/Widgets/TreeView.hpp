@@ -197,6 +197,9 @@ namespace Widgets
         {
             bool expanded = false;
             bool selected = false;
+
+           
+
         };
 
         std::shared_ptr<ITreeModel>                         model               = nullptr;

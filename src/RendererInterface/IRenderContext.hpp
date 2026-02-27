@@ -16,139 +16,139 @@ namespace Renderer
     public:
         virtual ~IRenderContext() noexcept = default;
 
-        // =============== УПРАВЛЕНИЕ РИСОВАНИЕМ ===============
+        // =============== РЈРџР РђР’Р›Р•РќРР• Р РРЎРћР’РђРќРР•Рњ ===============
 
-        // Начать рисование кадра
+        // РќР°С‡Р°С‚СЊ СЂРёСЃРѕРІР°РЅРёРµ РєР°РґСЂР°
         virtual void beginDraw() noexcept = 0;
 
-        // Завершить рисование кадра
-        // Возвращает: true - успех, false - ошибка (например, потеря устройства)
+        // Р—Р°РІРµСЂС€РёС‚СЊ СЂРёСЃРѕРІР°РЅРёРµ РєР°РґСЂР°
+        // Р’РѕР·РІСЂР°С‰Р°РµС‚: true - СѓСЃРїРµС…, false - РѕС€РёР±РєР° (РЅР°РїСЂРёРјРµСЂ, РїРѕС‚РµСЂСЏ СѓСЃС‚СЂРѕР№СЃС‚РІР°)
         [[nodiscard]] virtual bool endDraw() noexcept = 0;
 
-        // Очистить контекст заданным цветом
+        // РћС‡РёСЃС‚РёС‚СЊ РєРѕРЅС‚РµРєСЃС‚ Р·Р°РґР°РЅРЅС‹Рј С†РІРµС‚РѕРј
         virtual void clear(const NbColor& color) noexcept = 0;
 
-        // Принудительно выполнить все отложенные команды
+        // РџСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ РІС‹РїРѕР»РЅРёС‚СЊ РІСЃРµ РѕС‚Р»РѕР¶РµРЅРЅС‹Рµ РєРѕРјР°РЅРґС‹
         virtual void flush() noexcept = 0;
 
 
-        // =============== РИСОВАНИЕ ПРИМИТИВОВ ===============
+        // =============== Р РРЎРћР’РђРќРР• РџР РРњРРўРР’РћР’ ===============
 
-        // Прямоугольник (контур)
+        // РџСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРє (РєРѕРЅС‚СѓСЂ)
         virtual void drawRectangle(const NbRect<int>& rect, BrushHandle brush) noexcept = 0;
 
-        // Прямоугольник (заливка)
+        // РџСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРє (Р·Р°Р»РёРІРєР°)
         virtual void fillRectangle(const NbRect<int>& rect, BrushHandle brush) noexcept = 0;
 
-        // Прямоугольник с закругленными углами (контур)
+        // РџСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРє СЃ Р·Р°РєСЂСѓРіР»РµРЅРЅС‹РјРё СѓРіР»Р°РјРё (РєРѕРЅС‚СѓСЂ)
         virtual void drawRoundedRectangle(const NbRect<int>& rect, float radius,
             BrushHandle brush) noexcept = 0;
 
-        // Прямоугольник с закругленными углами (заливка)
+        // РџСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРє СЃ Р·Р°РєСЂСѓРіР»РµРЅРЅС‹РјРё СѓРіР»Р°РјРё (Р·Р°Р»РёРІРєР°)
         virtual void fillRoundedRectangle(const NbRect<int>& rect, float radius,
             BrushHandle brush) noexcept = 0;
 
-        // Эллипс/окружность (контур)
+        // Р­Р»Р»РёРїСЃ/РѕРєСЂСѓР¶РЅРѕСЃС‚СЊ (РєРѕРЅС‚СѓСЂ)
         virtual void drawEllipse(const NbPoint<int>& center, float radiusX, float radiusY,
             BrushHandle brush) noexcept = 0;
 
-        // Эллипс/окружность (заливка)
+        // Р­Р»Р»РёРїСЃ/РѕРєСЂСѓР¶РЅРѕСЃС‚СЊ (Р·Р°Р»РёРІРєР°)
         virtual void fillEllipse(const NbPoint<int>& center, float radiusX, float radiusY,
             BrushHandle brush) noexcept = 0;
 
-        // Линия
+        // Р›РёРЅРёСЏ
         virtual void drawLine(const NbPoint<int>& start, const NbPoint<int>& end,
             BrushHandle brush, float strokeWidth = 1.0f) noexcept = 0;
 
 
-        // =============== ТЕКСТ ===============
+        // =============== РўР•РљРЎРў ===============
 
-        // Нарисовать текст
+        // РќР°СЂРёСЃРѕРІР°С‚СЊ С‚РµРєСЃС‚
         virtual void drawText(const std::wstring& text, const NbRect<int>& layoutRect,
             TextFormatHandle format, BrushHandle brush) noexcept = 0;
 
-        // Измерить текст (без рисования)
+        // РР·РјРµСЂРёС‚СЊ С‚РµРєСЃС‚ (Р±РµР· СЂРёСЃРѕРІР°РЅРёСЏ)
         [[nodiscard]] virtual NbSize<int> measureText(const std::wstring& text,
             TextFormatHandle format,
             float maxWidth = 0.0f) const noexcept = 0;
 
 
-        // =============== ИЗОБРАЖЕНИЯ ===============
+        // =============== РР—РћР‘Р РђР–Р•РќРРЇ ===============
 
-        // Нарисовать изображение
+        // РќР°СЂРёСЃРѕРІР°С‚СЊ РёР·РѕР±СЂР°Р¶РµРЅРёРµ
         virtual void drawBitmap(const NbRect<int>& destination, BitmapHandle bitmap,
             float opacity = 1.0f) noexcept = 0;
 
-        // Нарисовать часть изображения
+        // РќР°СЂРёСЃРѕРІР°С‚СЊ С‡Р°СЃС‚СЊ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ
         virtual void drawBitmap(const NbRect<int>& destination, const NbRect<int>& sourceRect,
             BitmapHandle bitmap, float opacity = 1.0f) noexcept = 0;
 
 
-        // =============== ГЕОМЕТРИЯ ===============
+        // =============== Р“Р•РћРњР•РўР РРЇ ===============
 
-        // Нарисовать геометрию (контур)
+        // РќР°СЂРёСЃРѕРІР°С‚СЊ РіРµРѕРјРµС‚СЂРёСЋ (РєРѕРЅС‚СѓСЂ)
         virtual void drawGeometry(GeometryHandle geometry, BrushHandle brush,
             float strokeWidth = 1.0f) noexcept = 0;
 
-        // Нарисовать геометрию (заливка)
+        // РќР°СЂРёСЃРѕРІР°С‚СЊ РіРµРѕРјРµС‚СЂРёСЋ (Р·Р°Р»РёРІРєР°)
         virtual void fillGeometry(GeometryHandle geometry, BrushHandle brush,
             FillMode fillMode = FillMode::Alternate) noexcept = 0;
 
 
-        // =============== СОСТОЯНИЕ РИСОВАНИЯ ===============
+        // =============== РЎРћРЎРўРћРЇРќРР• Р РРЎРћР’РђРќРРЇ ===============
 
-        // Трансформации (стек)
+        // РўСЂР°РЅСЃС„РѕСЂРјР°С†РёРё (СЃС‚РµРє)
         //virtual void pushTransform(const Matrix3x2& transform) noexcept = 0;
         //virtual void popTransform() noexcept = 0;
         //[[nodiscard]] virtual Matrix3x2 getCurrentTransform() const noexcept = 0;
 
-        // Область отсечения (стек)
+        // РћР±Р»Р°СЃС‚СЊ РѕС‚СЃРµС‡РµРЅРёСЏ (СЃС‚РµРє)
         virtual void pushClip(const NbRect<int>& clipRect) noexcept = 0;
         virtual void popClip() noexcept = 0;
 
-        // Слои (для прозрачности и эффектов)
+        // РЎР»РѕРё (РґР»СЏ РїСЂРѕР·СЂР°С‡РЅРѕСЃС‚Рё Рё СЌС„С„РµРєС‚РѕРІ)
         virtual void pushLayer(const NbRect<int>& bounds, float opacity = 1.0f) noexcept = 0;
         virtual void popLayer() noexcept = 0;
 
-        // Антиалиасинг
+        // РђРЅС‚РёР°Р»РёР°СЃРёРЅРі
         virtual void setAntialiasMode(AntialiasMode mode) noexcept = 0;
         [[nodiscard]] virtual AntialiasMode getAntialiasMode() const noexcept = 0;
 
 
-        // =============== ИНФОРМАЦИЯ ===============
+        // =============== РРќР¤РћР РњРђР¦РРЇ ===============
 
-        // Получить DPI контекста
+        // РџРѕР»СѓС‡РёС‚СЊ DPI РєРѕРЅС‚РµРєСЃС‚Р°
         [[nodiscard]] virtual float getDpi() const noexcept = 0;
 
-        // Получить размер render target
+        // РџРѕР»СѓС‡РёС‚СЊ СЂР°Р·РјРµСЂ render target
         [[nodiscard]] virtual NbSize<int> getSize() const noexcept = 0;
 
-        // Проверить валидность контекста
+        // РџСЂРѕРІРµСЂРёС‚СЊ РІР°Р»РёРґРЅРѕСЃС‚СЊ РєРѕРЅС‚РµРєСЃС‚Р°
         [[nodiscard]] virtual bool isValid() const noexcept = 0;
 
 
-        // =============== СОБЫТИЯ ===============
+        // =============== РЎРћР‘Р«РўРРЇ ===============
 
-        // Обработка изменения DPI
+        // РћР±СЂР°Р±РѕС‚РєР° РёР·РјРµРЅРµРЅРёСЏ DPI
         virtual void onDpiChanged(float newDpi) noexcept = 0;
 
-        // Обработка потери графического устройства
+        // РћР±СЂР°Р±РѕС‚РєР° РїРѕС‚РµСЂРё РіСЂР°С„РёС‡РµСЃРєРѕРіРѕ СѓСЃС‚СЂРѕР№СЃС‚РІР°
         virtual void onDeviceLost() noexcept = 0;
 
 
-        // =============== СТАТИСТИКА (для отладки) ===============
+        // =============== РЎРўРђРўРРЎРўРРљРђ (РґР»СЏ РѕС‚Р»Р°РґРєРё) ===============
 
         struct RenderStats
         {
-            uint32_t drawCallCount{ 0 };      // Количество вызовов рисования
-            uint32_t primitiveCount{ 0 };     // Количество примитивов
-            uint32_t textureCount{ 0 };       // Количество используемых текстур
-            uint64_t frameNumber{ 0 };        // Номер кадра
+            uint32_t drawCallCount{ 0 };      // РљРѕР»РёС‡РµСЃС‚РІРѕ РІС‹Р·РѕРІРѕРІ СЂРёСЃРѕРІР°РЅРёСЏ
+            uint32_t primitiveCount{ 0 };     // РљРѕР»РёС‡РµСЃС‚РІРѕ РїСЂРёРјРёС‚РёРІРѕРІ
+            uint32_t textureCount{ 0 };       // РљРѕР»РёС‡РµСЃС‚РІРѕ РёСЃРїРѕР»СЊР·СѓРµРјС‹С… С‚РµРєСЃС‚СѓСЂ
+            uint64_t frameNumber{ 0 };        // РќРѕРјРµСЂ РєР°РґСЂР°
         };
 
         [[nodiscard]] virtual RenderStats getStats() const noexcept = 0;
 
-        // Сбросить статистику
+        // РЎР±СЂРѕСЃРёС‚СЊ СЃС‚Р°С‚РёСЃС‚РёРєСѓ
         virtual void resetStats() noexcept = 0;
     };
 

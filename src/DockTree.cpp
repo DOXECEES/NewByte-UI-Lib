@@ -1,8 +1,8 @@
-#include "DockTree.hpp"
 // This is a personal academic project. Dear PVS-Studio, please check it.
 
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
+#include "DockTree.hpp"
 std::shared_ptr<DockNode> DockTree::insert(const std::shared_ptr<DockNode> &parent,
                       const std::shared_ptr<DockNode> &insertNode) noexcept
 {

@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "Win32ModalWindow.hpp"
 #include "../Renderer/Direct2dRenderer.hpp"
 
@@ -39,19 +42,19 @@ namespace Win32Window
             { L"🗕", 30, 35 },
         };
 
-       captionButtons[0].setFunc([this]()
+        captionButtons[0].setFunc([this]()
         {
-            ShowWindow(handle.as<HWND>(), false);
+            ShowWindow(handle.as<HWND>(), SW_HIDE);
 
         });
         captionButtons[1].setFunc([this]()
         {  
-            ShowWindow(handle.as<HWND>(), false);
+            ShowWindow(handle.as<HWND>(), SW_HIDE);
 
         });
         captionButtons[2].setFunc([this]()
         {
-            ShowWindow(handle.as<HWND>(), false);
+            ShowWindow(handle.as<HWND>(), SW_HIDE);
         });
 
         //widgets.push_back(new Widgets::Button(NbRect<int>(100, 100, 100, 100)));

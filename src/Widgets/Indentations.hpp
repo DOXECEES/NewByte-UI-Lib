@@ -30,10 +30,10 @@ struct Margin
 template<typename T, typename = nbstl::isArithmetic<T>>
 struct Padding
 {
-    T top       = T(0);
-    T right     = T(0);
-    T bottom    = T(0);
-    T left      = T(0);
+    T top       = static_cast<T>(0);
+    T right     = static_cast<T>(0);
+    T bottom    = static_cast<T>(0);
+    T left      = static_cast<T>(0);
 
     template<typename U>
     Padding<U> to() const noexcept

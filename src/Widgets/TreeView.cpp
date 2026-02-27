@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "TreeView.hpp"
 #include "Debug.hpp" 
 
@@ -130,9 +133,9 @@ namespace Widgets
 
         buildUuidMap();
 
-        for (auto& kv : uuidMap)
+        for (const auto& [uuid, value] : uuidMap) 
         {
-            nodeStates.emplace(kv.first, NodeState{ false, false });
+            nodeStates.try_emplace(uuid, false, false);
         }
 
         for (const auto& rootPtr : model->getRootItems())
@@ -145,10 +148,14 @@ namespace Widgets
 
     void TreeView::buildUuidMap() noexcept
     {
-        if (!model) return;
+        if (!model)
+        {
+            return;
+        }
+
         model->forEach([this](const ModelItem& item)
         {
-            uuidMap.emplace(item.getUuid(), &item);
+            uuidMap.try_emplace( item.getUuid(), &item );
         });
     }
 
@@ -308,7 +315,7 @@ namespace Widgets
             nodeState.expanded = true;
             break;
         case ItemState::SELECTED:
-            // Снимаем выделение со всех, если нужно single-select
+            // РЎРЅРёРјР°РµРј РІС‹РґРµР»РµРЅРёРµ СЃРѕ РІСЃРµС…, РµСЃР»Рё РЅСѓР¶РЅРѕ single-select
             for (auto& [uuid, st] : nodeStates)
                 st.selected = false;
             nodeState.selected = true;

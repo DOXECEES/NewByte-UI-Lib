@@ -84,8 +84,8 @@ namespace Win32Window
                         EndPaint(hWnd, &ps);
                         return 0;
                     }*/
-
-                    if(state.title != L"SCENE" && state.title != L"SideBarTest")
+                    recalculateLayout();
+                    if(isRenderable)
                     {
                         renderer->render(this);
                     }
@@ -102,11 +102,11 @@ namespace Win32Window
 
                     state.setSize({xSize, ySize});
                     
-                    if (isRenderable == false)
-                    {
-                        wasNonRenderable = true;
-                        isRenderable = true;
-                    }
+                    //if (isRenderable == false)
+                    //{
+                    //    wasNonRenderable = true;
+                    //    isRenderable = true;
+                    //}
 
 
                     recalculateLayout();
@@ -171,7 +171,6 @@ namespace Win32Window
                     if (point.y > rc.bottom - state.frameSize.bot)
                         return HTBOTTOM;
 
-                    LoadCursor(nullptr, IDC_ARROW);
                     return HTCLIENT;
                 }
                 case WM_CHAR:

@@ -51,7 +51,7 @@ namespace Renderer
                     }
                 }
 
-                cache[key] = geometry;
+                cache[key] = std::move(geometry);
 
                 return cache.at(key);
 

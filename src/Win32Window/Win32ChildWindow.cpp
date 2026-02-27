@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "Win32ChildWindow.hpp"
 
 #include "../WindowInterface/WindowMapper.hpp"
@@ -10,6 +13,8 @@ namespace Win32Window
 {
     ChildWindow::ChildWindow(WindowInterface::IWindow* parentWindow, bool setOwnDC)
     {
+        isRenderable = !setOwnDC;
+
         state.frameSize = { 0, 0, 0, 0 }; // no frame on clild window 
         style.setBorderRadius(0);
         WNDCLASS wc = {};

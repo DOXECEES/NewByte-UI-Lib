@@ -71,18 +71,27 @@ namespace Widgets
         virtual bool hitTest(const NbPoint<int>& pos) = 0;
         virtual bool hitTestClick(const NbPoint<int>& pos) noexcept 
         {
-            for (auto& children : childrens)
+            for (auto it = childrens.rbegin(); it != childrens.rend(); ++it)
             {
-                if (children->hitTest(pos))
+                IWidget* child = *it;
+
+                if (child->isHide())
                 {
-                    children->setFocused();
-                    //Debug::debug("On unfocused in spinbox");
+                    continue;
                 }
-                else
+
+                if (child->hitTest(pos))
                 {
-                    children->setUnfocused();
+                    if (child->hitTestClick(pos))
+                    {
+                        return true;
+                    }
+
+                    child->onClick();
+                    return true;
                 }
             }
+
             return false;
         } // temporary non abstract
 
@@ -115,6 +124,7 @@ namespace Widgets
         inline void setActive() noexcept    { state = WidgetState::ACTIVE; }
         inline void setDisable() noexcept   { state = WidgetState::DISABLE; }
         inline void setDefault() noexcept   { state = WidgetState::DEFAULT; }
+        void hide(bool flag) noexcept;
 
         bool isHover() const noexcept;
 		bool isActive() const noexcept;

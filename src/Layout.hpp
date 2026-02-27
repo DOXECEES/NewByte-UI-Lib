@@ -16,10 +16,10 @@
 template<typename T>
 struct OldMargin
 {
-    T left  = T(0);
-    T right = T(0);
-    T top   = T(0);
-    T bot   = T(0);
+    T left  = static_cast<T>(0);
+    T right = static_cast<T>(0);
+    T top   = static_cast<T>(0);
+    T bot   = static_cast<T>(0);
 };
 
 
@@ -71,8 +71,8 @@ public:
         window->linkWidget(widget);
         linkedWidgets.push_back(widget);
 
-        for (auto& child : widget->getChildrens())
-            window->linkWidget(child);
+        //for (auto& child : widget->getChildrens())
+        //    window->linkWidget(child);
     }
 
     void addLayout(Layout* layout)
@@ -114,7 +114,7 @@ public:
 		if (linkedWidgets.empty()) return;
 
 		auto clientRect = applyPaddingToRect(window->getClientRect(), OldPadding());
-		clientRect.y + 35;
+		clientRect.y += 35;
 		int currentY = 5;
 
 		int fixedHeight = 0;
@@ -147,7 +147,11 @@ public:
 			}
 
 			//rect = applyHeightOnlyPaddingToRect(rect, Padding());
-			widget->setRect(rect);
+			//widget->setRect(rect);
+
+            auto size = widget->measure({rect.width, rect.height});
+                        widget->layout({rect.x, rect.y, rect.width, size.height});
+
 			currentY += rect.height;
 		}
 	}
@@ -337,8 +341,8 @@ private:
     nbstl::DynamicFlatMatrix<Widgets::IWidget*> grid;
     NbSize<int> cellPadding = { 5, 5 };
 
-    int desiredHeight;
-    int desiredWidth;
+    int desiredHeight   = 1;
+    int desiredWidth    = 1;
 };
 
 class FlexLayout : public Layout
@@ -371,12 +375,12 @@ public:
         std::vector<Element> elements;
         for (auto& w : linkedWidgets)
         {
-            elements.push_back({ w, nullptr });
+            elements.emplace_back(w, nullptr );
         }
 
         for (auto& l : linkedLayouts)
         {
-            elements.push_back({ nullptr, l });
+            elements.emplace_back( nullptr, l );
         }
 
         if (elements.empty())

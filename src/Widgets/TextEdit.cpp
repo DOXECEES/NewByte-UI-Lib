@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "TextEdit.hpp"
 
 #include <Alghorithm.hpp>
@@ -39,7 +42,7 @@ namespace Widgets
     {
         wchar_t effectiveSymbol = symbol;
 
-        // Если включен RTL, инвертируем физические стрелки для логического движения
+        // Р•СЃР»Рё РІРєР»СЋС‡РµРЅ RTL, РёРЅРІРµСЂС‚РёСЂСѓРµРј С„РёР·РёС‡РµСЃРєРёРµ СЃС‚СЂРµР»РєРё РґР»СЏ Р»РѕРіРёС‡РµСЃРєРѕРіРѕ РґРІРёР¶РµРЅРёСЏ
         // 0x25 - Left, 0x27 - Right
         if (isRTL)
         {
@@ -50,11 +53,11 @@ namespace Widgets
 
         switch (symbol)
         {
-        case 0x25: // Движение назад по строке
+        case 0x25: // Р”РІРёР¶РµРЅРёРµ РЅР°Р·Р°Рґ РїРѕ СЃС‚СЂРѕРєРµ
             if (specialCode == SpecialKeyCode::CTRL) decrementCaretPosOnWord();
             else decrementCaretPos();
             break;
-        case 0x27: // Движение вперед по строке
+        case 0x27: // Р”РІРёР¶РµРЅРёРµ РІРїРµСЂРµРґ РїРѕ СЃС‚СЂРѕРєРµ
             if (specialCode == SpecialKeyCode::CTRL) incrementCaretPosOnWord();
             else incrementCaretPos();
             break;
@@ -116,7 +119,7 @@ namespace Widgets
     void TextEdit::setData(const std::wstring& data) noexcept
     {
         this->data = data;
-        caretPosition = data.length();
+        caretPosition = data.length();  
         isDataChanged = true;
     }
 
@@ -213,30 +216,30 @@ namespace Widgets
 
     const NbSize<int>& TextEdit::measure(const NbSize<int>& maxSize) noexcept
     {
-        // Да, это та самая временная переменная. 
-        // В IWidget уже есть isSizeChange и rect, так что особо не хочется городить лишнего.
-        // Но measure по контракту должен вернуть ссылку.
+        // Р”Р°, СЌС‚Рѕ С‚Р° СЃР°РјР°СЏ РІСЂРµРјРµРЅРЅР°СЏ РїРµСЂРµРјРµРЅРЅР°СЏ. 
+        // Р’ IWidget СѓР¶Рµ РµСЃС‚СЊ isSizeChange Рё rect, С‚Р°Рє С‡С‚Рѕ РѕСЃРѕР±Рѕ РЅРµ С…РѕС‡РµС‚СЃСЏ РіРѕСЂРѕРґРёС‚СЊ Р»РёС€РЅРµРіРѕ.
+        // РќРѕ measure РїРѕ РєРѕРЅС‚СЂР°РєС‚Сѓ РґРѕР»Р¶РµРЅ РІРµСЂРЅСѓС‚СЊ СЃСЃС‹Р»РєСѓ.
         static NbSize<int> measured;
 
-        // Паддинги. Их желательно вытащить из WidgetStyle.
+        // РџР°РґРґРёРЅРіРё. РС… Р¶РµР»Р°С‚РµР»СЊРЅРѕ РІС‹С‚Р°С‰РёС‚СЊ РёР· WidgetStyle.
         const int paddingLeft = 0;
         const int paddingRight = 0;
         const int paddingTop = 0;
         const int paddingBottom = 0;
 
-        // Измеряем ширину текста
+        // РР·РјРµСЂСЏРµРј С€РёСЂРёРЅСѓ С‚РµРєСЃС‚Р°
         NbSize<int> textSize = { 0, 0 };
         if (!data.empty())
         {
-            // Твой движок должен уметь измерять текст (в твоём TextMetrics или что-то похожее)
+            // РўРІРѕР№ РґРІРёР¶РѕРє РґРѕР»Р¶РµРЅ СѓРјРµС‚СЊ РёР·РјРµСЂСЏС‚СЊ С‚РµРєСЃС‚ (РІ С‚РІРѕС‘Рј TextMetrics РёР»Рё С‡С‚Рѕ-С‚Рѕ РїРѕС…РѕР¶РµРµ)
             textSize = { 80,30 };
         }
 
-        // Минимальный размер: текст + отступы
+        // РњРёРЅРёРјР°Р»СЊРЅС‹Р№ СЂР°Р·РјРµСЂ: С‚РµРєСЃС‚ + РѕС‚СЃС‚СѓРїС‹
         int width = textSize.width + paddingLeft + paddingRight;
         int height = nbstl::max(textSize.height, 20) + paddingTop + paddingBottom;
 
-        // Ограничиваем maxSize
+        // РћРіСЂР°РЅРёС‡РёРІР°РµРј maxSize
         measured.width = nbstl::min(width, maxSize.width);
         measured.height = nbstl::min(height, maxSize.height);
 
@@ -259,7 +262,7 @@ namespace Widgets
     }
 
 
-    void TextEdit::addValidator(Utils::Validator valid) noexcept
+    void TextEdit::addValidator(const Utils::Validator& valid) noexcept
     {
         validator = valid;
     }

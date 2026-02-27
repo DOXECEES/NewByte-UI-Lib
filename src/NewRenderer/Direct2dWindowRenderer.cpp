@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "Direct2dWindowRenderer.hpp"
 #include <stdexcept>
 #include "Direct2dFactory.hpp"
@@ -10,9 +13,9 @@ namespace Renderer
             throw std::runtime_error("Window pointer is null");
 
         auto& factory = Direct2DFactory::getInstance();
-        // Ñîçäà¸ì êîíòåêñò Direct2D äëÿ ýòîãî îêíà
+        // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ ÐºÐ¾Ð½Ñ‚ÐµÐºÑÑ‚ Direct2D Ð´Ð»Ñ ÑÑ‚Ð¾Ð³Ð¾ Ð¾ÐºÐ½Ð°
         ctx = new Direct2DRenderContext(window->getHandle().as<HWND>(), resourceManager);
-        ctx->initialize();
+        //ctx->initialize();
         resourceManager = new Direct2DResourceManager(
             ctx->getNativeDeviceContext(),
             factory.getDWriteFactory(),
@@ -21,7 +24,7 @@ namespace Renderer
 
         ctx->setResourceManager(resourceManager);
 
-        // Ìîæíî ïåðåäàòü ôàáðèêè â ResourceManager
+        // ÐœÐ¾Ð¶Ð½Ð¾ Ð¿ÐµÑ€ÐµÐ´Ð°Ñ‚ÑŒ Ñ„Ð°Ð±Ñ€Ð¸ÐºÐ¸ Ð² ResourceManager
        
     }
 
@@ -81,18 +84,18 @@ namespace Renderer
 
         //captionButtonRenderer->render(window->getCaptionButtonsContainer());
 
-        // Î÷èñòêà ôîíà (íàïðèìåð, áåëûé)
+        // ÐžÑ‡Ð¸ÑÑ‚ÐºÐ° Ñ„Ð¾Ð½Ð° (Ð½Ð°Ð¿Ñ€Ð¸Ð¼ÐµÑ€, Ð±ÐµÐ»Ñ‹Ð¹)
         //D2D1_COLOR_F clearColor = D2D1::ColorF(D2D1::ColorF::White);
         //ctx->clear({23,45,254});
         //auto c = resourceManager->createSolidBrush({ 223,45,254 });
         //ctx->fillRectangle(window->getClientRect(), c);
 
-        // --- Çäåñü ìîæíî ðèñîâàòü ÷åðåç ResourceManager ---
-        // Ïðèìåð:
+        // --- Ð—Ð´ÐµÑÑŒ Ð¼Ð¾Ð¶Ð½Ð¾ Ñ€Ð¸ÑÐ¾Ð²Ð°Ñ‚ÑŒ Ñ‡ÐµÑ€ÐµÐ· ResourceManager ---
+        // ÐŸÑ€Ð¸Ð¼ÐµÑ€:
         // auto brush = resourceManager->getNativeBrush(myBrushHandle);
         // d2dContext->DrawRectangle(D2D1::RectF(10,10,100,100), static_cast<ID2D1Brush*>(brush));
 
-        // Çàâåðøàåì ðèñîâàíèå
+        // Ð—Ð°Ð²ÐµÑ€ÑˆÐ°ÐµÐ¼ Ñ€Ð¸ÑÐ¾Ð²Ð°Ð½Ð¸Ðµ
         CHECK_DIRECT2D_ERROR(
             ctx->endDraw()
         );
@@ -102,10 +105,10 @@ namespace Renderer
     {
         if (!ctx || !window) return;
 
-        // Ïåðåñîçäà¸ì ðåíäåð-òàðãåò äëÿ íîâîãî ðàçìåðà îêíà
+        // ÐŸÐµÑ€ÐµÑÐ¾Ð·Ð´Ð°Ñ‘Ð¼ Ñ€ÐµÐ½Ð´ÐµÑ€-Ñ‚Ð°Ñ€Ð³ÐµÑ‚ Ð´Ð»Ñ Ð½Ð¾Ð²Ð¾Ð³Ð¾ Ñ€Ð°Ð·Ð¼ÐµÑ€Ð° Ð¾ÐºÐ½Ð°
         ctx->resize(window->getSize().width, window->getSize().height);
 
-        // Device-dependent ðåñóðñû ìîãóò çàâèñåòü îò ðàçìåðà
+        // Device-dependent Ñ€ÐµÑÑƒÑ€ÑÑ‹ Ð¼Ð¾Ð³ÑƒÑ‚ Ð·Ð°Ð²Ð¸ÑÐµÑ‚ÑŒ Ð¾Ñ‚ Ñ€Ð°Ð·Ð¼ÐµÑ€Ð°
         resourceManager->onDeviceLost();
     }
 }

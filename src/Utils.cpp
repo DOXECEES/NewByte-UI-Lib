@@ -1,19 +1,25 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "Utils.hpp"
 
 namespace Utils
 {
-     bool isPointInsideRect(const NbPoint<int> pos, const RECT& rect)
+    bool isPointInsideRect(
+        const NbPoint<int>& pos,
+        RECT rect
+    )
     {
         return rect.bottom > pos.y && rect.top < pos.y 
-                && rect.left < pos.x && rect.right > pos.x;
+            && rect.left < pos.x && rect.right > pos.x;
     }
 
-    int getWidthFromRect(const RECT& rect) noexcept
+    int getWidthFromRect(const RECT rect) noexcept
     {
         return static_cast<int>(rect.bottom - rect.top);
     }
 
-    int getHeightFromRect(const RECT& rect) noexcept
+    int getHeightFromRect(const RECT rect) noexcept
     {
         return static_cast<int>(rect.right - rect.left);
     }

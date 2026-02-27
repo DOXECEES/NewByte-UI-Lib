@@ -142,7 +142,8 @@ namespace Localization
             }
         }
 
-        std::string getDayOfWeekKey(int32 index) const noexcept override {
+        std::string getDayOfWeekKey(int32 index) const noexcept override 
+        {
             static constexpr std::array<std::string_view, 7> WEEK_KEYS = {
                 "Calendar.Gregorian.Weekday_01_Full", "Calendar.Gregorian.Weekday_02_Full",
                 "Calendar.Gregorian.Weekday_03_Full", "Calendar.Gregorian.Weekday_04_Full",

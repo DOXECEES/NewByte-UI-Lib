@@ -22,10 +22,10 @@ namespace Renderer
         {
         }
 
-        // --- Создание ресурсов ---
+        // --- РЎРѕР·РґР°РЅРёРµ СЂРµСЃСѓСЂСЃРѕРІ ---
         BrushHandle createSolidBrush(const NbColor& color) noexcept override
         {
-            // Создаем ключ из RGBA
+            // РЎРѕР·РґР°РµРј РєР»СЋС‡ РёР· RGBA
             uint32_t key = (static_cast<uint32_t>(color.a * 255) << 24) |
                 (static_cast<uint32_t>(color.r * 255) << 16) |
                 (static_cast<uint32_t>(color.g * 255) << 8) |
@@ -90,12 +90,12 @@ namespace Renderer
             return registerBitmap(bitmap.Get());
         }
 
-        // --- Освобождение ресурсов ---
+        // --- РћСЃРІРѕР±РѕР¶РґРµРЅРёРµ СЂРµСЃСѓСЂСЃРѕРІ ---
         void releaseBrush(BrushHandle handle) noexcept override
         {
             brushes.erase(handle);
 
-            // Очистка кэша цветов
+            // РћС‡РёСЃС‚РєР° РєСЌС€Р° С†РІРµС‚РѕРІ
             for (auto it = colorCache.begin(); it != colorCache.end(); )
             {
                 if (it->second == handle)
@@ -123,7 +123,7 @@ namespace Renderer
             colorCache.clear();
         }
 
-        // --- Получение нативного COM объекта ---
+        // --- РџРѕР»СѓС‡РµРЅРёРµ РЅР°С‚РёРІРЅРѕРіРѕ COM РѕР±СЉРµРєС‚Р° ---
         void* getNativeBrush(BrushHandle handle) noexcept override
         {
             auto it = brushes.find(handle);
@@ -176,7 +176,7 @@ namespace Renderer
         std::unordered_map<TextFormatHandle, Microsoft::WRL::ComPtr<IDWriteTextFormat>> textFormats;
         std::unordered_map<BitmapHandle, Microsoft::WRL::ComPtr<ID2D1Bitmap1>> bitmaps;
 
-        // Кэш для кистей по цвету
+        // РљСЌС€ РґР»СЏ РєРёСЃС‚РµР№ РїРѕ С†РІРµС‚Сѓ
         std::unordered_map<uint32_t, BrushHandle> colorCache;
     };
 }

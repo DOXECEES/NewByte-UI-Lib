@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "Win32Window.hpp"
 #include "Win32Global.hpp"
 
@@ -211,10 +214,6 @@ namespace Win32Window
         {
             return onMinMaxInfo(hWnd, lParam);
         }
-        case WM_ERASEBKGND:
-        {
-            return TRUE;
-        }
         case WM_SIZE:
         {
             return onSize(hWnd, lParam);
@@ -223,6 +222,8 @@ namespace Win32Window
         {
             return onNonClientHitTest(hWnd, lParam);
         }
+        case WM_ERASEBKGND:
+            NB_FALLTHROUGH;
         case WM_NCACTIVATE:
         {
             return TRUE; // remove white frame around window

@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "ComboBox.hpp"
 
 #include "Indentations.hpp"
@@ -33,6 +36,12 @@ namespace Widgets
 				rc.width,
 				DropdownList::SIZE_OF_ELEMENT_IN_PIXEL * static_cast<int>(dropdownList->size())
 			});
+
+			
+		});
+
+		subscribe(*dropdownList, &DropdownList::onItemChecked, [&](const ListItem& item) {
+			this->onItemChecked.emit(item);
 		});
 	}
 
@@ -128,7 +137,7 @@ namespace Widgets
 
 	void ComboBox::registerDropdown(DropdownList* dropdown) noexcept
 	{
-		dropdowns.insert(std::make_pair(dropdown->getIndex(), dropdown));
+		dropdowns.try_emplace( dropdown->getIndex(), dropdown );
 	}
 
 	void ComboBox::closeAllDropDowns() noexcept
@@ -176,7 +185,7 @@ namespace Widgets
 		ComboBox::registerDropdown(this);
 	}
 
-	void DropdownList::add(ListItem item) noexcept
+	void DropdownList::add(const ListItem& item) noexcept
 	{
 		itemList.push_back(item);
 		rect = {
@@ -247,6 +256,7 @@ namespace Widgets
 	void DropdownList::setHoverForElement(const size_t hoverIndex) noexcept
 	{
 		hoverElement = hoverIndex;
+		onItemChecked.emit(getListItem());
 	}
 	
 

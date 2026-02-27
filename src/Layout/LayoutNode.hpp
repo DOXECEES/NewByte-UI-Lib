@@ -29,20 +29,20 @@ namespace NNsLayout
 
     struct LayoutStyle
     {
-        NbColor         color;
-        NbSize<int>     minSize;
-        NbSize<int>     maxSize;
+        NbColor         color           ;
+        NbSize<int>     minSize         ;
+        NbSize<int>     maxSize         ;
 
-        SizeType        widthSizeType;
-        SizeType        heightSizeType;
+        SizeType        widthSizeType   ;
+        SizeType        heightSizeType  ;
 
-        float           width;
-        float           height;
+        float           width           ;
+        float           height          ;
 
-        Border          border;
+        Border          border          ;
 
-        Margin<float>   margin;
-        Padding<float>  padding;
+        Margin<float>   margin          ;
+        Padding<float>  padding         ;
     };
 
     class LayoutNode
@@ -67,7 +67,13 @@ namespace NNsLayout
             static_assert(std::is_base_of<LayoutNode, T>::value, "T must derive from LayoutNode");
             child->parent = this;
             children.emplace_back(std::move(child));
+            dirty = true;
             return children.back().get();
+        }
+
+        void clearChilds() noexcept
+        {
+            children.clear();
         }
 
 
@@ -169,17 +175,14 @@ namespace NNsLayout
     class LayoutWidget : public LayoutNode
     {
     public:
-        explicit LayoutWidget(Widgets::IWidget* w) noexcept
-            : LayoutNode(w), widget(w)
+        explicit LayoutWidget(Widgets::IWidget* w) noexcept;
+       
+
+        void setWidget(std::shared_ptr<Widgets::IWidget> w) noexcept;
+       
+
+        std::shared_ptr<Widgets::IWidget> getWidget() const noexcept
         {
-        }
-
-        void setWidget(std::shared_ptr<Widgets::IWidget> w) noexcept {
-            widget = w;
-            dirty = true;
-        }
-
-        std::shared_ptr<Widgets::IWidget> getWidget() const noexcept {
             return widget;
         }
 

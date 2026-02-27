@@ -1,4 +1,7 @@
-    #include "LayoutNode.hpp"
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+#include "LayoutNode.hpp"
 
     #include "Widgets/IWidget.hpp"
     #include "WindowInterface/IWindow.hpp"
@@ -46,11 +49,24 @@
 
             for (auto& child : children)
             {
-                switch (child->style.widthSizeType)
+                const NNsLayout::LayoutStyle& style = child->style;
+                switch (style.widthSizeType)
                 {
-                case SizeType::RELATIVE: totalRelative += child->style.width; break;
-                case SizeType::ABSOLUTE: totalFixed += static_cast<int>(child->style.width); break;
-                case SizeType::AUTO: totalFixed += child->getMeasuredSize().width; break;
+                    case SizeType::RELATIVE:
+                    {
+                        totalRelative += style.width;
+                        break;
+                    }
+                    case SizeType::ABSOLUTE:
+                    {
+                        totalFixed += static_cast<int>(style.width);
+                        break;
+                    }
+                    case SizeType::AUTO:
+                    {
+                        totalFixed += child->getMeasuredSize().width;
+                        break;
+                    }
                 }
             }
 
@@ -59,20 +75,45 @@
             for (auto& child : children)
             {
                 int width = 0;
+                const NNsLayout::LayoutStyle& style = child->style;
 
-                switch (child->style.widthSizeType)
+                switch (style.widthSizeType)
                 {
-                case SizeType::ABSOLUTE: width = static_cast<int>(child->style.width); break;
-                case SizeType::RELATIVE: width = static_cast<int>(remainingWidth * (child->style.width / totalRelative)); break;
-                case SizeType::AUTO: width = child->getMeasuredSize().width; break;
+                    case SizeType::ABSOLUTE:
+                    {
+                        width = static_cast<int>(style.width);
+                        break;
+                    }
+                    case SizeType::RELATIVE:
+                    {
+                        width = static_cast<int>(remainingWidth * (style.width / totalRelative));
+                        break;
+                    }
+                    case SizeType::AUTO:
+                    {
+                        width = child->getMeasuredSize().width;
+                        break;
+                    }
                 }
 
                 int height = bounds.height;
-                switch (child->style.heightSizeType)
+                switch (style.heightSizeType)
                 {
-                case SizeType::ABSOLUTE: height = static_cast<int>(child->style.height); break;
-                case SizeType::RELATIVE: height = static_cast<int>(bounds.height * child->style.height); break;
-                case SizeType::AUTO: height = child->getMeasuredSize().height; break;
+                    case SizeType::ABSOLUTE:
+                    {
+                        height = static_cast<int>(style.height);
+                        break;
+                    }
+                    case SizeType::RELATIVE:
+                    {
+                        height = static_cast<int>(bounds.height * style.height);
+                        break;
+                    }
+                    case SizeType::AUTO:
+                    {
+                        height = child->getMeasuredSize().height;
+                        break;
+                    }
                 }
 
                 NbRect<int> childRect{ x, bounds.y, width, height };
@@ -93,7 +134,8 @@
             {
                 auto& st = child->style;
 
-                if (st.heightSizeType == SizeType::RELATIVE) {
+                if (st.heightSizeType == SizeType::RELATIVE)
+                {
                     totalRelative += st.height;
                     continue;
                 }
@@ -129,77 +171,77 @@
             float totalRelative = 0.0f;
             int totalFixed = 0;
 
+            // ===== PASS 1 : MEASURE CHILDREN =====
+
             for (auto& child : children)
             {
                 auto& st = child->style;
 
-                switch (st.heightSizeType)
+                if (st.heightSizeType == SizeType::AUTO)
                 {
-                case SizeType::RELATIVE:
+                    child->measure({bounds.width, bounds.height});
+                }
+
+                if (st.heightSizeType == SizeType::RELATIVE)
+                {
                     totalRelative += st.height;
-                    break;
-
-                case SizeType::ABSOLUTE:
-                    totalFixed += static_cast<int>(st.height)
-                        + st.margin.top + st.margin.bottom
-                        + st.border.width * 2
-                        + st.padding.top + st.padding.bottom;
-                    break;
-
-                case SizeType::AUTO:
-                    totalFixed += child->getMeasuredSize().height
-                        + st.margin.top + st.margin.bottom
-                        + st.border.width * 2
-                        + st.padding.top + st.padding.bottom;
-                    break;
+                }
+                else if (st.heightSizeType == SizeType::ABSOLUTE)
+                {
+                    totalFixed += static_cast<int>(st.height) + st.margin.top + st.margin.bottom
+                                  + st.border.width * 2 + st.padding.top + st.padding.bottom;
+                }
+                else if (st.heightSizeType == SizeType::AUTO)
+                {
+                    totalFixed += child->getMeasuredSize().height + st.margin.top + st.margin.bottom
+                                  + st.border.width * 2 + st.padding.top + st.padding.bottom;
                 }
             }
 
+            // ===== PASS 2 : LAYOUT =====
+
             int remaining = bounds.height - totalFixed;
-            if (remaining < 0) remaining = 0;
+            if (remaining < 0)
+            {
+                remaining = 0;
+            }
 
             int y = bounds.y;
 
             for (auto& child : children)
             {
                 auto& st = child->style;
+
                 int contentHeight = 0;
 
-                switch (st.heightSizeType)
+                if (st.heightSizeType == SizeType::ABSOLUTE)
                 {
-                case SizeType::ABSOLUTE:
                     contentHeight = static_cast<int>(st.height);
-                    break;
-
-                case SizeType::AUTO:
+                }
+                else if (st.heightSizeType == SizeType::AUTO)
+                {
                     contentHeight = child->getMeasuredSize().height;
-                    break;
-
-                case SizeType::RELATIVE:
+                }
+                else if (st.heightSizeType == SizeType::RELATIVE)
+                {
                     if (totalRelative > 0.0001f)
+                    {
                         contentHeight = static_cast<int>(remaining * (st.height / totalRelative));
-                    else
-                        contentHeight = 0;
-                    break;
+                    }
                 }
 
-                int fullHeight =
-                    st.margin.top +
-                    st.border.width +
-                    st.padding.top +
-                    contentHeight +
-                    st.padding.bottom +
-                    st.border.width +
-                    st.margin.bottom;
+                int fullHeight = st.margin.top + st.border.width * 2 + st.padding.top
+                                 + contentHeight + st.padding.bottom + st.border.width * 2
+                                 + st.margin.bottom;
 
                 NbRect<int> childRect;
+
                 childRect.x = bounds.x + st.margin.left + st.border.width + st.padding.left;
                 childRect.y = y + st.margin.top + st.border.width + st.padding.top;
-                childRect.width =
-                    bounds.width
-                    - (st.margin.left + st.margin.right)
-                    - (st.border.width * 2)
-                    - (st.padding.left + st.padding.right);
+
+                childRect.width = bounds.width - (st.margin.left + st.margin.right)
+                                  - (st.border.width * 2) - (st.padding.left + st.padding.right);
+
                 childRect.height = contentHeight;
 
                 child->setRect(childRect);
@@ -209,14 +251,36 @@
             }
         }
 
+        LayoutWidget::LayoutWidget(Widgets::IWidget* w) noexcept
+            : LayoutNode(w),
+              widget(w)
+        {
+            subscribe(
+                widget.get(), &Widgets::IWidget::onSizeChangedSignal,
+                [this](const NbRect<int>& rc)
+                {
+                    this->markDirty();
+                }
+            );
+        }
 
-
-
-
+        void LayoutWidget::setWidget(std::shared_ptr<Widgets::IWidget> w) noexcept
+        {
+            subscribe(
+                *w, &Widgets::IWidget::onSizeChangedSignal,
+                [&](const NbRect<int>&)
+                {
+                    dirty = true;
+                }
+            );
+            widget = std::move(w);
+            dirty = true;
+        }
 
         void LayoutWidget::measure(const NbSize<int>& available) noexcept
         {
-            const auto natural = widget ? widget->computeContentSize() : NbSize<int>{ 0, 0 };
+            //const auto natural = widget ? widget->computeContentSize() : NbSize<int>{ 0, 0 };
+            const auto natural = widget->measure(available);
 
             int w = 0;
             int h = 0;
@@ -305,10 +369,11 @@
                 return;
             }
 
-            NbRect<int> client = ownerWindow->getClientRect();
 
             if (!children.empty())
             {
+                NbRect<int> client = ownerWindow->getClientRect();
+
                 children[0]->layout(client);
             }
         }

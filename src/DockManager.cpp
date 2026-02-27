@@ -13,33 +13,33 @@ static inline NbRect<int> sanitizeRectForWindow(const NbRect<int>& desired, cons
 {
     NbRect<int> r = desired;
 
-    // Минимальные разрешённые размеры (подбирай под проект)
+    // РњРёРЅРёРјР°Р»СЊРЅС‹Рµ СЂР°Р·СЂРµС€С‘РЅРЅС‹Рµ СЂР°Р·РјРµСЂС‹ (РїРѕРґР±РёСЂР°Р№ РїРѕРґ РїСЂРѕРµРєС‚)
     constexpr int kMinWidth = 24;
     constexpr int kMinHeight = 24;
 
     if (r.width < kMinWidth)  r.width = kMinWidth;
     if (r.height < kMinHeight) r.height = kMinHeight;
 
-    // Корректируем x/y чтобы левый/верхний угол был внутри parent
+    // РљРѕСЂСЂРµРєС‚РёСЂСѓРµРј x/y С‡С‚РѕР±С‹ Р»РµРІС‹Р№/РІРµСЂС…РЅРёР№ СѓРіРѕР» Р±С‹Р» РІРЅСѓС‚СЂРё parent
     if (r.x < parentRect.x) r.x = parentRect.x;
     if (r.y < parentRect.y) r.y = parentRect.y;
 
-    // Ограничиваем по правой/нижней границе
+    // РћРіСЂР°РЅРёС‡РёРІР°РµРј РїРѕ РїСЂР°РІРѕР№/РЅРёР¶РЅРµР№ РіСЂР°РЅРёС†Рµ
     const int maxW = parentRect.x + parentRect.width - r.x;
     const int maxH = parentRect.y + parentRect.height - r.y;
 
     if (r.width > maxW)  r.width = std::max(0, maxW);
     if (r.height > maxH) r.height = std::max(0, maxH);
 
-    // Если после ограничений размеры уменьшились ниже минимума — сдвинем влево/вверх при возможности
+    // Р•СЃР»Рё РїРѕСЃР»Рµ РѕРіСЂР°РЅРёС‡РµРЅРёР№ СЂР°Р·РјРµСЂС‹ СѓРјРµРЅСЊС€РёР»РёСЃСЊ РЅРёР¶Рµ РјРёРЅРёРјСѓРјР° вЂ” СЃРґРІРёРЅРµРј РІР»РµРІРѕ/РІРІРµСЂС… РїСЂРё РІРѕР·РјРѕР¶РЅРѕСЃС‚Рё
     if (r.width < kMinWidth)
     {
-        // постараемся сдвинуть влево так, чтобы вместиться
+        // РїРѕСЃС‚Р°СЂР°РµРјСЃСЏ СЃРґРІРёРЅСѓС‚СЊ РІР»РµРІРѕ С‚Р°Рє, С‡С‚РѕР±С‹ РІРјРµСЃС‚РёС‚СЊСЃСЏ
         int needed = kMinWidth - r.width;
         int shift = std::min(needed, r.x - parentRect.x);
         r.x -= shift;
         r.width += shift;
-        if (r.width < kMinWidth) r.width = kMinWidth; // последняя защита
+        if (r.width < kMinWidth) r.width = kMinWidth; // РїРѕСЃР»РµРґРЅСЏСЏ Р·Р°С‰РёС‚Р°
     }
     if (r.height < kMinHeight)
     {
@@ -121,11 +121,11 @@ void DockManager::update(const std::shared_ptr<DockNode>& parent, DockPlacement 
         }
     }
 }
-// добавь в DockManager.h приватное поле:
+// РґРѕР±Р°РІСЊ РІ DockManager.h РїСЂРёРІР°С‚РЅРѕРµ РїРѕР»Рµ:
 NbRect<int> lastRootRect = { 0,0,0,0 };
 
 // ------------------------------------------------------------------
-// onSize — вызывается из WM_SIZE
+// onSize вЂ” РІС‹Р·С‹РІР°РµС‚СЃСЏ РёР· WM_SIZE
 // ------------------------------------------------------------------
 void DockManager::onSize(const NbRect<int>& newRect)
 {
@@ -133,7 +133,7 @@ void DockManager::onSize(const NbRect<int>& newRect)
     if (!root) return;
 
     root->setRect(newRect);
-    root->calculate(DockPlacement::CENTER); // рекалькуляция всего дерева
+    root->calculate(DockPlacement::CENTER); // СЂРµРєР°Р»СЊРєСѓР»СЏС†РёСЏ РІСЃРµРіРѕ РґРµСЂРµРІР°
 
     Utils::Windows::WindowPosQueue queue;
     queue.begin(0);
@@ -153,10 +153,10 @@ void DockManager::onSize(const NbRect<int>& newRect)
             auto winNode = std::dynamic_pointer_cast<DockWindow>(current);
             NbRect<int> rc = winNode->getRect();
 
-            // Ограничиваем rect родителем
+            // РћРіСЂР°РЅРёС‡РёРІР°РµРј rect СЂРѕРґРёС‚РµР»РµРј
             rc = sanitizeRectForWindow(rc, newRect);
 
-            // Конвертируем в клиентскую область
+            // РљРѕРЅРІРµСЂС‚РёСЂСѓРµРј РІ РєР»РёРµРЅС‚СЃРєСѓСЋ РѕР±Р»Р°СЃС‚СЊ
             rc.y += kCaptionHeight;
             rc.height -= kCaptionHeight;
             rc.height = std::max(0, rc.height);
@@ -178,15 +178,15 @@ void DockManager::onSize(const NbRect<int>& newRect)
 
 
 // ------------------------------------------------------------------
-// Новый метод — использует текущие (старые) rect внутри узлов как исходные.
-// Это устраняет накопление ошибок при многократных ресайзах.
+// РќРѕРІС‹Р№ РјРµС‚РѕРґ вЂ” РёСЃРїРѕР»СЊР·СѓРµС‚ С‚РµРєСѓС‰РёРµ (СЃС‚Р°СЂС‹Рµ) rect РІРЅСѓС‚СЂРё СѓР·Р»РѕРІ РєР°Рє РёСЃС…РѕРґРЅС‹Рµ.
+// Р­С‚Рѕ СѓСЃС‚СЂР°РЅСЏРµС‚ РЅР°РєРѕРїР»РµРЅРёРµ РѕС€РёР±РѕРє РїСЂРё РјРЅРѕРіРѕРєСЂР°С‚РЅС‹С… СЂРµСЃР°Р№Р·Р°С….
 // ------------------------------------------------------------------
 void DockManager::rescaleNodeUsingOldRects(const std::shared_ptr<DockNode>& node, const NbSize<float>& scaleFactor)
 {
     if (!node) return;
 
-    // Важное: берем origRect до изменения (node->getRect() возвращает "старый" rect,
-    // потому что мы ещё его не меняли в этом onSize)
+    // Р’Р°Р¶РЅРѕРµ: Р±РµСЂРµРј origRect РґРѕ РёР·РјРµРЅРµРЅРёСЏ (node->getRect() РІРѕР·РІСЂР°С‰Р°РµС‚ "СЃС‚Р°СЂС‹Р№" rect,
+    // РїРѕС‚РѕРјСѓ С‡С‚Рѕ РјС‹ РµС‰С‘ РµРіРѕ РЅРµ РјРµРЅСЏР»Рё РІ СЌС‚РѕРј onSize)
     const NbRect<int> origRect = node->getRect();
 
     NbRect<int> newRect;

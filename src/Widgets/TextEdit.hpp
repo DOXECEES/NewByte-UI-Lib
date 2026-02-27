@@ -24,7 +24,7 @@ namespace Widgets
 
         virtual void onClick() override;
         virtual void onButtonClicked(const wchar_t symbol, SpecialKeyCode specialCode = SpecialKeyCode::NONE) override;
-        virtual void onSymbolButtonClicked(const wchar_t symbol);
+        virtual void onSymbolButtonClicked(const wchar_t symbol) override;
         virtual void onTimer() override;
 
         inline bool getIsDataChanged() const noexcept { return isDataChanged; }
@@ -51,7 +51,7 @@ namespace Widgets
         const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override;
         void layout(const NbRect<int>& rect) noexcept override;
 
-        void addValidator(Utils::Validator valid) noexcept;
+        void addValidator(const Utils::Validator& valid) noexcept;
 
         inline bool getIsRTL() const noexcept { return isRTL; }
         void setIsRTL(bool rtl) noexcept;

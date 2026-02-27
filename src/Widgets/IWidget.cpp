@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "IWidget.hpp"
 
 namespace Widgets
@@ -12,7 +15,12 @@ namespace Widgets
 		isHide_ = false;
 	}
 
-	bool IWidget::isHover() const noexcept
+	void IWidget::hide(bool flag) noexcept
+    {
+        isHide_ = flag;
+    }
+
+    bool IWidget::isHover() const noexcept
 	{
 		return state == WidgetState::HOVER;
 	}

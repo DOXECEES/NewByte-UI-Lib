@@ -30,6 +30,8 @@ set (SRC
         src/SubscribtionManager.cpp
         src/SubscribtionManager.hpp
         src/TempDocking.hpp
+        src/LayoutBuilder.cpp
+        src/LayoutBuilder.hpp
 
 
 
@@ -139,6 +141,11 @@ set (SRC
         src/Widgets/ILayoutable.hpp
         src/Widgets/Calendar.cpp
         src/Widgets/Calendar.hpp
+        src/Widgets/Spacer.cpp
+        src/Widgets/Spacer.hpp
+        src/Widgets/FloatSpinBox.cpp
+        src/Widgets/FloatSpinBox.hpp
+        src/Widgets/Section.hpp
 
         src/Layout/LayoutNode.cpp
         src/Layout/LayoutNode.hpp

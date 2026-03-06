@@ -737,6 +737,130 @@ public:
         }
     }
 
+    void fillHorizontalGradient(
+        const NbRect<int>& rect,
+        const NbColor& leftColor,
+        const NbColor& rightColor
+    )
+    {
+        D2D1_GRADIENT_STOP stops[2];
+
+        stops[0].position = 0.0f;
+        stops[0].color = D2D1::ColorF(
+            leftColor.r / 255.0f, leftColor.g / 255.0f, leftColor.b / 255.0f, leftColor.a / 255.0f
+        );
+
+        stops[1].position = 1.0f;
+        stops[1].color = D2D1::ColorF(
+            rightColor.r / 255.0f, rightColor.g / 255.0f, rightColor.b / 255.0f,
+            rightColor.a / 255.0f
+        );
+
+        ComPtr<ID2D1GradientStopCollection> stopCollection;
+        m_d2dContext->CreateGradientStopCollection(stops, 2, &stopCollection);
+
+        ComPtr<ID2D1LinearGradientBrush> brush;
+        m_d2dContext->CreateLinearGradientBrush(
+            D2D1::LinearGradientBrushProperties(
+                D2D1::Point2F(float(rect.x), float(rect.y)),
+                D2D1::Point2F(float(rect.x + rect.width), float(rect.y))
+            ),
+            stopCollection.Get(), &brush
+        );
+
+        m_d2dContext->FillRectangle(
+            D2D1::RectF(
+                float(rect.x), float(rect.y), float(rect.x + rect.width),
+                float(rect.y + rect.height)
+            ),
+            brush.Get()
+        );
+    }
+
+    void fillVerticalGradient(
+        const NbRect<int>& rect,
+        const NbColor& topColor,
+        const NbColor& bottomColor
+    )
+    {
+        D2D1_GRADIENT_STOP stops[2];
+
+        stops[0].position = 0.0f;
+        stops[0].color = D2D1::ColorF(
+            topColor.r / 255.0f, topColor.g / 255.0f, topColor.b / 255.0f, topColor.a / 255.0f
+        );
+
+        stops[1].position = 1.0f;
+        stops[1].color = D2D1::ColorF(
+            bottomColor.r / 255.0f, bottomColor.g / 255.0f, bottomColor.b / 255.0f,
+            bottomColor.a / 255.0f
+        );
+
+        ComPtr<ID2D1GradientStopCollection> stopCollection;
+        m_d2dContext->CreateGradientStopCollection(stops, 2, &stopCollection);
+
+        ComPtr<ID2D1LinearGradientBrush> brush;
+        m_d2dContext->CreateLinearGradientBrush(
+            D2D1::LinearGradientBrushProperties(
+                D2D1::Point2F(float(rect.x), float(rect.y)),
+                D2D1::Point2F(float(rect.x), float(rect.y + rect.height))
+            ),
+            stopCollection.Get(), &brush
+        );
+
+        m_d2dContext->FillRectangle(
+            D2D1::RectF(
+                float(rect.x), float(rect.y), float(rect.x + rect.width),
+                float(rect.y + rect.height)
+            ),
+            brush.Get()
+        );
+    }
+
+    void fillHueGradient(const NbRect<int>& rect)
+    {
+        D2D1_GRADIENT_STOP stops[7];
+
+        const float positions[7] = {0.0f,        1.0f / 6.0f, 2.0f / 6.0f, 3.0f / 6.0f,
+                                    4.0f / 6.0f, 5.0f / 6.0f, 1.0f};
+
+        const D2D1_COLOR_F colors[7] = {
+            D2D1::ColorF(1, 0, 0, 1), // Red
+            D2D1::ColorF(1, 1, 0, 1), // Yellow
+            D2D1::ColorF(0, 1, 0, 1), // Green
+            D2D1::ColorF(0, 1, 1, 1), // Cyan
+            D2D1::ColorF(0, 0, 1, 1), // Blue
+            D2D1::ColorF(1, 0, 1, 1), // Magenta
+            D2D1::ColorF(1, 0, 0, 1)  // Red again
+        };
+
+        for (int i = 0; i < 7; ++i)
+        {
+            stops[i].position = positions[i];
+            stops[i].color = colors[i];
+        }
+
+        ComPtr<ID2D1GradientStopCollection> stopCollection;
+        m_d2dContext->CreateGradientStopCollection(stops, 7, &stopCollection);
+
+        ComPtr<ID2D1LinearGradientBrush> brush;
+        m_d2dContext->CreateLinearGradientBrush(
+            D2D1::LinearGradientBrushProperties(
+                D2D1::Point2F(float(rect.x), float(rect.y)),
+                D2D1::Point2F(float(rect.x), float(rect.y + rect.height))
+            ),
+            stopCollection.Get(), &brush
+        );
+
+        m_d2dContext->FillRectangle(
+            D2D1::RectF(
+                float(rect.x), float(rect.y), float(rect.x + rect.width),
+                float(rect.y + rect.height)
+            ),
+            brush.Get()
+        );
+    }
+
     ComPtr<ID2D1SolidColorBrush> createSolidBrush(const NbColor& color) const noexcept
     {
         if (!m_d2dContext) return nullptr;

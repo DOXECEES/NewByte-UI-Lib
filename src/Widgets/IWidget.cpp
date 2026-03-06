@@ -45,7 +45,17 @@ namespace Widgets
 	bool IWidget::isHide() const noexcept
 	{
 		return isHide_;
-	}
+    }
+
+    void IWidget::disableHoverState(bool flag) noexcept
+    {
+        isDisableHoverState = flag;
+    }
+
+    bool IWidget::isHoverStateDisable() const noexcept
+    {
+        return isDisableHoverState;
+    }
 
 	void IWidget::setFocused() noexcept
 	{

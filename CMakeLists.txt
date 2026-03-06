@@ -6,7 +6,6 @@ project(NewByte_UI_Lib)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_subdirectory(../Common NbCommon_build)
 
 
 set (SRC 
@@ -32,6 +31,9 @@ set (SRC
         src/TempDocking.hpp
         src/LayoutBuilder.cpp
         src/LayoutBuilder.hpp
+
+        src/GlobalWidgetContext.hpp
+        src/GlobalWidgetContext.cpp
 
 
 
@@ -146,6 +148,9 @@ set (SRC
         src/Widgets/FloatSpinBox.cpp
         src/Widgets/FloatSpinBox.hpp
         src/Widgets/Section.hpp
+
+        src/Widgets/ColorPicker.hpp
+
 
         src/Layout/LayoutNode.cpp
         src/Layout/LayoutNode.hpp

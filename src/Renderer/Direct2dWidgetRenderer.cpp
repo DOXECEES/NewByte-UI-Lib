@@ -19,6 +19,7 @@
 
 
 #include "../Widgets/WidgetStyle.hpp"
+#include "Widgets/ColorPicker.hpp"
 
 #include "../Utils.hpp"
 #include <Debug.hpp>
@@ -27,6 +28,8 @@
 #include <Array.hpp>
 
 #include "Geometry/BorderGeometryBuilder.hpp"
+
+
 
 namespace Renderer
 {
@@ -75,6 +78,10 @@ namespace Renderer
         else if (strncmp(widgetName, SectionWidget::CLASS_NAME, size) == 0)
         {
             renderSection(widget, layoutStyle);
+        }
+        else if (strncmp(widgetName, ColorPicker::CLASS_NAME, size) == 0)
+        {
+            renderColorPicker(widget, layoutStyle);
         }
 
 
@@ -363,6 +370,152 @@ namespace Renderer
         }
 
         drawBorder(section, layoutStyle.border);
+    }
+
+    void Direct2dWidgetRenderer::renderColorPicker(
+        IWidget* widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    )
+    {
+        using namespace Widgets;
+
+        ColorPicker* picker = castWidget<ColorPicker>(widget);
+        if (!picker)
+        {
+            return;
+        }
+
+        NbColor bgColor, textColor;
+        getWidgetThemeColorByState(picker, bgColor, textColor);
+
+        const NbRect<int>& rect = picker->getRect();
+        const WidgetStyle& style = picker->getStyle();
+
+        renderTarget->fillRectangle(rect, bgColor);
+
+        // === SV AREA ===
+        IWidget* svArea = picker->getSVArea();
+        if (svArea)
+        {
+            const NbRect<int>& svRect = svArea->getRect();
+            float hue = picker->getHSV().hue;
+
+
+            nb::HSV hsv = picker->getHSV();
+            nb::Color hueColor = nb::Color::fromHsv(hsv.hue, 1.0f, 1.0f);
+            nb::RGB hueRgb = hueColor.toRgb();
+            
+
+            renderTarget->fillHorizontalGradient(svRect, NbColor(255, 255, 255), NbColor(hueRgb.r, hueRgb.g, hueRgb.b));
+
+            renderTarget->fillVerticalGradient(svRect, NbColor(0, 0, 0, 0), NbColor(0, 0, 0, 255));
+
+            // === Маркер SV ===
+            float s = picker->getHSV().saturation;
+            float v = picker->getHSV().value;
+
+            int markerX = svRect.x + int(s * svRect.width);
+            int markerY = svRect.y + int((1.0f - v) * svRect.height);
+
+            NbRect<int> marker = {markerX - 4, markerY - 4, 8, 8};
+            renderTarget->drawRectangle(marker, NbColor(255, 255, 255));
+        }
+
+        // === HUE BAR ===
+        IWidget* hueBar = picker->getHueBar();
+        if (hueBar)
+        {
+            const NbRect<int>& hueRect = hueBar->getRect();
+
+            renderTarget->fillHueGradient(hueRect); 
+
+            float h = picker->getHSV().hue;
+            int markerY = hueRect.y + int((h / 360.0f) * hueRect.height);
+
+            NbRect<int> marker = {hueRect.x - 2, markerY - 2, hueRect.width + 4, 4};
+            renderTarget->fillRectangle(marker, NbColor(255, 255, 255));
+        }
+
+        constexpr int MARKER_WIDTH = 6;
+        constexpr int MARKER_HEIGHT = 20;
+
+        auto rgbaBars = picker->getRgbaBars();
+
+        for (auto* bar : rgbaBars)
+        {
+            if (!bar)
+            {
+                continue;
+            }
+
+            const NbRect<int>& rgbaRect = bar->getRect();
+
+            ColorBar::Channel channel = bar->getChannel();
+
+            NbColor leftColor = {0, 0, 0};
+            NbColor rightColor;
+
+            switch (channel)
+            {
+            case ColorBar::Channel::Red:
+                rightColor = {255, 0, 0};
+                break;
+
+            case ColorBar::Channel::Green:
+                rightColor = {0, 255, 0};
+                break;
+
+            case ColorBar::Channel::Blue:
+                rightColor = {0, 0, 255};
+                break;
+
+            case ColorBar::Channel::Alpha:
+                rightColor = {255, 255, 255};
+                break;
+            }
+
+            renderTarget->fillHorizontalGradient(rgbaRect, leftColor, rightColor);
+
+            float t = bar->getValue() / 255.0f;
+
+            int markerX = rgbaRect.x + static_cast<int>(t * rgbaRect.width) - MARKER_WIDTH / 2;
+
+            NbRect<int> marker = {markerX, rgbaRect.y, MARKER_WIDTH, MARKER_HEIGHT};
+
+            renderTarget->fillRectangle(marker, NbColor(255, 255, 255));
+        }
+
+        auto spinboxes = picker->getSpinboxes();
+
+        for (auto* spinbox : spinboxes)
+        {
+            renderSpinBox(spinbox, layoutStyle);
+        }
+
+        auto buttons = picker->getButtons();
+
+        for (auto* button : buttons)
+        {
+            renderButton(button, layoutStyle);
+        }
+
+        
+        // === PREVIEW ===
+        //IWidget* preview = picker->getPreview();
+        //if (preview)
+        //{
+        //    ColorRGB rgb = hsvToRgb(picker->getHSV());
+
+        //    NbColor previewColor(
+        //        uint8_t(rgb.r * 255), uint8_t(rgb.g * 255), uint8_t(rgb.b * 255), 255
+        //    );
+
+        //    renderTarget->fillRectangle(preview->getRect(), previewColor);
+        //    renderTarget->drawRectangle(preview->getRect(), NbColor(60, 60, 60));
+        //}
+
+        // === OUTER BORDER ===
+        renderTarget->drawRectangle(rect, NbColor(80, 80, 80));
     }
 
 

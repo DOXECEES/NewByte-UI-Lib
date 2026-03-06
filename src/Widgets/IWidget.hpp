@@ -51,7 +51,6 @@ namespace Widgets
                 return;
             }
             onPressedSignal.emit();
-            //onClickCallback();
         };
 
         virtual void onRelease() noexcept
@@ -67,6 +66,8 @@ namespace Widgets
         virtual void onButtonClicked(const wchar_t symbol, SpecialKeyCode specialCode = SpecialKeyCode::NONE) {};
         virtual void onSymbolButtonClicked(const wchar_t symbol) {};
         virtual void onTimer() {};
+
+        virtual void onMouseMove(const NbPoint<int>& pos) noexcept {};
 
         virtual bool hitTest(const NbPoint<int>& pos) = 0;
         virtual bool hitTestClick(const NbPoint<int>& pos) noexcept 
@@ -84,10 +85,10 @@ namespace Widgets
                 {
                     if (child->hitTestClick(pos))
                     {
+                        child->onClick();
                         return true;
                     }
 
-                    child->onClick();
                     return true;
                 }
             }
@@ -131,6 +132,9 @@ namespace Widgets
 		bool isDisable() const noexcept;
 		bool isDefault() const noexcept;
         bool isHide() const noexcept;
+
+        void disableHoverState(bool flag) noexcept;
+        bool isHoverStateDisable() const noexcept;
 
         virtual const char* getClassName() const = 0;
 
@@ -187,7 +191,10 @@ namespace Widgets
         bool                    isHover_            = false;
         bool                    isFocused           = false;
         bool                    isHide_             = false;
+
+        bool                    isDisableHoverState = false;
     
+
     public:
         bool isSizeChange = true;
     };

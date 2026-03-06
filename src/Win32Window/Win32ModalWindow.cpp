@@ -6,10 +6,11 @@
 
 namespace Win32Window
 {
-    ModalWindow::ModalWindow(IWindow *parent)
-        :IWindow(), parent(parent)
+    ModalWindow::ModalWindow(const NbSize<int>& size, IWindow *parent)
+        : IWindow()
+        , parent(parent)
     {
-        state.size = {800, 600};
+        state.size = {size.width, size.height};
 
         WNDCLASS wc = {};
         wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -23,7 +24,7 @@ namespace Win32Window
             ///MessageBox(nullptr, L"Failed to register class", L"Error", MB_OK);
         }
 
-        HWND _handle = CreateWindow(L"Modal", L"NbWindow", WS_OVERLAPPEDWINDOW | WS_POPUP | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT, state.size.width, state.size.height, parent->getHandle().as<HWND>(), nullptr,nullptr, this);
+        HWND _handle = CreateWindow(L"Modal", L"NbWindow", WS_POPUP | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT, state.size.width, state.size.height, parent->getHandle().as<HWND>(), nullptr,nullptr, this);
         handle = NbWindowHandle::fromWinHandle(_handle);
         WindowInterface::WindowMapper::registerWindow(handle, this);
        

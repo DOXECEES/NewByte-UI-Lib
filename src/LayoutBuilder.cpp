@@ -12,6 +12,8 @@
 #include "Widgets/CheckBox.hpp"
 #include "Widgets/TreeView.hpp"
 
+#include <Color.hpp>
+
 namespace nbui
 {
     LayoutBuilder LayoutBuilder::widget(Widgets::IWidget* w)

@@ -48,6 +48,10 @@ namespace Renderer
             IWidget* widget,
             const NNsLayout::LayoutStyle& layoutStyle
         );
+        void renderColorPicker(
+            IWidget* widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        );
 
         template<typename T>
         T* castWidget(IWidget* widget) const noexcept

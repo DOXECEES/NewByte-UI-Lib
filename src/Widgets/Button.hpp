@@ -29,6 +29,11 @@ namespace Widgets
         WidgetStyle& getStyle() noexcept override { return buttonStyle.baseStyle; }
         const WidgetStyle& getStyle() const noexcept override { return buttonStyle.baseStyle; }
 
+        void setColor(const NbColor& c)
+        {
+            buttonStyle.baseStyle.baseColor = c; 
+        }
+
         inline void setText(const std::wstring& text) noexcept { this->text = text; }
         inline const std::wstring& getText() const noexcept { return text; }
         

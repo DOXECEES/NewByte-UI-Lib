@@ -10,6 +10,8 @@
 #include <Utility.hpp>
 #include "Widgets/CheckBox.hpp"
 
+#include "GlobalWidgetContext.hpp"
+
 #pragma comment(lib, "winmm.lib")
 
 namespace Win32Window
@@ -35,6 +37,38 @@ namespace Win32Window
 		bool getIsRenderable() const noexcept { return isRenderable; };
 
         inline static Widgets::IWidget* focusedWidget = nullptr; // only one widget can have focus
+
+
+        Widgets::IWidget* hitTestRecursive(
+            NNsLayout::LayoutNode* node,
+            const NbPoint<int>& point
+        )
+        {
+            // 1. Сначала дети (в обратном порядке)
+            for (auto it = node->getChildren().rbegin(); it != node->getChildren().rend(); ++it)
+            {
+                if (auto result = hitTestRecursive(it->get(), point))
+                {
+                    return result;
+                }
+            }
+
+            // 2. Потом сам узел
+            if (auto widgetNode = dynamic_cast<NNsLayout::LayoutWidget*>(node))
+            {
+                if (auto widget = widgetNode->getWidget())
+                {
+                    if (!widget->isDisable() && !widget->isHoverStateDisable() &&
+                        widget->hitTest(point))
+                    {
+                        return widget.get();
+                    }
+                }
+            }
+
+            return nullptr;
+        }
+
 
     public:
         Signal<void(const NbSize<int>&)> onSizeChanged;
@@ -302,6 +336,7 @@ namespace Win32Window
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
                     {
+                        nbui::GlobalWidgetContext::onMouseMove(point);
                         bool isHoveredSet = false;
 
                         std::vector<NNsLayout::LayoutNode*> stack;
@@ -312,17 +347,40 @@ namespace Win32Window
                             auto node = stack.back();
                             stack.pop_back();
 
+
+
                             if (auto widgetNode = dynamic_cast<NNsLayout::LayoutWidget*>(node); widgetNode != nullptr)
                             {
                                 if (auto widget = widgetNode->getWidget())
                                 {
+                                    for (auto* w : widget->getChildrens())
+                                    {
+                                        if (w->isDisable())
+                                        {
+                                            continue;
+                                        }
+
+                                        if (!w->isHoverStateDisable() && !isHoveredSet &&
+                                            w->hitTest(point))
+                                        {
+                                            w->setHover();
+                                            isHoveredSet = true;
+                                            break;
+                                        }
+                                        else
+                                        {
+                                            w->setDefault();
+                                        }
+                                    }
+
+
                                     if (widget->isDisable())
                                     {
                                         continue;
                                     }
 
 
-                                    if (!isHoveredSet && widget->hitTest(point))
+                                    if (!widget->isHoverStateDisable() && !isHoveredSet && widget->hitTest(point))
                                     {
                                         widget->setHover();
                                         isHoveredSet = true;
@@ -403,6 +461,14 @@ namespace Win32Window
                                 auto widget = widgetLayout->getWidget().get();
                                 if (widget && !widget->isHide() && widget->hitTest(point))
                                 {
+                                    for (auto child : widget->getChildrens())
+                                    {
+                                        if (child->hitTest(point))
+                                        {
+                                            child->onRelease();
+                                            return true;
+                                        }
+                                    }
                                     widget->onRelease();
                                     return true;
                                 }

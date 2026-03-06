@@ -118,6 +118,20 @@ namespace Widgets
             }
         }
 
+        void setValue(const T& value) noexcept
+        {
+            if (setter)
+            {
+                setter(value);
+            }
+            else
+            {
+                internalValue = value;
+            }
+
+            syncText();
+        }
+
         T getValue() const noexcept
         {
             if (getter)

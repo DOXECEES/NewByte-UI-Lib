@@ -19,6 +19,11 @@ namespace Widgets
     enum class TextAlign;
 }
 
+namespace nb
+{
+    class Color;
+}
+
 namespace nbui
 {
     class LayoutBuilder
@@ -32,7 +37,7 @@ namespace nbui
         static LayoutBuilder treeView();
 
         LayoutBuilder&& child(LayoutBuilder&& childBuilder)&&;
-        LayoutBuilder&& background(const NbColor& color)&&;
+        LayoutBuilder&& background(const NbColor& color) &&;
         LayoutBuilder&& color(const NbColor& color)&&;
         LayoutBuilder&& border(
             int width,

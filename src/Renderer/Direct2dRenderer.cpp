@@ -89,11 +89,16 @@ namespace Renderer
 
             if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
             {
-                auto widget = widgetLayout->getWidget().get();
-                if (widget)
+                auto widgetPtr = widgetLayout->getWidget();
+                if (widgetPtr)
                 {
-                    widgetRenderer->render(widget, widgetLayout->style);
+                    // 2. Проверяем сам рендерер
+                    if (widgetRenderer)
+                    {
+                        widgetRenderer->render(widgetPtr.get(), widgetLayout->style);
+                    }
                 }
+
             }
             else if (auto layout = dynamic_cast<const NNsLayout::LayoutNode*>(node))
             {

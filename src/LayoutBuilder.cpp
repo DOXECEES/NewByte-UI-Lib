@@ -78,18 +78,53 @@ namespace nbui
 
     LayoutBuilder LayoutBuilder::toolbar()
     {
-        LayoutBuilder b;
-        auto tb = new Widgets::ToolBar();
-        b.node = std::make_unique<NNsLayout::LayoutWidget>(tb);
-        b.currentNode = b.node.get();
-        b.currentNode->style.widthSizeType = NNsLayout::SizeType::RELATIVE;
-        b.currentNode->style.width = 1.0f;
-        b.currentNode->style.heightSizeType = NNsLayout::SizeType::ABSOLUTE;
-        b.currentNode->style.height = 32.0f;
+        auto tb = std::make_shared<Widgets::ToolBar>();
 
-        b.currentNodeWidget = tb; 
+        // Создаем ноду-обертку для лейаута
+        auto node = std::make_unique<NNsLayout::LayoutWidget>(tb);
+        node->setWidget(tb); // Чтобы shared_ptr удерживал виджет
+
+        // Настраиваем дефолтный стиль тулбара
+        node->style.widthSizeType = NNsLayout::SizeType::RELATIVE;
+        node->style.width = 1.0f; // 100% ширины
+        node->style.heightSizeType = NNsLayout::SizeType::ABSOLUTE;
+        node->style.height = 32.0f;
+
+        // Создаем билдер, инициализируя его этой нодой
+        LayoutBuilder b;
+        b.node = std::move(node);
+        b.currentNode = b.node.get();
+        b.currentNodeWidget = tb.get();
+
         return b;
     }
+
+
+    LayoutBuilder&& LayoutBuilder::buttonGroup() &&
+    {
+        auto groupNode = std::make_unique<NNsLayout::ButtonGroup>();
+        auto* raw = groupNode.get();
+
+        if (currentNode)
+        {
+            currentNode->addChild(std::move(groupNode));
+        }
+
+        currentNode = raw;
+        currentNodeWidget = nullptr; // Чтобы child() начал искать родителя выше
+        return std::move(*this);
+    }
+
+    LayoutBuilder&& LayoutBuilder::endGroup() &&
+    {
+        if (auto* group = dynamic_cast<NNsLayout::ButtonGroup*>(currentNode))
+        {
+            group->syncInternalState(); // Подписываемся на клики, когда все дети добавлены
+        }
+        currentNode = currentNode->getParent();
+        return std::move(*this);
+    }
+
 
     LayoutBuilder LayoutBuilder::treeView()
     {
@@ -99,25 +134,43 @@ namespace nbui
         return b;
     }
 
-    LayoutBuilder&& LayoutBuilder::child(LayoutBuilder&& childBuilder)&&
+    LayoutBuilder&& LayoutBuilder::child(LayoutBuilder&& childBuilder) &&
     {
-        if (currentNodeWidget)
+        if (!childBuilder.node)
         {
-            if (auto widgetLayout = dynamic_cast<NNsLayout::LayoutWidget*>(childBuilder.node.get()))
-            {
-                currentNodeWidget->addChildrenWidget(widgetLayout->getWidget());
-            }
-
-
-            //return std::move(*this);
+            return std::move(*this);
         }
 
-        if (currentNode && childBuilder.node)
+        // 1. Ищем, куда приткнуть виджет для РЕНДЕРИНГА
+        if (auto* childWidgetNode = dynamic_cast<NNsLayout::LayoutWidget*>(childBuilder.node.get()))
+        {
+            NNsLayout::LayoutNode* search = currentNode;
+            Widgets::IWidget* visualParent = nullptr;
+
+            while (search)
+            {
+                if (visualParent = search->getOwner())
+                {
+                    break; // Нашли Тулбар или Окно
+                }
+                search = search->getParent();
+            }
+
+            if (visualParent)
+            {
+                visualParent->addChildrenWidget(childWidgetNode->getWidget());
+            }
+        }
+
+        // 2. Строим дерево НОД
+        if (currentNode)
         {
             currentNode->addChild(std::move(childBuilder.node));
         }
+
         return std::move(*this);
     }
+
 
     LayoutBuilder&& LayoutBuilder::background(
         const NbColor& color,

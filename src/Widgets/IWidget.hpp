@@ -1,6 +1,8 @@
 #ifndef NBUI_SRC_WIDGETS_IWIDGET_HPP
 #define NBUI_SRC_WIDGETS_IWIDGET_HPP
 
+#define DECLARE_WIDGET_CLASS_NAME(ClassName) constexpr static const char* CLASS_NAME = #ClassName
+
 #include "../Core.hpp"
 #include "../IIndexable.hpp"
 #include "Signal.hpp"
@@ -12,6 +14,8 @@
 #include "Theme.hpp"
 
 #include <functional>
+
+
 
 namespace Widgets
 {
@@ -33,6 +37,11 @@ namespace Widgets
         const NbSize<int> getMeasuredSize() const noexcept
         {
             return measuredSize;
+        }
+
+        void setMeasuredSize(const NbSize<int>& size) noexcept
+        {
+            measuredSize = size;
         }
 
     protected: 
@@ -58,6 +67,10 @@ namespace Widgets
             if (state == WidgetState::DISABLE)
             {
                 return;
+            }
+            if (onClickCallback)
+            {
+                onClickCallback();
             }
             onPressedSignal.emit();
         };
@@ -188,6 +201,7 @@ namespace Widgets
         Signal<void()> onReleasedSignal;
         Signal<void()> onUnfocusedSignal;
         Signal<void()> onFocusSignal;
+        std::function<void()> onClickCallback;
 
     protected:
 
@@ -197,7 +211,6 @@ namespace Widgets
 
         Core::ZIndex            zIndex;
 
-        std::function<void()>   onClickCallback;
 
         WidgetStyle             style               = ThemeManager::getCurrent().widgetStyle;
         WidgetSizePolicy        sizePolicy          = { SizePolicy::EXPANDING, SizePolicy::EXPANDING };

@@ -5,13 +5,18 @@
 
     #include "Widgets/IWidget.hpp"
     #include "WindowInterface/IWindow.hpp"
+#include "Widgets/Button.hpp"
     #include <Alghorithm.hpp>
+#include "Widgets/ButtonGroup.hpp"
 
     #undef ABSOLUTE
     #undef RELATIVE
 
     namespace NNsLayout
     {
+
+    
+
         void HLayout::measure(const NbSize<int>& available) noexcept
         {
             int totalFixed = 0;
@@ -271,6 +276,19 @@
             );
         }
 
+        LayoutWidget::LayoutWidget(std::shared_ptr<Widgets::IWidget> w) noexcept
+            : LayoutNode(w.get()),
+              widget(std::move(w))
+        {
+            subscribe(
+                widget.get(), &Widgets::IWidget::onSizeChangedSignal,
+                [this](const NbRect<int>& rc)
+                {
+                    this->markDirty();
+                }
+            );
+        }
+
         void LayoutWidget::setWidget(std::shared_ptr<Widgets::IWidget> w) noexcept
         {
             subscribe(
@@ -286,73 +304,51 @@
 
         void LayoutWidget::measure(const NbSize<int>& available) noexcept
         {
-            //const auto natural = widget ? widget->computeContentSize() : NbSize<int>{ 0, 0 };
-            const auto natural = widget->measure(available);
+            /// 1. Спрашиваем у самого виджета, сколько он хочет (Intrinsic Size)
+            NbSize<int> size = widget->measure(available);
 
-            int w = 0;
-            int h = 0;
-
-            switch (style.widthSizeType) {
-            case SizeType::ABSOLUTE:
-                w = static_cast<int>(style.width);
-                break;
-            case SizeType::RELATIVE:
-                w = static_cast<int>(available.width * style.width);
-                break;
-            case SizeType::FLEX:
-                w = 0;
-                break;
-            case SizeType::AUTO:
-                w = natural.width;
-                break;
+            // 2. ПЕРЕКРЫВАЕМ правилами из Builder (absoluteWidth и т.д.)
+            if (style.widthSizeType == SizeType::ABSOLUTE)
+            {
+                size.width = style.width;
+            }
+            if (style.heightSizeType == SizeType::ABSOLUTE)
+            {
+                size.height = style.height;
             }
 
-            switch (style.heightSizeType) {
-            case SizeType::ABSOLUTE:
-                h = static_cast<int>(style.height);
-                break;
-            case SizeType::RELATIVE:
-                h = static_cast<int>(available.height * style.height);
-                break;
-            case SizeType::FLEX:
-                h = 0;
-                break;
-            case SizeType::AUTO:
-                h = natural.height;
-                break;
+            // 3. Если есть дети (как в группе), считаем их (как HLayout)
+            if (!children.empty())
+            {
+                int totalW = 0;
+                for (auto& child : children)
+                {
+                    child->measure(available);
+                    totalW += child->getMeasuredSize().width;
+                }
+                size.width = totalW;
             }
 
-            int internalW = style.padding.left + style.padding.right + style.border.width * 2;
-            int internalH = style.padding.top + style.padding.bottom + style.border.width * 2;
+            measuredSize = size;
 
-            w += internalW;
-            h += internalH;
-
-            // Ограничиваем размерами контента и min/max
-            measuredSize = {
-                (nbstl::max)(style.minSize.width, w), (nbstl::max)(style.minSize.height, h)
-            };
         }
 
     
         void LayoutWidget::layout(const NbRect<int>& bounds) noexcept
         {
-            if (!widget) return;
+            //rect = bounds;
+            widget->setRect(bounds); // Передаем геометрию в виджет
 
-            NbRect<int> inner = bounds;
+            // Расставляем детей в ряд (Логика Тулбара/Группы)
+            int x = bounds.x;
+            for (auto& child : children)
+            {
+                auto s = child->getMeasuredSize();
+                NbRect<int> childRect = {x, bounds.y, s.width, bounds.height};
+                child->layout(childRect);
+                x += s.width;
+            }
 
-
-            inner.x += style.border.width;
-            inner.y += style.border.width;
-            inner.width  -= style.border.width * 2;
-            inner.height -= style.border.width * 2;
-
-            inner.x += style.padding.left;
-            inner.y += style.padding.top;
-            inner.width  -= style.padding.left + style.padding.right;
-            inner.height -= style.padding.top  + style.padding.bottom;
-
-            widget->layout(inner);
         }
 
 
@@ -471,5 +467,72 @@
                     break; // Лимит сетки
                 }
             }
+        }
+
+
+        ButtonGroup::ButtonGroup(bool allowNone) noexcept
+            : LayoutWidget(std::make_shared<ButtonGroupWidget>()),
+              m_allowNoneSelected(allowNone)
+        {
+        }
+
+        void ButtonGroup::syncInternalState()
+        {
+            for (auto& child : children)
+            {
+                if (auto* widgetNode = dynamic_cast<LayoutWidget*>(child.get()))
+                {
+                    auto widget = widgetNode->getWidget();
+                    // Здесь мы предполагаем наличие у вашего IWidget
+                    // возможности задать Callback на клик.
+                    // Псевдокод:
+                    /*
+                    widget->onClicked = [this, widgetNode]() {
+                        this->handleSelection(widgetNode);
+                    };
+                    */
+                    widget->onClickCallback = [this, widgetNode]()
+                    {
+                        this->handleSelection(widgetNode);
+                    };
+                }
+            }
+        }
+
+        void ButtonGroup::handleSelection(LayoutWidget* selectedNode)
+        {
+            for (auto& child : children)
+            {
+                auto* node = dynamic_cast<LayoutWidget*>(child.get());
+                if (!node)
+                {
+                    continue;
+                }
+
+                // Безопасно получаем кнопку
+                auto sharedWidget = node->getWidget();
+                if (!sharedWidget)
+                {
+                    continue;
+                }
+
+                auto* btn = dynamic_cast<Widgets::Button*>(sharedWidget.get());
+                if (!btn)
+                {
+                    continue; // Если это не кнопка, просто пропускаем этот узел
+                }
+
+                bool isTarget = (node == selectedNode);
+
+                // Теперь безопасно вызываем методы
+                if (isTarget && btn->getIsChecked() && !m_allowNoneSelected)
+                {
+                    continue;
+                }
+
+                btn->setIsChecked(isTarget);
+            }
+            markDirty(); 
+
         }
     } // namespace NNsLayout

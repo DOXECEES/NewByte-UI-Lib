@@ -150,8 +150,11 @@ set (SRC
         src/Widgets/Section.hpp
 
         src/Widgets/ColorPicker.hpp
-        src/Widgets/ToolBar.hpp
         src/Widgets/ToolBar.cpp
+        src/Widgets/ToolBar.hpp
+        src/Widgets/ButtonGroup.hpp
+        src/Widgets/ButtonGroup.cpp
+
 
         src/Layout/LayoutNode.cpp
         src/Layout/LayoutNode.hpp

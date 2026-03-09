@@ -301,7 +301,8 @@ namespace NNsLayout
     {
     public:
         explicit LayoutWidget(Widgets::IWidget* w) noexcept;
-       
+        explicit LayoutWidget(std::shared_ptr<Widgets::IWidget> w) noexcept;
+
 
         void setWidget(std::shared_ptr<Widgets::IWidget> w) noexcept;
        
@@ -317,6 +318,144 @@ namespace NNsLayout
 
     private:
         std::shared_ptr<Widgets::IWidget> widget;
+    };
+
+ 
+
+    class ButtonGroup : public LayoutWidget
+    {
+    public:
+        ButtonGroup(bool allowNone = false) noexcept;
+        
+
+        void measure(const NbSize<int>& available) noexcept override
+        {
+            int totalFixed = 0;
+            int maxHeight = 0;
+            int flexCount = 0;
+
+            for (auto& child : children)
+            {
+                auto& style = child->style;
+
+                if (style.widthSizeType == SizeType::FLEX)
+                {
+                    flexCount++;
+                    continue;
+                }
+
+                child->measure(available);
+                auto s = child->getMeasuredSize();
+
+                totalFixed += s.width;
+                maxHeight = (std::max)(maxHeight, s.height);
+            }
+
+            measuredSize = {totalFixed, maxHeight};
+        }
+
+        void layout(const NbRect<int>& bounds) noexcept override
+        {
+            layoutRect = bounds;
+            int x = bounds.x;
+
+            float totalRelative = 0.0f;
+            int totalFixed = 0;
+
+            for (auto& child : children)
+            {
+                const NNsLayout::LayoutStyle& style = child->style;
+                switch (style.widthSizeType)
+                {
+                case SizeType::RELATIVE:
+                {
+                    totalRelative += style.width;
+                    break;
+                }
+                case SizeType::ABSOLUTE:
+                {
+                    totalFixed += static_cast<int>(style.width);
+                    break;
+                }
+                case SizeType::AUTO:
+                {
+                    totalFixed += child->getMeasuredSize().width;
+                    break;
+                }
+                }
+            }
+
+            int remainingWidth = bounds.width - totalFixed;
+
+            for (auto& child : children)
+            {
+                int width = 0;
+                const NNsLayout::LayoutStyle& style = child->style;
+
+                switch (style.widthSizeType)
+                {
+                case SizeType::ABSOLUTE:
+                {
+                    width = static_cast<int>(style.width);
+                    break;
+                }
+                case SizeType::RELATIVE:
+                {
+                    width = static_cast<int>(remainingWidth * (style.width / totalRelative));
+                    break;
+                }
+                case SizeType::AUTO:
+                {
+                    width = child->getMeasuredSize().width;
+                    break;
+                }
+                }
+
+                int height = bounds.height;
+                switch (style.heightSizeType)
+                {
+                case SizeType::ABSOLUTE:
+                {
+                    height = static_cast<int>(style.height);
+                    break;
+                }
+                case SizeType::RELATIVE:
+                {
+                    height = static_cast<int>(bounds.height * style.height);
+                    break;
+                }
+                case SizeType::AUTO:
+                {
+                    height = child->getMeasuredSize().height;
+                    break;
+                }
+                }
+
+                NbRect<int> childRect;
+                childRect.y = bounds.y + style.margin.top;
+                childRect.height = bounds.height - (style.margin.top + style.margin.bottom);
+
+                childRect.x = x + style.margin.left;
+                childRect.width = width;
+
+                child->setRect(childRect);
+                child->layout(childRect);
+
+                x += width + style.margin.left + style.margin.right;
+            }
+        }
+
+
+        // Метод для регистрации кнопки и подписки на её события
+        void syncInternalState();
+        
+
+        // Логика переключения
+        void handleSelection(LayoutWidget* selectedNode);
+        
+
+    private:
+        bool m_allowNoneSelected = false;
     };
 
 

@@ -22,39 +22,17 @@ namespace Widgets
 
         void addToolBarWidget(std::shared_ptr<IWidget> widget, int size) noexcept;
 
+
         const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
         {
-            int width = 0;
-            int height = 0;
-
-            for (auto& child : childrens)
-            {
-                const NbSize<int>& size = child->measure(maxSize);
-
-                width += size.width;
-                height = std::max(height, size.height);
-            }
-
-            measuredSize = {width, height};
             return measuredSize;
-
-        };
-
-
+        }
         void layout(const NbRect<int>& rect) noexcept override
         {
-            int x = rect.x;
+            this->rect = rect;
+        }
 
-            for (auto& child : childrens)
-            {
-                const NbSize<int>& size = child->getMeasuredSize();
 
-                child->layout({x, rect.y, size.width, rect.height});
-
-                x += size.width;
-            }
-        
-        };
 
 
 

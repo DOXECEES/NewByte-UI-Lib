@@ -89,6 +89,7 @@ namespace Renderer
         {
             renderToolBar(widget, layoutStyle);
         }
+        
 
 
     }
@@ -253,7 +254,7 @@ namespace Renderer
     }
 
 
-    void Direct2dWidgetRenderer::renderButton(
+   void Direct2dWidgetRenderer::renderButton(
         IWidget* widget,
         const NNsLayout::LayoutStyle& layoutStyle
     )
@@ -264,46 +265,46 @@ namespace Renderer
         const ButtonStyle& bStyle = button->getButtonStyle();
         WidgetState state = button->getState();
 
+        bool isSelected = button->getIsChecked();
+
         NbColor color, textColor;
 
-        switch (state)
+        if (state == WidgetState::DISABLE)
         {
-        case WidgetState::HOVER:
-            color = bStyle.hoverColor();
-            textColor = bStyle.hoverTextColor();
-            break;
-        case WidgetState::ACTIVE:
-            color = bStyle.activeColor();
-            textColor = bStyle.activeTextColor();
-            break;
-        case WidgetState::DISABLE:
             color = bStyle.disableColor();
             textColor = bStyle.disableTextColor();
-            break;
-        default:
+        }
+        else if (state == WidgetState::ACTIVE || isSelected)
+        {
+            color = bStyle.activeColor();
+            textColor = bStyle.activeTextColor();
+        }
+        else if (state == WidgetState::HOVER)
+        {
+            color = bStyle.hoverColor();
+            textColor = bStyle.hoverTextColor();
+        }
+        else
+        {
             color = bStyle.baseColor();
             textColor = bStyle.baseTextColor();
-            break;
         }
 
         NbRect<int> rect = button->getRect();
 
         renderTarget->fillRectangle(rect, color);
 
-        if (state != WidgetState::ACTIVE 
-            && state != WidgetState::DISABLE)
+        if (state != WidgetState::DISABLE && state != WidgetState::ACTIVE && !isSelected)
         {
             NbRect<int> highlight = {rect.x, rect.y, rect.width, 1};
-            renderTarget->fillRectangle(
-                highlight,
-                NbColor(255, 255, 255, 30)
-            ); 
+            renderTarget->fillRectangle(highlight, NbColor(255, 255, 255, 30));
         }
 
         drawBorder(button, layoutStyle.border);
 
         NbRect<int> textRect = rect;
-        if (state == WidgetState::ACTIVE)
+
+        if (state == WidgetState::ACTIVE || isSelected)
         {
             textRect.y += 1;
         }

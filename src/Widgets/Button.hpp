@@ -36,6 +36,16 @@ namespace Widgets
 
         inline void setText(const std::wstring& text) noexcept { this->text = text; }
         inline const std::wstring& getText() const noexcept { return text; }
+
+        inline void setIsChecked(bool flag)
+        {
+            isChecked = flag;
+        }
+
+        bool getIsChecked()
+        {
+            return isChecked;
+        }
         
         NbSize<int> computeContentSize() const noexcept override
         {
@@ -68,7 +78,7 @@ namespace Widgets
             height = (nbstl::min)(height, maxSize.height);
 
             
-            measuredSize = {rect.width, rect.height};
+            measuredSize = {width, height};
 
             return measuredSize;
         }
@@ -86,6 +96,7 @@ namespace Widgets
 
         ButtonStyle     buttonStyle = ThemeManager::getCurrent().buttonStyle;
         NbSize<int>     size;
+        bool isChecked = false;
     };
 }
 

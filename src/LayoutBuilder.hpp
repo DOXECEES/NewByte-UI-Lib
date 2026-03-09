@@ -45,6 +45,9 @@ namespace nbui
 
         static LayoutBuilder spacer();
         static LayoutBuilder toolbar();
+        LayoutBuilder&& buttonGroup() &&;
+        LayoutBuilder&& endGroup() &&;
+        
 
         static LayoutBuilder treeView();
 

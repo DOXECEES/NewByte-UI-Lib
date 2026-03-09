@@ -54,7 +54,7 @@ namespace Widgets
 
         virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
         {
-            constexpr int charWidth = 50;
+            constexpr int charWidth = 1;
             constexpr int lineHeight = 20;
             constexpr int paddingLeft = 4;
             constexpr int paddingRight = 4;
@@ -67,10 +67,10 @@ namespace Widgets
             width = (nbstl::min)(width, maxSize.width);
             height = (nbstl::min)(height, maxSize.height);
 
-            size.width = width;
-            size.height = height;
+            
+            measuredSize = {rect.width, rect.height};
 
-            return size;
+            return measuredSize;
         }
 
         virtual void layout(const NbRect<int>& rect) noexcept override

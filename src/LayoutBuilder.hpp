@@ -29,15 +29,30 @@ namespace nbui
     class LayoutBuilder
     {
     public:
+        enum class StateStyle
+        {
+            ACTIVE,
+            HOVER, 
+            DISABLE
+        };
+
         static LayoutBuilder widget(Widgets::IWidget* w);
         static LayoutBuilder label(const std::wstring& text);
         static LayoutBuilder hBox();
         static LayoutBuilder vBox();
+        static LayoutBuilder grid(int columns);
+        static LayoutBuilder flow();
+
         static LayoutBuilder spacer();
+        static LayoutBuilder toolbar();
+
         static LayoutBuilder treeView();
 
         LayoutBuilder&& child(LayoutBuilder&& childBuilder)&&;
-        LayoutBuilder&& background(const NbColor& color) &&;
+        LayoutBuilder&& background(
+            const NbColor& color,
+            StateStyle stateStyle = StateStyle::ACTIVE
+        ) &&;
         LayoutBuilder&& color(const NbColor& color)&&;
         LayoutBuilder&& border(
             int width,
@@ -89,9 +104,13 @@ namespace nbui
 
         std::unique_ptr<NNsLayout::LayoutNode> build()&&;
 
+        std::shared_ptr<Widgets::IWidget> buildRawWidget();
+
     private:
         std::unique_ptr<NNsLayout::LayoutNode>      node;
         NNsLayout::LayoutNode*                      currentNode = nullptr;
+        Widgets::IWidget*                           currentNodeWidget = nullptr;
+
     };
 }
 

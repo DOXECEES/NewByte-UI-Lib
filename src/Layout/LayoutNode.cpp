@@ -116,11 +116,18 @@
                     }
                 }
 
-                NbRect<int> childRect{ x, bounds.y, width, height };
+                NbRect<int> childRect;
+                childRect.y = bounds.y + style.margin.top;
+                childRect.height = bounds.height - (style.margin.top + style.margin.bottom);
+
+                childRect.x = x + style.margin.left;
+                childRect.width = width;
+
                 child->setRect(childRect);
                 child->layout(childRect);
 
-                x += width;
+                x += width + style.margin.left + style.margin.right;
+
             }
         }
 
@@ -236,18 +243,18 @@
 
                 NbRect<int> childRect;
 
-                childRect.x = bounds.x + st.margin.left + st.border.width + st.padding.left;
-                childRect.y = y + st.margin.top + st.border.width + st.padding.top;
+                childRect.x = bounds.x + st.margin.left;
+                childRect.y = y + st.margin.top;
 
                 childRect.width = bounds.width - (st.margin.left + st.margin.right)
-                                  - (st.border.width * 2) - (st.padding.left + st.padding.right);
+                                  ;
 
                 childRect.height = contentHeight;
 
                 child->setRect(childRect);
                 child->layout(childRect);
 
-                y += fullHeight;
+                y += contentHeight + st.margin.top + st.margin.bottom;
             }
         }
 
@@ -315,25 +322,16 @@
                 break;
             }
 
-            w += style.padding.left + style.padding.right;
-            h += style.padding.top + style.padding.bottom;
+            int internalW = style.padding.left + style.padding.right + style.border.width * 2;
+            int internalH = style.padding.top + style.padding.bottom + style.border.width * 2;
 
-            w += style.border.width * 2;
-            h += style.border.width * 2;
+            w += internalW;
+            h += internalH;
 
-            //w += style.margin.left + style.margin.right;
-            //h += style.margin.top + style.margin.bottom;
-
-            w = (nbstl::min)(w, available.width);
-            h = (nbstl::min)(h, available.height);
-
-            w = (nbstl::max)(w, style.minSize.width);
-            h = (nbstl::max)(h, style.minSize.height);
-
-            if (style.maxSize.width > 0) w = (nbstl::min)(w, style.maxSize.width);
-            if (style.maxSize.height > 0) h = (nbstl::min)(h, style.maxSize.height);
-
-            measuredSize = { w, h };
+            // Ограничиваем размерами контента и min/max
+            measuredSize = {
+                (nbstl::max)(style.minSize.width, w), (nbstl::max)(style.minSize.height, h)
+            };
         }
 
     
@@ -343,10 +341,6 @@
 
             NbRect<int> inner = bounds;
 
-            //inner.x += style.margin.left;
-            //inner.y += style.margin.top;
-            //inner.width  -= style.margin.left + style.margin.right;
-            //inner.height -= style.margin.top  + style.margin.bottom;
 
             inner.x += style.border.width;
             inner.y += style.border.width;
@@ -377,4 +371,105 @@
                 children[0]->layout(client);
             }
         }
-    }
+
+        void GridLayout::measure(const NbSize<int>& available) noexcept
+        {
+            if (children.empty() || columns <= 0)
+            {
+                measuredSize = {0, 0};
+                return;
+            }
+
+            int maxChildW = 0;
+            int maxChildH = 0;
+
+            // Измеряем каждого ребенка и находим самую большую ячейку
+            for (auto& child : children)
+            {
+                child->measure(available);
+                auto s = child->getMeasuredSize();
+                auto& st = child->style;
+
+                int fullW = s.width + st.margin.left + st.margin.right;
+                int fullH = s.height + st.margin.top + st.margin.bottom;
+
+                maxChildW = (std::max)(maxChildW, fullW);
+                maxChildH = (std::max)(maxChildH, fullH);
+            }
+
+            int numRows =
+                (rows > 0) ? rows : (static_cast<int>(children.size()) + columns - 1) / columns;
+
+            // Итоговый размер = размер ячейки * кол-во ячеек
+            measuredSize.width = maxChildW * columns;
+            measuredSize.height = maxChildH * numRows;
+
+            // Не превышаем доступное место
+            measuredSize.width = (std::min)(measuredSize.width, available.width);
+            measuredSize.height = (std::min)(measuredSize.height, available.height);
+        }
+
+        void GridLayout::layout(const NbRect<int>& bounds) noexcept
+        {
+            layoutRect = bounds;
+            if (children.empty() || columns <= 0)
+            {
+                return;
+            }
+
+            // 1. Вычисляем количество строк
+            int totalChildren = static_cast<int>(children.size());
+            int numRows = (rows > 0) ? rows : (totalChildren + columns - 1) / columns;
+
+            // 2. Вычисляем ширину одной колонки и высоту одной строки
+            // (Для простоты берем равномерное распределение,
+            // но учитываем общие отступы контейнера)
+
+            float cellW = static_cast<float>(bounds.width) / columns;
+            float cellH = static_cast<float>(bounds.height) / numRows;
+
+            int index = 0;
+            for (auto& child : children)
+            {
+                int col = index % columns;
+                int row = index / columns;
+
+                const auto& st = child->style;
+
+                // Определяем границы ячейки (Cell Rect)
+                int cellX = bounds.x + static_cast<int>(col * cellW);
+                int cellY = bounds.y + static_cast<int>(row * cellH);
+                int currentCellW = static_cast<int>(cellW);
+                int currentCellH = static_cast<int>(cellH);
+
+                // 3. Учитываем Margin ребенка внутри ячейки
+                NbRect<int> childRect;
+                childRect.x = cellX + st.margin.left;
+                childRect.y = cellY + st.margin.top;
+
+                // Ширина = ширина ячейки минус внешние отступы
+                childRect.width = currentCellW - (st.margin.left + st.margin.right);
+                childRect.height = currentCellH - (st.margin.top + st.margin.bottom);
+
+                // 4. Ограничиваем размеры, если у ребенка ABSOLUTE или AUTO
+                if (st.widthSizeType == SizeType::ABSOLUTE)
+                {
+                    childRect.width = (std::min)(childRect.width, static_cast<int>(st.width));
+                }
+                if (st.heightSizeType == SizeType::ABSOLUTE)
+                {
+                    childRect.height = (std::min)(childRect.height, static_cast<int>(st.height));
+                }
+
+                // Устанавливаем и запускаем внутренний Layout
+                child->setRect(childRect);
+                child->layout(childRect);
+
+                index++;
+                if (rows > 0 && index >= columns * rows)
+                {
+                    break; // Лимит сетки
+                }
+            }
+        }
+    } // namespace NNsLayout

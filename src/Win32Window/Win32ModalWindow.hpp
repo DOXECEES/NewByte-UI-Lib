@@ -34,7 +34,7 @@ namespace Win32Window
             //renderer->resize(this);
         };
     private:
-        inline static Widgets::IWidget* focusedWidget = nullptr; // only one widget can have focus
+        inline static std::shared_ptr<Widgets::IWidget> focusedWidget = nullptr; // only one widget can have focus
 
         IWindow* parent = nullptr;
 
@@ -229,7 +229,7 @@ namespace Win32Window
                     {
                         if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
                         {
-                            auto widget = widgetLayout->getWidget().get();
+                            auto widget = widgetLayout->getWidget();
                             // hitTest должен проверять и внутренних детей (как мы писали для
                             // ComboBox)
                             if (widget && !widget->isHide() && widget->hitTest(point))
@@ -247,7 +247,7 @@ namespace Win32Window
                                         focusedWidget = child;
                                         focusedWidget->setFocused();
                                         clicked = true;
-                                        nbui::GlobalWidgetContext::capturePressedWidget(child);
+                                        nbui::GlobalWidgetContext::capturePressedWidget(child.get());
                                         child->onClick();
                                         return true; // Нашли самый верхний виджет, прерываем DFS
                                     }
@@ -261,7 +261,7 @@ namespace Win32Window
                                 focusedWidget = widget;
                                 focusedWidget->setFocused();
                                 clicked = true;
-                                nbui::GlobalWidgetContext::capturePressedWidget(widget);
+                                nbui::GlobalWidgetContext::capturePressedWidget(widget.get());
                                 widget->onClick();
                                 return true; // Нашли самый верхний виджет, прерываем DFS
                             }
@@ -335,7 +335,7 @@ namespace Win32Window
                         {
                             if (auto widget = widgetNode->getWidget())
                             {
-                                for (auto* w : widget->getChildrens())
+                                for (auto& w : widget->getChildrens())
                                 {
                                     if (w->isDisable())
                                     {

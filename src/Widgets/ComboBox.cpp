@@ -9,9 +9,9 @@ namespace Widgets
 {
 	ComboBox::ComboBox() noexcept
 		: IWidget({})
-		, dropdownList(std::make_unique<DropdownList>())
+		, dropdownList(std::make_shared<DropdownList>())
 	{
-		this->addChildrenWidget(dropdownList.get());
+		this->addChildrenWidget(dropdownList);
 		subscribe(static_cast<IWidget*>(this), &IWidget::onSizeChangedSignal, [this](const NbRect<int>& rc)
 		{
 			OldPadding p;

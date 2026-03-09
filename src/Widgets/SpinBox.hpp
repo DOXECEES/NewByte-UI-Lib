@@ -202,9 +202,9 @@ namespace Widgets
 
         int precision = 3;
 
-        std::unique_ptr<TextEdit> input;
-        std::unique_ptr<Button> upButton;
-        std::unique_ptr<Button> downButton;
+        std::shared_ptr<TextEdit> input;
+        std::shared_ptr<Button> upButton;
+        std::shared_ptr<Button> downButton;
 
         NbSize<int> measuredSize{0, 0};
 
@@ -212,16 +212,16 @@ namespace Widgets
 
         void createInternalWidgets()
         {
-            input = std::make_unique<TextEdit>(NbRect<int>{});
-            upButton = std::make_unique<Button>(NbRect<int>{});
-            downButton = std::make_unique<Button>(NbRect<int>{});
+            input = std::make_shared<TextEdit>(NbRect<int>{});
+            upButton = std::make_shared<Button>(NbRect<int>{});
+            downButton = std::make_shared<Button>(NbRect<int>{});
 
             upButton->setText(L"\u25B4");
             downButton->setText(L"\u25BE");
 
-            addChildrenWidget(input.get());
-            addChildrenWidget(upButton.get());
-            addChildrenWidget(downButton.get());
+            addChildrenWidget(input);
+            addChildrenWidget(upButton);
+            addChildrenWidget(downButton);
         }
 
         void setupHandlers()

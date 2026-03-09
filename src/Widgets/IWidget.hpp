@@ -29,6 +29,15 @@ namespace Widgets
     public:
         virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept { return {}; };
         virtual void layout(const NbRect<int>& rect) noexcept {};
+
+        const NbSize<int> getMeasuredSize() const noexcept
+        {
+            return measuredSize;
+        }
+
+    protected: 
+        NbSize<int> measuredSize;
+
     };
 
     // INTERFACE JUST PEICE OF SHIT /
@@ -74,7 +83,7 @@ namespace Widgets
         {
             for (auto it = childrens.rbegin(); it != childrens.rend(); ++it)
             {
-                IWidget* child = *it;
+                IWidget* child = (*it).get();
 
                 if (child->isHide())
                 {
@@ -96,7 +105,13 @@ namespace Widgets
             return false;
         } // temporary non abstract
 
-        inline void setSize(const NbSize<int>& newSize) { rect.width = newSize.width; rect.height = newSize.height; isSizeChange = true; onSizeChangedSignal.emit(rect); }
+        inline void setSize(const NbSize<int>& newSize) 
+        {
+            rect.width = newSize.width;
+            rect.height = newSize.height; 
+            isSizeChange = true; 
+            onSizeChangedSignal.emit(rect);
+        }
         
         inline const NbRect<int>& getRect() const { return rect; }
 		inline void setRect(const NbRect<int>& rect)
@@ -146,8 +161,8 @@ namespace Widgets
 
         virtual NbRect<int> getRequestedSize() const noexcept;
 
-        void addChildrenWidget(IWidget* widget) noexcept;
-        NB_NODISCARD const std::vector<IWidget*>& getChildrens() const noexcept;
+        void addChildrenWidget(std::shared_ptr<IWidget> widget) noexcept;
+        NB_NODISCARD const std::vector<std::shared_ptr<IWidget>>& getChildrens() const noexcept;
         
         NB_NODISCARD const Core::ZIndex& getZIndex() const noexcept;
 
@@ -177,7 +192,7 @@ namespace Widgets
     protected:
 
 
-        std::vector<IWidget*>   childrens;
+        std::vector<std::shared_ptr<IWidget>> childrens;
         NbRect<int>             rect                = { 0, 0, 0, 0 };
 
         Core::ZIndex            zIndex;

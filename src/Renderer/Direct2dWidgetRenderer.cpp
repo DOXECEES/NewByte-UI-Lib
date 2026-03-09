@@ -15,6 +15,8 @@
 #include "Widgets/Calendar.hpp"
 #include "Widgets/Section.hpp"
 
+#include "Widgets/ToolBar.hpp"
+
 #include "Direct2dGlobalWidgetMapper.hpp"
 
 
@@ -82,6 +84,10 @@ namespace Renderer
         else if (strncmp(widgetName, ColorPicker::CLASS_NAME, size) == 0)
         {
             renderColorPicker(widget, layoutStyle);
+        }
+        else if (strncmp(widgetName, ToolBar::CLASS_NAME, size) == 0)
+        {
+            renderToolBar(widget, layoutStyle);
         }
 
 
@@ -365,7 +371,7 @@ namespace Renderer
 
             for (auto& child : section->getChildrens())
             {
-                render(child, layoutStyle);
+                render(child.get(), layoutStyle);
             }
         }
 
@@ -516,6 +522,24 @@ namespace Renderer
 
         // === OUTER BORDER ===
         renderTarget->drawRectangle(rect, NbColor(80, 80, 80));
+    }
+
+    void Direct2dWidgetRenderer::renderToolBar(
+        IWidget* widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    )
+    {
+        using namespace Widgets;
+        ToolBar* toolbar = castWidget<ToolBar>(widget);
+        const NbRect<int>& widgetRect = toolbar->getRect();
+        const WidgetStyle& style = toolbar->getStyle();
+
+        renderTarget->fillRectangle(widgetRect, style.baseColor);
+
+        for (auto& w : toolbar->getChildrens())
+        {
+            render(w.get(), layoutStyle);
+        }
     }
 
 

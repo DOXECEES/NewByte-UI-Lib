@@ -11,7 +11,7 @@
 #include "Widgets/Button.hpp"
 #include "Widgets/CheckBox.hpp"
 #include "Widgets/TreeView.hpp"
-
+#include "Widgets/ToolBar.hpp"
 #include <Color.hpp>
 
 namespace nbui
@@ -48,6 +48,22 @@ namespace nbui
         return b;
     }
 
+    LayoutBuilder LayoutBuilder::grid(int columns)
+    {
+        LayoutBuilder b;
+        b.node = std::make_unique<NNsLayout::GridLayout>(columns);
+        b.currentNode = b.node.get();
+        return b;
+    }
+
+    LayoutBuilder LayoutBuilder::flow()
+    {
+        LayoutBuilder b;
+        b.node = std::make_unique<NNsLayout::FlowLayout>();
+        b.currentNode = b.node.get();
+        return b;
+    }
+
     LayoutBuilder LayoutBuilder::spacer()
     {
         LayoutBuilder b;
@@ -57,6 +73,21 @@ namespace nbui
         b.currentNode->style.width = 1.0f;
         b.currentNode->style.heightSizeType = NNsLayout::SizeType::RELATIVE;
         b.currentNode->style.height = 1.0f;
+        return b;
+    }
+
+    LayoutBuilder LayoutBuilder::toolbar()
+    {
+        LayoutBuilder b;
+        auto tb = new Widgets::ToolBar();
+        b.node = std::make_unique<NNsLayout::LayoutWidget>(tb);
+        b.currentNode = b.node.get();
+        b.currentNode->style.widthSizeType = NNsLayout::SizeType::RELATIVE;
+        b.currentNode->style.width = 1.0f;
+        b.currentNode->style.heightSizeType = NNsLayout::SizeType::ABSOLUTE;
+        b.currentNode->style.height = 32.0f;
+
+        b.currentNodeWidget = tb; 
         return b;
     }
 
@@ -70,6 +101,17 @@ namespace nbui
 
     LayoutBuilder&& LayoutBuilder::child(LayoutBuilder&& childBuilder)&&
     {
+        if (currentNodeWidget)
+        {
+            if (auto widgetLayout = dynamic_cast<NNsLayout::LayoutWidget*>(childBuilder.node.get()))
+            {
+                currentNodeWidget->addChildrenWidget(widgetLayout->getWidget());
+            }
+
+
+            //return std::move(*this);
+        }
+
         if (currentNode && childBuilder.node)
         {
             currentNode->addChild(std::move(childBuilder.node));
@@ -77,11 +119,28 @@ namespace nbui
         return std::move(*this);
     }
 
-    LayoutBuilder&& LayoutBuilder::background(const NbColor& color)&&
+    LayoutBuilder&& LayoutBuilder::background(
+        const NbColor& color,
+        StateStyle stateStyle
+    ) &&
     {
         if (currentNode && currentNode->getOwner())
         {
-            currentNode->getOwner()->getStyle().baseColor = color;
+            WidgetStyle& style = currentNode->getOwner()->getStyle();
+            switch (stateStyle)
+            {
+            case nbui::LayoutBuilder::StateStyle::ACTIVE:
+                style.baseColor = color;
+                break;
+            case nbui::LayoutBuilder::StateStyle::HOVER:
+                style.hoverColor = color;
+                break;
+            case nbui::LayoutBuilder::StateStyle::DISABLE:
+                style.disableColor = color;
+                break;
+            default:
+                break;
+            }
         }
         return std::move(*this);
     }
@@ -240,5 +299,21 @@ namespace nbui
     std::unique_ptr<NNsLayout::LayoutNode> LayoutBuilder::build()&&
     {
         return std::move(node);
+    }
+
+    std::shared_ptr<Widgets::IWidget> LayoutBuilder::buildRawWidget()
+    {
+        if (auto widgetLayout = dynamic_cast<NNsLayout::LayoutWidget*>(currentNode))
+        {
+            return widgetLayout->getWidget();
+        }
+        else
+        {
+            nb::Error::ErrorManager::instance()
+                .report(nb::Error::Type::WARNING, "Failed to build raw widget from ui");
+            return nullptr;
+        }
+        
+        
     }
 }

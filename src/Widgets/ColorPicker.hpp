@@ -308,7 +308,7 @@ public:
 
         layoutChildren();
 
-        subscribe(svArea, &SVArea::onSVChanged, 
+        subscribe(*svArea, &SVArea::onSVChanged, 
             [this](float s, float v)
             {
                 hsv.saturation = s;
@@ -318,7 +318,7 @@ public:
             }
         );
 
-        subscribe(hueBar, &HueBar::onHueChanged,
+        subscribe(*hueBar, &HueBar::onHueChanged,
             [this](float h)
             {
                 hsv.hue = h;
@@ -328,125 +328,125 @@ public:
 
 
         subscribe(
-            redBar, &ColorBar::onColorChanged,
+            *redBar, &ColorBar::onColorChanged,
             [this](ColorBar::Channel channel, int value)
             {
-                redColorSpinbox.setValue(value);
+                redColorSpinbox->setValue(value);
                 nb::Color col = nb::Color::fromRgba(
-                    redBar.getValue(), greenBar.getValue(), blueBar.getValue(), alphaBar.getValue()
+                    redBar->getValue(), greenBar->getValue(), blueBar->getValue(), alphaBar->getValue()
                 );
                 hsv = col.toHsv();
             }
         );
 
         subscribe(
-            greenBar, &ColorBar::onColorChanged,
+            *greenBar, &ColorBar::onColorChanged,
             [this](ColorBar::Channel channel, int value)
             {
-                greenColorSpinbox.setValue(value);
+                greenColorSpinbox->setValue(value);
                 nb::Color col = nb::Color::fromRgba(
-                    redBar.getValue(), greenBar.getValue(), blueBar.getValue(), alphaBar.getValue()
+                    redBar->getValue(), greenBar->getValue(), blueBar->getValue(), alphaBar->getValue()
                 );
                 hsv = col.toHsv();
             }
         );
 
         subscribe(
-            blueBar, &ColorBar::onColorChanged,
+            *blueBar, &ColorBar::onColorChanged,
             [this](ColorBar::Channel channel, int value)
             {
-                blueColorSpinbox.setValue(value);
+                blueColorSpinbox->setValue(value);
                 nb::Color col = nb::Color::fromRgba(
-                    redBar.getValue(), greenBar.getValue(), blueBar.getValue(), alphaBar.getValue()
+                    redBar->getValue(), greenBar->getValue(), blueBar->getValue(), alphaBar->getValue()
                 );
                 hsv = col.toHsv();
             }
         );
 
           subscribe(
-            alphaBar, &ColorBar::onColorChanged,
+            *alphaBar, &ColorBar::onColorChanged,
             [this](ColorBar::Channel channel, int value)
             {
-                alphaColorSpinbox.setValue(value);
+                alphaColorSpinbox->setValue(value);
                 nb::Color col = nb::Color::fromRgba(
-                    redBar.getValue(), greenBar.getValue(), blueBar.getValue(), alphaBar.getValue()
+                    redBar->getValue(), greenBar->getValue(), blueBar->getValue(), alphaBar->getValue()
                 );
                 hsv = col.toHsv();
             }
         );
 
-        okButton.setText(L"OK");
-        closeButton.setText(L"Close");
+        okButton->setText(L"OK");
+        closeButton->setText(L"Close");
 
    
-        addChildrenWidget(&svArea);
-        addChildrenWidget(&hueBar);
-        addChildrenWidget(&redBar);
-        addChildrenWidget(&greenBar);
-        addChildrenWidget(&blueBar);
-        addChildrenWidget(&alphaBar);
+        addChildrenWidget(svArea);
+        addChildrenWidget(hueBar);
+        addChildrenWidget(redBar);
+        addChildrenWidget(greenBar);
+        addChildrenWidget(blueBar);
+        addChildrenWidget(alphaBar);
 
-        addChildrenWidget(&redColorSpinbox);
-        addChildrenWidget(&greenColorSpinbox);
-        addChildrenWidget(&blueColorSpinbox);
-        addChildrenWidget(&alphaColorSpinbox);
+        addChildrenWidget(redColorSpinbox);
+        addChildrenWidget(greenColorSpinbox);
+        addChildrenWidget(blueColorSpinbox);
+        addChildrenWidget(alphaColorSpinbox);
         
-        addChildrenWidget(&okButton);
-        addChildrenWidget(&closeButton);
+        addChildrenWidget(okButton);
+        addChildrenWidget(closeButton);
 
 
-        redColorSpinbox.bind(
+        redColorSpinbox->bind(
             [this]()
             {
-                return redBar.getValue();
+                return redBar->getValue();
             },
             [this](int value)
             {
-                redBar.setValue(uint8_t(value));
+                redBar->setValue(uint8_t(value));
             }
         );
 
-        greenColorSpinbox.bind(
+        greenColorSpinbox->bind(
             [this]()
             {
-                return greenBar.getValue();
+                return greenBar->getValue();
             },
             [this](int value)
             {
-                greenBar.setValue(uint8_t(value));
+                greenBar->setValue(uint8_t(value));
             }
         );
 
-        blueColorSpinbox.bind(
+        blueColorSpinbox->bind(
             [this]()
             {
-                return blueBar.getValue();
+                return blueBar->getValue();
             },
             [this](int value)
             {
-                blueBar.setValue(uint8_t(value));
+                blueBar->setValue(uint8_t(value));
             }
         );
 
-        alphaColorSpinbox.bind(
+        alphaColorSpinbox->bind(
             [this]()
             {
-                return alphaBar.getValue();
+                return alphaBar->getValue();
             },
             [this](int value)
             {
-                alphaBar.setValue(uint8_t(value));
+                alphaBar->setValue(uint8_t(value));
             }
         );
 
 
-        subscribe(okButton, &Widgets::IWidget::onReleasedSignal, [this]()
+        subscribe(*okButton, &Widgets::IWidget::onReleasedSignal, [this]()
         {
             onOkButtonPressed.emit(getColor());
         });
 
         subscribe(
-            closeButton, &Widgets::IWidget::onReleasedSignal,
+            *closeButton, &Widgets::IWidget::onReleasedSignal,
             [this]()
         {
             onCancelButtonPressed.emit();
@@ -476,12 +476,12 @@ public:
 
     SVArea* getSVArea()
     {
-        return &svArea;
+        return svArea.get();
     }
 
     HueBar* getHueBar()
     {
-        return &hueBar;
+        return hueBar.get();
     }
 
     nb::HSV getHSV()
@@ -492,41 +492,41 @@ public:
     nbstl::Array<ColorBar*, 4> getRgbaBars()
     {
         return nbstl::Array<ColorBar*, 4>{
-            &redBar,
-            &greenBar,
-            &blueBar,
-            &alphaBar
+            redBar.get(),
+            greenBar.get(),
+            blueBar.get(),
+            alphaBar.get()
         };
     }
 
     nbstl::Array<SpinBoxBase*, 4> getSpinboxes()
     {
         return nbstl::Array<SpinBoxBase*, 4>{
-            &redColorSpinbox,
-            &greenColorSpinbox,
-            &blueColorSpinbox,
-            &alphaColorSpinbox
+            redColorSpinbox.get(),
+            greenColorSpinbox.get(),
+            blueColorSpinbox.get(),
+            alphaColorSpinbox.get()
         };
     }
 
     nbstl::Array<Button*, 2> getButtons()
     {
         return nbstl::Array<Button*, 2>{
-            &okButton,
-            &closeButton
+            okButton.get(),
+            closeButton.get()
         };
     }
 
    
     void onRelease() noexcept override
     {
-        svArea.onRelease();
-        hueBar.onRelease();
+        svArea->onRelease();
+        hueBar->onRelease();
 
-        redBar.onRelease();
-        greenBar.onRelease();
-        blueBar.onRelease();
-        alphaBar.onRelease();
+        redBar->onRelease();
+        greenBar->onRelease();
+        blueBar->onRelease();
+        alphaBar->onRelease();
 
 
     }
@@ -651,20 +651,20 @@ public:
         };
 
         
-        svArea.layout(svRect);
-        hueBar.layout(hueRect);
-        redBar.layout(redRect);
-        greenBar.layout(greenRect);
-        blueBar.layout(blueRect);
-        alphaBar.layout(alphaRect);
+        svArea->layout(svRect);
+        hueBar->layout(hueRect);
+        redBar->layout(redRect);
+        greenBar->layout(greenRect);
+        blueBar->layout(blueRect);
+        alphaBar->layout(alphaRect);
 
-        redColorSpinbox.layout(redSpinboxRect);
-        greenColorSpinbox.layout(greenSpinboxRect);
-        blueColorSpinbox.layout(blueSpinboxRect);
-        alphaColorSpinbox.layout(alphaSpinboxRect);
+        redColorSpinbox->layout(redSpinboxRect);
+        greenColorSpinbox->layout(greenSpinboxRect);
+        blueColorSpinbox->layout(blueSpinboxRect);
+        alphaColorSpinbox->layout(alphaSpinboxRect);
 
-        okButton.layout(okButtonRect);
-        closeButton.layout(closeButtonRect);
+        okButton->layout(okButtonRect);
+        closeButton->layout(closeButtonRect);
     }
 
 
@@ -673,9 +673,9 @@ private:
     {
         int hueWidth = 20;
 
-        svArea.setRect({rect.x, rect.y, rect.width - hueWidth - 4, rect.height});
+        svArea->setRect({rect.x, rect.y, rect.width - hueWidth - 4, rect.height});
 
-        hueBar.setRect({rect.x + rect.width - hueWidth, rect.y, hueWidth, rect.height});
+        hueBar->setRect({rect.x + rect.width - hueWidth, rect.y, hueWidth, rect.height});
     }
 
     void emitColor()
@@ -683,10 +683,10 @@ private:
         nb::Color rgb = nb::Color::fromHsv(hsv);
         nb::RGBA rgba = rgb.toRgba();
 
-        redColorSpinbox.setValue(rgba.r);
-        greenColorSpinbox.setValue(rgba.g);
-        blueColorSpinbox.setValue(rgba.b);
-        alphaColorSpinbox.setValue(rgba.alpha);
+        redColorSpinbox->setValue(rgba.r);
+        greenColorSpinbox->setValue(rgba.g);
+        blueColorSpinbox->setValue(rgba.b);
+        alphaColorSpinbox->setValue(rgba.alpha);
 
 
         onColorChanged.emit(rgb);
@@ -704,21 +704,21 @@ private:
     NbSize<int> measuredSize;
     nb::HSV hsv;
 
-    SVArea svArea{{0, 0, 0, 0}};
-    HueBar hueBar{{0, 0, 0, 0}};
+    std::shared_ptr<SVArea> svArea = std::make_shared<SVArea>(NbRect<int>{0, 0, 0, 0});
+    std::shared_ptr<HueBar> hueBar = std::make_shared<HueBar>(NbRect<int>{0, 0, 0, 0});
 
-    ColorBar redBar{{0, 0, 0, 0}, ColorBar::Channel::Red};
-    ColorBar greenBar{{0, 0, 0, 0}, ColorBar::Channel::Green};
-    ColorBar blueBar{{0, 0, 0, 0}, ColorBar::Channel::Blue};
-    ColorBar alphaBar{{0, 0, 0, 0}, ColorBar::Channel::Alpha};
+    std::shared_ptr<ColorBar> redBar = std::make_shared<ColorBar>(NbRect<int>{0, 0, 0, 0}, ColorBar::Channel::Red);
+    std::shared_ptr<ColorBar> greenBar= std::make_shared<ColorBar>(NbRect<int>{0, 0, 0, 0}, ColorBar::Channel::Green);
+    std::shared_ptr<ColorBar> blueBar= std::make_shared<ColorBar>(NbRect<int>{0, 0, 0, 0}, ColorBar::Channel::Blue);;
+    std::shared_ptr<ColorBar> alphaBar= std::make_shared<ColorBar>(NbRect<int>{0, 0, 0, 0}, ColorBar::Channel::Alpha);
 
-    IntSpinBox redColorSpinbox;
-    IntSpinBox greenColorSpinbox;
-    IntSpinBox blueColorSpinbox;
-    IntSpinBox alphaColorSpinbox;
+    std::shared_ptr<IntSpinBox> redColorSpinbox;
+    std::shared_ptr<IntSpinBox> greenColorSpinbox;
+    std::shared_ptr<IntSpinBox> blueColorSpinbox;
+    std::shared_ptr<IntSpinBox> alphaColorSpinbox;
 
-    Button okButton;
-    Button closeButton;
+    std::shared_ptr<Button> okButton;
+    std::shared_ptr<Button> closeButton;
 };
 
 };

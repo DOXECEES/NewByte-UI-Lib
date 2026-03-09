@@ -353,7 +353,7 @@ namespace Win32Window
                             {
                                 if (auto widget = widgetNode->getWidget())
                                 {
-                                    for (auto* w : widget->getChildrens())
+                                    for (auto& w : widget->getChildrens())
                                     {
                                         if (w->isDisable())
                                         {

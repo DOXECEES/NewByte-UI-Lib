@@ -45,7 +45,17 @@ namespace Widgets
 	bool IWidget::isHide() const noexcept
 	{
 		return isHide_;
-	}
+    }
+
+    void IWidget::disableHoverState(bool flag) noexcept
+    {
+        isDisableHoverState = flag;
+    }
+
+    bool IWidget::isHoverStateDisable() const noexcept
+    {
+        return isDisableHoverState;
+    }
 
 	void IWidget::setFocused() noexcept
 	{
@@ -64,12 +74,12 @@ namespace Widgets
 		return {};
 	}
 
-	void IWidget::addChildrenWidget(IWidget* widget) noexcept
+	void IWidget::addChildrenWidget(std::shared_ptr<IWidget> widget) noexcept
 	{
-		childrens.push_back(widget);
+		childrens.push_back(std::move(widget));
 	}
 
-	const std::vector<IWidget*>& IWidget::getChildrens() const noexcept
+	const std::vector<std::shared_ptr<IWidget>>& IWidget::getChildrens() const noexcept
 	{
 		return childrens;
 	}

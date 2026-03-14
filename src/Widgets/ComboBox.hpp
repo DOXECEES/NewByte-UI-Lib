@@ -205,7 +205,7 @@ namespace Widgets
 		NbRect<int>						buttonRect;
 		NbRect<int>						selectedItemRect;
 
-		std::unique_ptr<DropdownList>	dropdownList;
+		std::shared_ptr<DropdownList>	dropdownList;
 		ComboState						comboBoxState = ComboState::COLLAPSED;
 	
 		inline static ComboBox*			openedComboBox = nullptr;

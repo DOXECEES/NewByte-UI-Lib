@@ -24,8 +24,8 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow)
     button->setText(L"hello world");
     button->setOnClickCallback([&window]() 
     { 
-        auto modalWindow = new Win32Window::ModalWindow(&window);
-        modalWindow->show();
+        //auto modalWindow = new Win32Window::ModalWindow(NbSize<int>(400,300), &window);
+        //modalWindow->show();
 
     });
 

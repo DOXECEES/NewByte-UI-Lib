@@ -15,7 +15,7 @@ namespace Widgets
         bool isHit = hitTest(pos);
         if (isHit)
         {
-            onClick();
+            //onClick();
         }
         return isHit;
 

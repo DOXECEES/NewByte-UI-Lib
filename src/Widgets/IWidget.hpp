@@ -1,6 +1,8 @@
 #ifndef NBUI_SRC_WIDGETS_IWIDGET_HPP
 #define NBUI_SRC_WIDGETS_IWIDGET_HPP
 
+#define DECLARE_WIDGET_CLASS_NAME(ClassName) constexpr static const char* CLASS_NAME = #ClassName
+
 #include "../Core.hpp"
 #include "../IIndexable.hpp"
 #include "Signal.hpp"
@@ -12,6 +14,8 @@
 #include "Theme.hpp"
 
 #include <functional>
+#include "MouseState.hpp"
+
 
 namespace Widgets
 {
@@ -29,6 +33,20 @@ namespace Widgets
     public:
         virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept { return {}; };
         virtual void layout(const NbRect<int>& rect) noexcept {};
+
+        const NbSize<int> getMeasuredSize() const noexcept
+        {
+            return measuredSize;
+        }
+
+        void setMeasuredSize(const NbSize<int>& size) noexcept
+        {
+            measuredSize = size;
+        }
+
+    protected: 
+        NbSize<int> measuredSize;
+
     };
 
     // INTERFACE JUST PEICE OF SHIT /
@@ -50,8 +68,11 @@ namespace Widgets
             {
                 return;
             }
+            if (onClickCallback)
+            {
+                onClickCallback();
+            }
             onPressedSignal.emit();
-            //onClickCallback();
         };
 
         virtual void onRelease() noexcept
@@ -68,12 +89,14 @@ namespace Widgets
         virtual void onSymbolButtonClicked(const wchar_t symbol) {};
         virtual void onTimer() {};
 
+        virtual void onMouseMove(const MouseState& pos) noexcept {};
+
         virtual bool hitTest(const NbPoint<int>& pos) = 0;
         virtual bool hitTestClick(const NbPoint<int>& pos) noexcept 
         {
             for (auto it = childrens.rbegin(); it != childrens.rend(); ++it)
             {
-                IWidget* child = *it;
+                IWidget* child = (*it).get();
 
                 if (child->isHide())
                 {
@@ -84,10 +107,10 @@ namespace Widgets
                 {
                     if (child->hitTestClick(pos))
                     {
+                        child->onClick();
                         return true;
                     }
 
-                    child->onClick();
                     return true;
                 }
             }
@@ -95,7 +118,13 @@ namespace Widgets
             return false;
         } // temporary non abstract
 
-        inline void setSize(const NbSize<int>& newSize) { rect.width = newSize.width; rect.height = newSize.height; isSizeChange = true; onSizeChangedSignal.emit(rect); }
+        inline void setSize(const NbSize<int>& newSize) 
+        {
+            rect.width = newSize.width;
+            rect.height = newSize.height; 
+            isSizeChange = true; 
+            onSizeChangedSignal.emit(rect);
+        }
         
         inline const NbRect<int>& getRect() const { return rect; }
 		inline void setRect(const NbRect<int>& rect)
@@ -132,6 +161,9 @@ namespace Widgets
 		bool isDefault() const noexcept;
         bool isHide() const noexcept;
 
+        void disableHoverState(bool flag) noexcept;
+        bool isHoverStateDisable() const noexcept;
+
         virtual const char* getClassName() const = 0;
 
         inline void setOnClickCallback(const std::function<void()>& onClickCallback) { this->onClickCallback = onClickCallback; }
@@ -142,8 +174,8 @@ namespace Widgets
 
         virtual NbRect<int> getRequestedSize() const noexcept;
 
-        void addChildrenWidget(IWidget* widget) noexcept;
-        NB_NODISCARD const std::vector<IWidget*>& getChildrens() const noexcept;
+        void addChildrenWidget(std::shared_ptr<IWidget> widget) noexcept;
+        NB_NODISCARD const std::vector<std::shared_ptr<IWidget>>& getChildrens() const noexcept;
         
         NB_NODISCARD const Core::ZIndex& getZIndex() const noexcept;
 
@@ -169,16 +201,16 @@ namespace Widgets
         Signal<void()> onReleasedSignal;
         Signal<void()> onUnfocusedSignal;
         Signal<void()> onFocusSignal;
+        std::function<void()> onClickCallback;
 
     protected:
 
 
-        std::vector<IWidget*>   childrens;
+        std::vector<std::shared_ptr<IWidget>> childrens;
         NbRect<int>             rect                = { 0, 0, 0, 0 };
 
         Core::ZIndex            zIndex;
 
-        std::function<void()>   onClickCallback;
 
         WidgetStyle             style               = ThemeManager::getCurrent().widgetStyle;
         WidgetSizePolicy        sizePolicy          = { SizePolicy::EXPANDING, SizePolicy::EXPANDING };
@@ -187,7 +219,10 @@ namespace Widgets
         bool                    isHover_            = false;
         bool                    isFocused           = false;
         bool                    isHide_             = false;
+
+        bool                    isDisableHoverState = false;
     
+
     public:
         bool isSizeChange = true;
     };

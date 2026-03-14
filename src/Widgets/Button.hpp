@@ -29,8 +29,33 @@ namespace Widgets
         WidgetStyle& getStyle() noexcept override { return buttonStyle.baseStyle; }
         const WidgetStyle& getStyle() const noexcept override { return buttonStyle.baseStyle; }
 
+        void setColor(const NbColor& c)
+        {
+            buttonStyle.baseStyle.baseColor = c; 
+        }
+
         inline void setText(const std::wstring& text) noexcept { this->text = text; }
         inline const std::wstring& getText() const noexcept { return text; }
+
+        inline void setIsChecked(bool flag)
+        {
+            if(isChecked != flag)
+            {
+                onCheckedChangedSignal.emit(flag);
+            }
+            isChecked = flag;
+        }
+
+        inline void toggleIsChecked()
+        {
+            isChecked = !isChecked;
+            onCheckedChangedSignal.emit(isChecked);
+        }
+
+        bool getIsChecked()
+        {
+            return isChecked;
+        }
         
         NbSize<int> computeContentSize() const noexcept override
         {
@@ -49,7 +74,7 @@ namespace Widgets
 
         virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
         {
-            constexpr int charWidth = 50;
+            constexpr int charWidth = 1;
             constexpr int lineHeight = 20;
             constexpr int paddingLeft = 4;
             constexpr int paddingRight = 4;
@@ -62,10 +87,10 @@ namespace Widgets
             width = (nbstl::min)(width, maxSize.width);
             height = (nbstl::min)(height, maxSize.height);
 
-            size.width = width;
-            size.height = height;
+            
+            measuredSize = {width, height};
 
-            return size;
+            return measuredSize;
         }
 
         virtual void layout(const NbRect<int>& rect) noexcept override
@@ -73,7 +98,7 @@ namespace Widgets
             this->rect = rect;
         }
 
-		//Signal<void()> onButtonClickedSignal;
+		Signal<void(bool)> onCheckedChangedSignal;
         //Signal<void()> onButtonReleasedSignal;
 
     private:
@@ -81,6 +106,7 @@ namespace Widgets
 
         ButtonStyle     buttonStyle = ThemeManager::getCurrent().buttonStyle;
         NbSize<int>     size;
+        bool isChecked = false;
     };
 }
 

@@ -13,31 +13,70 @@
 #include "Layout/LayoutNode.hpp"
 #include "Signal.hpp"
 
+#include "Renderer/TextAlignment.hpp"
+
 namespace Widgets 
 {
     class IWidget;
     enum class TextAlign;
 }
 
+namespace nb
+{
+    class Color;
+}
+
+namespace NNsLayout
+{
+    enum class ButtonGroupType;
+}
+
+
 namespace nbui
 {
     class LayoutBuilder
     {
     public:
+        enum class StateStyle
+        {
+            BASE,
+            ACTIVE,
+            HOVER, 
+            DISABLE
+        };
+
         static LayoutBuilder widget(Widgets::IWidget* w);
         static LayoutBuilder label(const std::wstring& text);
         static LayoutBuilder hBox();
         static LayoutBuilder vBox();
+        static LayoutBuilder grid(int columns);
+        static LayoutBuilder flow();
+
         static LayoutBuilder spacer();
+        static LayoutBuilder spacerAbsolute(
+            float absolutWidth,
+            float absolutHeigth
+        );
+        static LayoutBuilder toolbar();
+        LayoutBuilder&& buttonGroupOnlyOne() &&;
+        LayoutBuilder&& buttonGroupMultiple() &&;
+
+        LayoutBuilder&& endGroup() &&;
+        
+        static LayoutBuilder thumbnail();
         static LayoutBuilder treeView();
 
         LayoutBuilder&& child(LayoutBuilder&& childBuilder)&&;
-        LayoutBuilder&& background(const NbColor& color)&&;
+        LayoutBuilder&& background(
+            const NbColor& color,
+            StateStyle stateStyle = StateStyle::BASE
+        ) &&;
         LayoutBuilder&& color(const NbColor& color)&&;
         LayoutBuilder&& border(
             int width,
             Border::Style style = Border::Style::SOLID,
-            const NbColor& color = {}
+            const NbColor& color = {},
+            Border::Side side = Border::Side::ALL 
         )&&;
         LayoutBuilder&& margin(const Margin<int>& margin)&&;
         LayoutBuilder&& padding(const Padding<int>& padding)&&;
@@ -49,13 +88,16 @@ namespace nbui
         LayoutBuilder&& autoWidth() &&;
         LayoutBuilder&& autoHeight() &&;
 
+        LayoutBuilder&& spacing(int spacing)&&;
 
         LayoutBuilder&& text(const std::wstring& t)&&;
         LayoutBuilder&& style(std::function<void(NNsLayout::LayoutStyle&)> f)&&;
 
         LayoutBuilder&& checked(bool state)&&;
+        LayoutBuilder&& checkedGroupIndex(bool state, int index)&&;
+
         LayoutBuilder&& fontSize(int size)&&;
-        LayoutBuilder&& textAlign(Widgets::TextAlign align)&&;
+        LayoutBuilder&& textAlignment(TextFormatAlignment align)&&;
 
 
         template<
@@ -75,18 +117,37 @@ namespace nbui
         template<typename T, typename Func>
         LayoutBuilder&& apply(Func&& func)&&
         {
-            if (auto w = dynamic_cast<T*>(currentNode->getOwner()))
+            if (!currentNode)
+            {
+                return std::move(*this);
+            }
+
+            if (auto n = dynamic_cast<T*>(currentNode))
+            {
+                func(n);
+            }
+            else if (auto w = dynamic_cast<T*>(currentNode->getOwner()))
             {
                 func(w);
             }
+
             return std::move(*this);
+
         }
 
         std::unique_ptr<NNsLayout::LayoutNode> build()&&;
 
+        std::shared_ptr<Widgets::IWidget> buildRawWidget();
+
     private:
+
+        LayoutBuilder&& buttonGroup(NNsLayout::ButtonGroupType type) &&;
+
+
         std::unique_ptr<NNsLayout::LayoutNode>      node;
         NNsLayout::LayoutNode*                      currentNode = nullptr;
+        Widgets::IWidget*                           currentNodeWidget = nullptr;
+
     };
 }
 

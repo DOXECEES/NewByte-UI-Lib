@@ -18,7 +18,7 @@ struct CaptionButton
 {
     static constexpr int DEFAULT_HEIGTH = 30;
     
-    CaptionButton(const std::wstring& text, const int width, const int height = 30, const NbColor& color = { 45, 45, 45 }, const NbColor& hoverColor = { 181, 163, 163 })
+    CaptionButton(const std::wstring& text, const int width, const int height = 30, const NbColor& color = { 35, 35, 35 }, const NbColor& hoverColor = { 181, 163, 163 })
         : text(text)
         , width(width)
         , height(height)
@@ -45,7 +45,7 @@ struct CaptionButton
     int                     width;
     int                     height              = DEFAULT_HEIGTH;
     NbColor                 hoverColor          = { 255, 255, 255 };
-    NbColor                 color               = { 105, 105, 105 };
+    NbColor                 color               = { 35, 35, 35 };
     mutable bool            isHovered           = false;
     
 };

@@ -44,8 +44,8 @@ namespace Win32Window
             //state.clientRect = { state.frameSize.left, parentClientRect.y, 400, 300 };
             state.clientRect = NbRect<int>(state.frameSize.left
                 , state.frameSize.top
-                , 400 - state.frameSize.left - state.frameSize.right
-                , 300 - state.frameSize.top - state.frameSize.bot);
+                , state.size.width - state.frameSize.left - state.frameSize.right
+                , state.size.height - state.frameSize.top - state.frameSize.bot);
 
         }
         else
@@ -57,7 +57,7 @@ namespace Win32Window
             NbRect parentClientRect = parentWindow->getClientRect();
             state.setSize({ 300, 200 });
             state.setMinSize({ 0,0 });
-            state.clientRect = { parentClientRect.x + 50, parentClientRect.y + 50, 300, 200 };
+            state.clientRect = { parentClientRect.x, parentClientRect.y, state.size.width, state.size.height};
         }
 
         HWND ihandle = CreateWindow(wc.lpszClassName, L"Child Window",

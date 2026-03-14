@@ -162,6 +162,11 @@ struct NbColor
         return r == other.r && g == other.g && b == other.b && a == other.a;
     }
 
+    uint8_t operator[](size_t index) noexcept
+    {
+        return *(& r + index);
+    }
+
     // связать с движком
 };
 

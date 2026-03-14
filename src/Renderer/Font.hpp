@@ -55,6 +55,15 @@ public:
 		: name(fontName), style(style), weight(weight), stretch(stretch), size(size)
 	{}
 
+	bool operator==(const Font& other) const noexcept
+	{
+		return name == other.name 
+			&& style == other.style
+			&& weight == other.weight
+			&& stretch == other.stretch 
+			&& size == other.size;
+	}
+
 	NB_NODISCARD const std::wstring& getName() const noexcept	{ return name; }
 	NB_NODISCARD FontStyle getStyle() const noexcept			{ return style; }
 	NB_NODISCARD FontWeight getWeight() const noexcept			{ return weight; }

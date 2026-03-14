@@ -56,7 +56,7 @@ namespace Widgets
             {
                 NbSize<int> childAvailable{maxSize.width, maxSize.height};
 
-                for (auto* child : childrens)
+                for (auto& child : childrens)
                 {
                     if (!child || child->isHide())
                     {
@@ -80,7 +80,7 @@ namespace Widgets
 
             if (!expanded)
             {
-                for (auto* child : childrens)
+                for (auto& child : childrens)
                 {
                     if (child)
                     {
@@ -95,7 +95,7 @@ namespace Widgets
 
             NbSize<int> innerAvailable{rect.width, rect.height - headerHeight};
 
-            for (auto* child : childrens)
+            for (auto& child : childrens)
             {
                 if (!child || child->isHide())
                 {

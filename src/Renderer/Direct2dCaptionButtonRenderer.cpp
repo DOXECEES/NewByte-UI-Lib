@@ -18,7 +18,8 @@ void Renderer::Direct2dCaptionButtonRenderer::render(CaptionButtonsContainer *co
     for(auto i = reverseIterator; i != container->getButtons().rend(); ++i)
     {
         const NbRect<int>& localRect = i->rect;
-        NbRect<int> rect = {paintArea.width - localRect.width - i->rect.x
+        NbRect<int> rect = {
+            paintArea.width - localRect.width - i->rect.x
                             , localRect.y
                             , localRect.width
                             , localRect.height

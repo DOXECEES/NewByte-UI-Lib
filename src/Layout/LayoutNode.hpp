@@ -48,10 +48,7 @@ namespace NNsLayout
     class LayoutNode
     {
     public:
-        explicit LayoutNode(Widgets::IWidget* owner) noexcept
-            : ownerWidget(owner)
-        {
-        }
+        explicit LayoutNode(Widgets::IWidget* owner) noexcept;
 
         virtual ~LayoutNode() = default;
 
@@ -71,18 +68,9 @@ namespace NNsLayout
             return children.back().get();
         }
 
-        void clearChilds() noexcept
-        {
-            children.clear();
-        }
+        void clearChilds() noexcept;
 
-
-        void markDirty() noexcept
-        {
-            if (dirty) return;
-            dirty = true;
-            if (parent) parent->markDirty();
-        }
+        void markDirty() noexcept;
 
         bool isDirty() const noexcept { return dirty; }
 
@@ -109,42 +97,7 @@ namespace NNsLayout
     };
 
 
-    class LayoutWindow : public LayoutNode
-    {
-    public:
-        LayoutWindow(WindowInterface::IWindow* w) noexcept
-            : LayoutNode(nullptr)
-            , ownerWindow(w)
-        {
-
-        }
-
-        void setOwnerWindow(WindowInterface::IWindow* w) noexcept {
-            ownerWindow = w;
-            dirty = true;
-        }
-
-        WindowInterface::IWindow* getOwnerWindow() const noexcept {
-            return ownerWindow;
-        }
-
-        void measure(const NbSize<int>& available) noexcept override {
-            if (!children.empty())
-            {
-                children[0]->measure(available);
-                measuredSize = children[0]->getMeasuredSize();
-            }
-            else
-            {
-                measuredSize = available;
-            }
-        }
-
-        void layout(const NbRect<int>& bounds) noexcept override;
-
-    private:
-        WindowInterface::IWindow* ownerWindow = nullptr;
-    };
+    
 
 
     class HLayout : public LayoutNode
@@ -167,33 +120,38 @@ namespace NNsLayout
         void setScrollOffset(int offset) noexcept { scrollOffset = offset; }
         int getScrollOffset() const noexcept { return scrollOffset; }
 
+        void setSpacing(int value) noexcept;
+
     private:
         int scrollOffset; 
+        int spacing = 0;
     };
 
 
-    class LayoutWidget : public LayoutNode
+    class GridLayout : public LayoutNode
     {
     public:
-        explicit LayoutWidget(Widgets::IWidget* w) noexcept;
-       
-
-        void setWidget(std::shared_ptr<Widgets::IWidget> w) noexcept;
-       
-
-        std::shared_ptr<Widgets::IWidget> getWidget() const noexcept
-        {
-            return widget;
-        }
-
+        GridLayout(int cols) noexcept;
 
         void measure(const NbSize<int>& available) noexcept override;
         void layout(const NbRect<int>& bounds) noexcept override;
 
-    private:
-        std::shared_ptr<Widgets::IWidget> widget;
+        int columns = 1;
+        int rows = 0; 
+        std::vector<float> columnWeights;
+        int spacing = 0; 
+
     };
 
+    class FlowLayout : public LayoutNode
+    {
+    public:
+        FlowLayout() noexcept;
+        void measure(const NbSize<int>& available) noexcept override;
+    
+        void layout(const NbRect<int>& bounds) noexcept override;
+        
+    };
 
 }
 

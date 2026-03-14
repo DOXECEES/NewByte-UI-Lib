@@ -72,21 +72,46 @@ void subscribe(Publisher& publisher,
 	(publisher.*signal).connect(std::forward<Func>(func));
 }
 
-template<typename Publisher, typename... Args, typename Func>
-void subscribe(Publisher* publisher,
-	Signal<void(Args...)> Publisher::* signal,
-	Func&& func)
+template <
+    typename Publisher,
+    typename Owner,
+    typename SignalType,
+    typename Func>
+void subscribe(
+    Publisher&& publisher,
+    SignalType Owner::* signal,
+    Func&& func
+)
 {
-	(publisher->*signal).connect(std::forward<Func>(func));
+    using PubType = std::remove_pointer_t<std::decay_t<Publisher>>;
+
+    static_assert(std::is_base_of_v<Owner, PubType>, "Signal owner must be base of Publisher");
+
+    if constexpr (std::is_pointer_v<std::decay_t<Publisher>>)
+    {
+        (static_cast<Owner*>(publisher)->*signal).connect(std::forward<Func>(func));
+    }
+    else
+    {
+        (static_cast<Owner&>(publisher).*signal).connect(std::forward<Func>(func));
+    }
 }
 
-template<typename Publisher, typename... Args, typename Func>
-void subscribe(Publisher& publisher,
-	Signal<void(Args...)> Publisher::* signal,
-	Func&& func)
-{
-	(publisher.*signal).connect(std::forward<Func>(func));
-}
+//template<typename Publisher, typename... Args, typename Func>
+//void subscribe(Publisher* publisher,
+//	Signal<void(Args...)> Publisher::* signal,
+//	Func&& func)
+//{
+//	(publisher->*signal).connect(std::forward<Func>(func));
+//}
+//
+//template<typename Publisher, typename... Args, typename Func>
+//void subscribe(Publisher& publisher,
+//	Signal<void(Args...)> Publisher::* signal,
+//	Func&& func)
+//{
+//	(publisher.*signal).connect(std::forward<Func>(func));
+//}
 
 
 #endif

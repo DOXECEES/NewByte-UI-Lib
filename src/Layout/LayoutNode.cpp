@@ -3,378 +3,440 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "LayoutNode.hpp"
 
-    #include "Widgets/IWidget.hpp"
-    #include "WindowInterface/IWindow.hpp"
-    #include <Alghorithm.hpp>
+#include "Widgets/Button.hpp"
+#include "Widgets/ButtonGroup.hpp"
+#include "Widgets/IWidget.hpp"
+#include "WindowInterface/IWindow.hpp"
+#include <Alghorithm.hpp>
 
-    #undef ABSOLUTE
-    #undef RELATIVE
+#undef ABSOLUTE
+#undef RELATIVE
 
-    namespace NNsLayout
+namespace NNsLayout
+{
+
+    void HLayout::measure(const NbSize<int>& available) noexcept
     {
-        void HLayout::measure(const NbSize<int>& available) noexcept
+        int totalFixed = 0;
+        int maxHeight = 0;
+        int flexCount = 0;
+
+        for (auto& child : children)
         {
-            int totalFixed = 0;
-            int maxHeight = 0;
-            int flexCount = 0;
+            auto& style = child->style;
 
-            for (auto& child : children)
+            if (style.widthSizeType == SizeType::FLEX)
             {
-                auto& style = child->style;
-
-                if (style.widthSizeType == SizeType::FLEX)
-                {
-                    flexCount++;
-                    continue;
-                }
-
-                child->measure(available);
-                auto s = child->getMeasuredSize();
-
-                totalFixed += s.width;
-                maxHeight = (std::max)(maxHeight, s.height);
+                flexCount++;
+                continue;
             }
 
-            measuredSize = { totalFixed, maxHeight };
+            child->measure(available);
+            auto s = child->getMeasuredSize();
 
+            int fullW = s.width + style.margin.left + style.margin.right + 
+                        style.border.width.left + style.border.width.right + 
+                        style.padding.left + style.padding.right;
+
+            int fullH = s.height + style.margin.top + style.margin.bottom + 
+                        style.border.width.top + style.border.width.bottom + 
+                        style.padding.top + style.padding.bottom;
+
+            totalFixed += fullW;
+            maxHeight = (std::max)(maxHeight, fullH);
         }
 
-        void HLayout::layout(const NbRect<int>& bounds) noexcept
+        measuredSize = {totalFixed, maxHeight};
+    }
+
+    void HLayout::layout(const NbRect<int>& bounds) noexcept
+    {
+        layoutRect = bounds;
+        int x = bounds.x;
+
+        float totalRelative = 0.0f;
+        int totalFixed = 0;
+
+        for (auto& child : children)
         {
-            layoutRect = bounds;
-            int x = bounds.x;
+            const auto& st = child->style;
+            // Добавляем константные части (margin + border + padding) к фиксированной ширине
+            int decorationW = st.margin.left + st.margin.right + st.border.width.left + st.border.width.right + st.padding.left + st.padding.right;
 
-            float totalRelative = 0.0f;
-            int totalFixed = 0;
-
-            for (auto& child : children)
+            switch (st.widthSizeType)
             {
-                const NNsLayout::LayoutStyle& style = child->style;
-                switch (style.widthSizeType)
-                {
-                    case SizeType::RELATIVE:
-                    {
-                        totalRelative += style.width;
-                        break;
-                    }
-                    case SizeType::ABSOLUTE:
-                    {
-                        totalFixed += static_cast<int>(style.width);
-                        break;
-                    }
-                    case SizeType::AUTO:
-                    {
-                        totalFixed += child->getMeasuredSize().width;
-                        break;
-                    }
-                }
-            }
-
-            int remainingWidth = bounds.width - totalFixed;
-
-            for (auto& child : children)
-            {
-                int width = 0;
-                const NNsLayout::LayoutStyle& style = child->style;
-
-                switch (style.widthSizeType)
-                {
-                    case SizeType::ABSOLUTE:
-                    {
-                        width = static_cast<int>(style.width);
-                        break;
-                    }
-                    case SizeType::RELATIVE:
-                    {
-                        width = static_cast<int>(remainingWidth * (style.width / totalRelative));
-                        break;
-                    }
-                    case SizeType::AUTO:
-                    {
-                        width = child->getMeasuredSize().width;
-                        break;
-                    }
-                }
-
-                int height = bounds.height;
-                switch (style.heightSizeType)
-                {
-                    case SizeType::ABSOLUTE:
-                    {
-                        height = static_cast<int>(style.height);
-                        break;
-                    }
-                    case SizeType::RELATIVE:
-                    {
-                        height = static_cast<int>(bounds.height * style.height);
-                        break;
-                    }
-                    case SizeType::AUTO:
-                    {
-                        height = child->getMeasuredSize().height;
-                        break;
-                    }
-                }
-
-                NbRect<int> childRect{ x, bounds.y, width, height };
-                child->setRect(childRect);
-                child->layout(childRect);
-
-                x += width;
-            }
-        }
-
-
-        void VLayout::measure(const NbSize<int>& available) noexcept
-        {
-            int totalFixed = 0;
-            float totalRelative = 0.0f;
-
-            for (auto& child : children)
-            {
-                auto& st = child->style;
-
-                if (st.heightSizeType == SizeType::RELATIVE)
-                {
-                    totalRelative += st.height;
-                    continue;
-                }
-
-                child->measure(available);
-                auto s = child->getMeasuredSize();
-
-                int fullH =
-                    st.margin.top + st.margin.bottom +
-                    st.border.width * 2 +
-                    st.padding.top + st.padding.bottom +
-                    s.height;
-
-                totalFixed += fullH;
-            }
-
-            int remaining = available.height - totalFixed;
-            if (remaining < 0) remaining = 0;
-
-            measuredSize.width = available.width;
-            measuredSize.height = totalFixed;
-
-            if (totalRelative > 0.0001f)
-                measuredSize.height += remaining;
-        }
-
-
-
-        void VLayout::layout(const NbRect<int>& bounds) noexcept
-        {
-            layoutRect = bounds;
-
-            float totalRelative = 0.0f;
-            int totalFixed = 0;
-
-            // ===== PASS 1 : MEASURE CHILDREN =====
-
-            for (auto& child : children)
-            {
-                auto& st = child->style;
-
-                if (st.heightSizeType == SizeType::AUTO)
-                {
-                    child->measure({bounds.width, bounds.height});
-                }
-
-                if (st.heightSizeType == SizeType::RELATIVE)
-                {
-                    totalRelative += st.height;
-                }
-                else if (st.heightSizeType == SizeType::ABSOLUTE)
-                {
-                    totalFixed += static_cast<int>(st.height) + st.margin.top + st.margin.bottom
-                                  + st.border.width * 2 + st.padding.top + st.padding.bottom;
-                }
-                else if (st.heightSizeType == SizeType::AUTO)
-                {
-                    totalFixed += child->getMeasuredSize().height + st.margin.top + st.margin.bottom
-                                  + st.border.width * 2 + st.padding.top + st.padding.bottom;
-                }
-            }
-
-            // ===== PASS 2 : LAYOUT =====
-
-            int remaining = bounds.height - totalFixed;
-            if (remaining < 0)
-            {
-                remaining = 0;
-            }
-
-            int y = bounds.y;
-
-            for (auto& child : children)
-            {
-                auto& st = child->style;
-
-                int contentHeight = 0;
-
-                if (st.heightSizeType == SizeType::ABSOLUTE)
-                {
-                    contentHeight = static_cast<int>(st.height);
-                }
-                else if (st.heightSizeType == SizeType::AUTO)
-                {
-                    contentHeight = child->getMeasuredSize().height;
-                }
-                else if (st.heightSizeType == SizeType::RELATIVE)
-                {
-                    if (totalRelative > 0.0001f)
-                    {
-                        contentHeight = static_cast<int>(remaining * (st.height / totalRelative));
-                    }
-                }
-
-                int fullHeight = st.margin.top + st.border.width * 2 + st.padding.top
-                                 + contentHeight + st.padding.bottom + st.border.width * 2
-                                 + st.margin.bottom;
-
-                NbRect<int> childRect;
-
-                childRect.x = bounds.x + st.margin.left + st.border.width + st.padding.left;
-                childRect.y = y + st.margin.top + st.border.width + st.padding.top;
-
-                childRect.width = bounds.width - (st.margin.left + st.margin.right)
-                                  - (st.border.width * 2) - (st.padding.left + st.padding.right);
-
-                childRect.height = contentHeight;
-
-                child->setRect(childRect);
-                child->layout(childRect);
-
-                y += fullHeight;
-            }
-        }
-
-        LayoutWidget::LayoutWidget(Widgets::IWidget* w) noexcept
-            : LayoutNode(w),
-              widget(w)
-        {
-            subscribe(
-                widget.get(), &Widgets::IWidget::onSizeChangedSignal,
-                [this](const NbRect<int>& rc)
-                {
-                    this->markDirty();
-                }
-            );
-        }
-
-        void LayoutWidget::setWidget(std::shared_ptr<Widgets::IWidget> w) noexcept
-        {
-            subscribe(
-                *w, &Widgets::IWidget::onSizeChangedSignal,
-                [&](const NbRect<int>&)
-                {
-                    dirty = true;
-                }
-            );
-            widget = std::move(w);
-            dirty = true;
-        }
-
-        void LayoutWidget::measure(const NbSize<int>& available) noexcept
-        {
-            //const auto natural = widget ? widget->computeContentSize() : NbSize<int>{ 0, 0 };
-            const auto natural = widget->measure(available);
-
-            int w = 0;
-            int h = 0;
-
-            switch (style.widthSizeType) {
-            case SizeType::ABSOLUTE:
-                w = static_cast<int>(style.width);
-                break;
             case SizeType::RELATIVE:
-                w = static_cast<int>(available.width * style.width);
+                totalRelative += st.width;
+                totalFixed += decorationW;
                 break;
-            case SizeType::FLEX:
-                w = 0;
+            case SizeType::ABSOLUTE:
+                totalFixed += static_cast<int>(st.width) + decorationW;
                 break;
             case SizeType::AUTO:
-                w = natural.width;
+                totalFixed += child->getMeasuredSize().width + decorationW;
                 break;
             }
+        }
 
-            switch (style.heightSizeType) {
+        int remainingWidth = (std::max)(0, bounds.width - totalFixed);
+
+        for (auto& child : children)
+        {
+            const auto& st = child->style;
+            int width = 0;
+
+            switch (st.widthSizeType)
+            {
             case SizeType::ABSOLUTE:
-                h = static_cast<int>(style.height);
+                width = static_cast<int>(st.width);
                 break;
             case SizeType::RELATIVE:
-                h = static_cast<int>(available.height * style.height);
-                break;
-            case SizeType::FLEX:
-                h = 0;
+                width = (totalRelative > 0) ? static_cast<int>(remainingWidth * (st.width / totalRelative)) : 0;
                 break;
             case SizeType::AUTO:
-                h = natural.height;
+                width = child->getMeasuredSize().width;
                 break;
             }
 
-            w += style.padding.left + style.padding.right;
-            h += style.padding.top + style.padding.bottom;
+            // Расчет высоты с учетом сторон
+            int height = bounds.height - (st.margin.top + st.margin.bottom + st.border.width.top + st.border.width.bottom + st.padding.top + st.padding.bottom);
+            if (st.heightSizeType == SizeType::ABSOLUTE) height = static_cast<int>(st.height);
+            else if (st.heightSizeType == SizeType::AUTO) height = child->getMeasuredSize().height;
 
-            w += style.border.width * 2;
-            h += style.border.width * 2;
+            NbRect<int> childRect;
+            childRect.x = x + st.margin.left + st.border.width.left + st.padding.left;
+            childRect.y = bounds.y + st.margin.top + st.border.width.top + st.padding.top;
+            childRect.width = width;
+            childRect.height = height;
 
-            //w += style.margin.left + style.margin.right;
-            //h += style.margin.top + style.margin.bottom;
+            child->setRect(childRect);
+            child->layout(childRect);
 
-            w = (nbstl::min)(w, available.width);
-            h = (nbstl::min)(h, available.height);
-
-            w = (nbstl::max)(w, style.minSize.width);
-            h = (nbstl::max)(h, style.minSize.height);
-
-            if (style.maxSize.width > 0) w = (nbstl::min)(w, style.maxSize.width);
-            if (style.maxSize.height > 0) h = (nbstl::min)(h, style.maxSize.height);
-
-            measuredSize = { w, h };
+            x += width + st.margin.left + st.margin.right + st.border.width.left + st.border.width.right + st.padding.left + st.padding.right;
         }
+    }
+
+    void VLayout::measure(const NbSize<int>& available) noexcept
+    {
+        int totalFixed = 0;
+        float totalRelative = 0.0f;
+        int visibleCount = 0;
+
+        for (auto& child : children)
+        {
+            auto& st = child->style;
+
+            if (st.heightSizeType == SizeType::RELATIVE)
+            {
+                totalRelative += st.height;
+                visibleCount++;
+                continue;
+            }
+
+            child->measure(available);
+            auto s = child->getMeasuredSize();
+
+            // ЗАМЕНА: вместо border.width * 2 используем стороны
+            int fullH = st.margin.top + st.margin.bottom +
+                        st.border.width.top + st.border.width.bottom +
+                        st.padding.top + st.padding.bottom +
+                        s.height;
+
+            totalFixed += fullH;
+            visibleCount++;
+        }
+
+        if (visibleCount > 1) {
+            totalFixed += (visibleCount - 1) * spacing;
+        }
+
+        int remaining = (std::max)(0, available.height - totalFixed);
+
+        measuredSize.width = available.width;
+        measuredSize.height = totalFixed;
+
+        if (totalRelative > 0.0001f)
+            measuredSize.height += remaining;
+    }
+
+    void VLayout::layout(const NbRect<int>& bounds) noexcept
+    {
+        layoutRect = bounds;
+
+        float totalRelative = 0.0f;
+        int totalFixed = 0;
+        int visibleCount = 0;
+
+        for (auto& child : children)
+        {
+            auto& st = child->style;
+            visibleCount++;
+
+            if (st.heightSizeType == SizeType::AUTO)
+                child->measure({bounds.width, bounds.height});
+
+            // ЗАМЕНА: Суммируем конкретные стороны рамки
+            int decorationH = st.margin.top + st.margin.bottom + 
+                             st.border.width.top + st.border.width.bottom + 
+                             st.padding.top + st.padding.bottom;
+
+            if (st.heightSizeType == SizeType::RELATIVE)
+            {
+                totalRelative += st.height;
+                totalFixed += decorationH;
+            }
+            else if (st.heightSizeType == SizeType::ABSOLUTE)
+            {
+                totalFixed += static_cast<int>(st.height) + decorationH;
+            }
+            else if (st.heightSizeType == SizeType::AUTO)
+            {
+                totalFixed += child->getMeasuredSize().height + decorationH;
+            }
+        }
+
+        if (visibleCount > 1) totalFixed += (visibleCount - 1) * spacing;
+
+        int remaining = (std::max)(0, bounds.height - totalFixed);
+        int y = bounds.y;
+
+        for (size_t i = 0; i < children.size(); ++i)
+        {
+            auto& child = children[i];
+            auto& st = child->style;
+
+            int contentHeight = 0;
+            if (st.heightSizeType == SizeType::ABSOLUTE) contentHeight = static_cast<int>(st.height);
+            else if (st.heightSizeType == SizeType::AUTO) contentHeight = child->getMeasuredSize().height;
+            else if (st.heightSizeType == SizeType::RELATIVE && totalRelative > 0.0001f)
+            {
+                contentHeight = static_cast<int>(remaining * (st.height / totalRelative));
+            }
+
+            NbRect<int> childRect;
+            // Учитываем левую и правую рамки/отступы для ширины контента
+            childRect.x = bounds.x + st.margin.left + st.border.width.left + st.padding.left;
+            childRect.y = y + st.margin.top + st.border.width.top + st.padding.top;
+            childRect.width = bounds.width - (st.margin.left + st.margin.right + st.border.width.left + st.border.width.right + st.padding.left + st.padding.right);
+            childRect.height = contentHeight;
+
+            child->setRect(childRect);
+            child->layout(childRect);
+
+            // ЗАМЕНА: Инкремент Y с учетом всех сторон
+            y += contentHeight + st.margin.top + st.margin.bottom + 
+                 st.border.width.top + st.border.width.bottom + 
+                 st.padding.top + st.padding.bottom;
+
+            if (i < children.size() - 1) y += spacing;
+        }
+    }
+
+
+    void VLayout::setSpacing(int value) noexcept
+    {
+        spacing = value;
+    }
 
     
-        void LayoutWidget::layout(const NbRect<int>& bounds) noexcept
+
+    
+
+    GridLayout::GridLayout(int cols) noexcept
+        : LayoutNode(nullptr),
+          columns(cols)
+    {
+    }
+    void GridLayout::measure(const NbSize<int>& available) noexcept
+    {
+        if (children.empty() || columns <= 0)
         {
-            if (!widget) return;
-
-            NbRect<int> inner = bounds;
-
-            //inner.x += style.margin.left;
-            //inner.y += style.margin.top;
-            //inner.width  -= style.margin.left + style.margin.right;
-            //inner.height -= style.margin.top  + style.margin.bottom;
-
-            inner.x += style.border.width;
-            inner.y += style.border.width;
-            inner.width  -= style.border.width * 2;
-            inner.height -= style.border.width * 2;
-
-            inner.x += style.padding.left;
-            inner.y += style.padding.top;
-            inner.width  -= style.padding.left + style.padding.right;
-            inner.height -= style.padding.top  + style.padding.bottom;
-
-            widget->layout(inner);
+            measuredSize = {0, 0};
+            return;
         }
 
+        int maxChildW = 0;
+        int maxChildH = 0;
 
-        void LayoutWindow::layout(const NbRect<int>& bounds) noexcept
+        for (auto& child : children)
         {
-            if (!ownerWindow)
+            child->measure(available);
+            auto s = child->getMeasuredSize();
+            auto& st = child->style;
+
+            int fullW = s.width + st.margin.left + st.margin.right;
+            int fullH = s.height + st.margin.top + st.margin.bottom;
+
+            maxChildW = (std::max)(maxChildW, fullW);
+            maxChildH = (std::max)(maxChildH, fullH);
+        }
+
+        int numRows =
+            (rows > 0) ? rows : (static_cast<int>(children.size()) + columns - 1) / columns;
+
+        measuredSize.width = maxChildW * columns;
+        measuredSize.height = maxChildH * numRows;
+
+        measuredSize.width = (std::min)(measuredSize.width, available.width);
+        measuredSize.height = (std::min)(measuredSize.height, available.height);
+    }
+
+    void GridLayout::layout(const NbRect<int>& bounds) noexcept
+    {
+        layoutRect = bounds;
+        if (children.empty() || columns <= 0)
+        {
+            return;
+        }
+
+        int totalChildren = static_cast<int>(children.size());
+        int numRows = (rows > 0) ? rows : (totalChildren + columns - 1) / columns;
+
+        float cellW = static_cast<float>(bounds.width) / columns;
+        float cellH = static_cast<float>(bounds.height) / numRows;
+
+        int index = 0;
+        for (auto& child : children)
+        {
+            int col = index % columns;
+            int row = index / columns;
+
+            const auto& st = child->style;
+
+            int cellX = bounds.x + static_cast<int>(col * cellW);
+            int cellY = bounds.y + static_cast<int>(row * cellH);
+            int currentCellW = static_cast<int>(cellW);
+            int currentCellH = static_cast<int>(cellH);
+
+            NbRect<int> childRect;
+            childRect.x = cellX + st.margin.left;
+            childRect.y = cellY + st.margin.top;
+
+            childRect.width = currentCellW - (st.margin.left + st.margin.right);
+            childRect.height = currentCellH - (st.margin.top + st.margin.bottom);
+
+            if (st.widthSizeType == SizeType::ABSOLUTE)
             {
-                return;
+                childRect.width = (std::min)(childRect.width, static_cast<int>(st.width));
+            }
+            if (st.heightSizeType == SizeType::ABSOLUTE)
+            {
+                childRect.height = (std::min)(childRect.height, static_cast<int>(st.height));
             }
 
+            child->setRect(childRect);
+            child->layout(childRect);
 
-            if (!children.empty())
+            index++;
+            if (rows > 0 && index >= columns * rows)
             {
-                NbRect<int> client = ownerWindow->getClientRect();
-
-                children[0]->layout(client);
+                break;
             }
         }
     }
+
+    
+
+    FlowLayout::FlowLayout() noexcept : LayoutNode(nullptr)
+    {
+    }
+
+    void FlowLayout::measure(const NbSize<int>& available) noexcept
+    {
+        if (children.empty())
+        {
+            measuredSize = {0, 0};
+            return;
+        }
+
+        auto& firstStyle = children[0]->style;
+
+        int itemW =
+            static_cast<int>(firstStyle.width) + firstStyle.margin.left + firstStyle.margin.right;
+        int itemH =
+            static_cast<int>(firstStyle.height) + firstStyle.margin.top + firstStyle.margin.bottom;
+
+        int columns = available.width / itemW;
+        if (columns < 1)
+        {
+            columns = 1;
+        }
+
+        int totalItems = static_cast<int>(children.size());
+        int rows = (totalItems + columns - 1) / columns;
+
+        measuredSize.width = available.width;
+        measuredSize.height = rows * itemH;
+
+        measuredSize.height = (std::max)(measuredSize.height, style.minSize.height);
+        if (style.maxSize.height > 0)
+        {
+            measuredSize.height = (std::min)(measuredSize.height, style.maxSize.height);
+        }
+    }
+
+    void FlowLayout::layout(const NbRect<int>& bounds) noexcept
+    {
+        layoutRect = bounds;
+        if (children.empty())
+        {
+            return;
+        }
+
+        auto& firstStyle = children[0]->style;
+        int childW = static_cast<int>(firstStyle.width);
+        int childH = static_cast<int>(firstStyle.height);
+
+        int stepX = childW + firstStyle.margin.left + firstStyle.margin.right;
+        int stepY = childH + firstStyle.margin.top + firstStyle.margin.bottom;
+
+        int columns = bounds.width / stepX;
+        if (columns < 1)
+        {
+            columns = 1;
+        }
+
+        int totalGridWidth = columns * stepX;
+        int offsetX = (bounds.width - totalGridWidth) / 2;
+
+        int index = 0;
+        for (auto& child : children)
+        {
+            int col = index % columns;
+            int row = index / columns;
+
+            auto& st = child->style;
+
+            int x = bounds.x + offsetX + (col * stepX) + st.margin.left;
+
+            int y = bounds.y + (row * stepY) + st.margin.top;
+
+            NbRect<int> childRect{x, y, childW, childH};
+
+            child->setRect(childRect);
+            child->layout(childRect);
+
+            index++;
+        }
+    }
+
+    LayoutNode::LayoutNode(Widgets::IWidget* owner) noexcept : ownerWidget(owner)
+    {
+    }
+    void LayoutNode::clearChilds() noexcept
+    {
+        children.clear();
+    }
+    void LayoutNode::markDirty() noexcept
+    {
+        if (dirty)
+        {
+            return;
+        }
+        dirty = true;
+        if (parent)
+        {
+            parent->markDirty();
+        }
+    }
+}; 

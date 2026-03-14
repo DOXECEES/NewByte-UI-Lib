@@ -914,17 +914,16 @@ public:
         return nullptr;
     }
 
-    ID2D1Bitmap* LoadBitmapFromFile(
-        ID2D1RenderTarget *pRenderTarget,
-        IWICImagingFactory *pWICFactory,
-        PCWSTR uri // Путь к файлу
-    ) {
+    Microsoft::WRL::ComPtr<ID2D1Bitmap> loadBitmapFromFile(
+        PCWSTR uri 
+    )
+    {
         IWICBitmapDecoder *pDecoder = NULL;
         IWICBitmapFrameDecode *pSource = NULL;
         IWICFormatConverter *pConverter = NULL;
 
         
-
+        ComPtr<IWICImagingFactory> pWICFactory = Renderer::FactorySingleton::getWicFactory();
         HRESULT hr = pWICFactory->CreateDecoderFromFilename(uri, NULL, GENERIC_READ, 
             WICDecodeMetadataCacheOnLoad, &pDecoder);
 
@@ -934,8 +933,8 @@ public:
         pConverter->Initialize(pSource, GUID_WICPixelFormat32bppPBGRA, 
             WICBitmapDitherTypeNone, NULL, 0.f, WICBitmapPaletteTypeMedianCut);
 
-        ID2D1Bitmap *pBitmap = NULL;
-        pRenderTarget->CreateBitmapFromWicBitmap(pConverter, NULL, &pBitmap);
+        Microsoft::WRL::ComPtr<ID2D1Bitmap> pBitmap = NULL;
+        m_d2dContext->CreateBitmapFromWicBitmap(pConverter, NULL, &pBitmap);
 
         pDecoder->Release();
         pSource->Release();

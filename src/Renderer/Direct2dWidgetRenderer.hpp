@@ -9,6 +9,8 @@
 #include "Widgets/ComboBox.hpp"
 #include "Geometry/BorderGeometryCache.hpp"
 #include "Geometry/WidgetsGeometryCache.hpp"
+#include "Direct2dBitmapCache.hpp"
+
 #include "Direct2dTextFormatCache.hpp"
 
 #include "Debug.hpp"
@@ -148,6 +150,7 @@ namespace Renderer
         std::queue<PopUpRenderParams> popupQueue;
         Geometry::BorderGeometryCache cache;
         Geometry::WidgetsGeometryCache widgetsCache;
+        Direct2dBitmapCache bitmapCache;
         
 
     };

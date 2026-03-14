@@ -5,6 +5,7 @@
 #include "Core.hpp"
 #include "Direct2dWidgetRenderer.hpp"
 
+#include "Direct2dBitmapCache.hpp"
 #include "Renderer/FactorySingleton.hpp"
 #include "Widgets/Button.hpp"
 #include "Widgets/TextEdit.hpp"
@@ -40,7 +41,8 @@
 namespace Renderer
 {
     Direct2dWidgetRenderer::Direct2dWidgetRenderer(Direct2dHandleRenderTarget *renderTarget)
-        :renderTarget(renderTarget)
+        : renderTarget(renderTarget)
+        , bitmapCache(renderTarget)
     {}
 
 
@@ -1081,11 +1083,8 @@ namespace Renderer
         const wchar_t* path = L"C:\\Users\\Admin\\Pictures\\Screenshots\\Screenshot 2026-01-14 113146.png";
 
 
-        static auto bitmap = renderTarget->LoadBitmapFromFile(
-            renderTarget->getRawContext(), pWICFactory.Get(), path
-        );
-        renderTarget->drawBitmap(rect, bitmap);
-
+        auto bitmap = bitmapCache.get(path);
+        renderTarget->drawBitmap(rect, bitmap.Get());
     }
 
 

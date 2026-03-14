@@ -1,6 +1,6 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
+ //This is a personal academic project. Dear PVS-Studio, please check it.
 
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+ //PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "Indentations.hpp"
 
 NbRect<int> applyPaddingToRect(const NbRect<int>& rect, const OldPadding& padding) noexcept

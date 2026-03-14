@@ -39,7 +39,17 @@ namespace Widgets
 
         inline void setIsChecked(bool flag)
         {
+            if(isChecked != flag)
+            {
+                onCheckedChangedSignal.emit(flag);
+            }
             isChecked = flag;
+        }
+
+        inline void toggleIsChecked()
+        {
+            isChecked = !isChecked;
+            onCheckedChangedSignal.emit(isChecked);
         }
 
         bool getIsChecked()
@@ -88,7 +98,7 @@ namespace Widgets
             this->rect = rect;
         }
 
-		//Signal<void()> onButtonClickedSignal;
+		Signal<void(bool)> onCheckedChangedSignal;
         //Signal<void()> onButtonReleasedSignal;
 
     private:

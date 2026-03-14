@@ -24,7 +24,7 @@ namespace Win32Window
             ///MessageBox(nullptr, L"Failed to register class", L"Error", MB_OK);
         }
 
-        HWND _handle = CreateWindow(L"Modal", L"NbWindow", WS_POPUP | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT, state.size.width, state.size.height, parent->getHandle().as<HWND>(), nullptr,nullptr, this);
+        HWND _handle = CreateWindow(L"Modal", L"NbWindow", WS_POPUP | WS_VISIBLE |WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, state.size.width, state.size.height, parent->getHandle().as<HWND>(), nullptr,nullptr, this);
         handle = NbWindowHandle::fromWinHandle(_handle);
         WindowInterface::WindowMapper::registerWindow(handle, this);
        

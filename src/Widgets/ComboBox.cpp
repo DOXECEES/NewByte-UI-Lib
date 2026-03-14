@@ -12,6 +12,7 @@ namespace Widgets
 		, dropdownList(std::make_shared<DropdownList>())
 	{
 		this->addChildrenWidget(dropdownList);
+		dropdownList->hide();
 		subscribe(static_cast<IWidget*>(this), &IWidget::onSizeChangedSignal, [this](const NbRect<int>& rc)
 		{
 			OldPadding p;
@@ -45,12 +46,14 @@ namespace Widgets
 		});
 	}
 
-	bool ComboBox::hitTest(const NbPoint<int>& pos) {
+	bool ComboBox::hitTest(const NbPoint<int>& pos)
+	{
 		// 1. Проверяем сам заголовок комбобокса
 		if (rect.isInside(pos)) return true;
 
 		// 2. Если список открыт, проверяем попадание в него
-		if (comboBoxState == ComboState::EXPANDED && dropdownList) {
+		if (comboBoxState == ComboState::EXPANDED && dropdownList) 
+		{
 			if (dropdownList->getRect().isInside(pos)) return true;
 		}
 		return false;

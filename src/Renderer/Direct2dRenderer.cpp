@@ -3,6 +3,7 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
 #include "Layout/LayoutNode.hpp"
+#include "Layout/LayoutWidget.hpp"
 #include "Direct2dRenderer.hpp"
 
 namespace Renderer 
@@ -48,13 +49,13 @@ namespace Renderer
         NbRect<int> topBorder = { 0, 0, windowSize.width, frameSize.top};
         renderTarget.fillRectangle(topBorder, frameColor);
 
-        NbRect<int> botBorder = {0 + radius, windowSize.height - frameSize.bot, windowSize.width - radius - radius, frameSize.bot};
+        NbRect<int> botBorder = {0, windowSize.height - frameSize.bot, windowSize.width, frameSize.bot};
         renderTarget.fillRectangle(botBorder, frameColor);
 
-        NbRect<int> leftBorder = {0, frameSize.top, frameSize.left, windowSize.height - frameSize.top - frameSize.bot - radius };
+        NbRect<int> leftBorder = {0, frameSize.top, frameSize.left, windowSize.height - frameSize.top - frameSize.bot };
         renderTarget.fillRectangle(leftBorder, frameColor);
 
-        NbRect<int> rightBorder = {windowSize.width - frameSize.right, frameSize.top, frameSize.right, windowSize.height - frameSize.top - frameSize.bot - radius  };
+        NbRect<int> rightBorder = {windowSize.width - frameSize.right, frameSize.top, frameSize.right, windowSize.height - frameSize.top - frameSize.bot  };
         renderTarget.fillRectangle(rightBorder, frameColor);
         ////
 
@@ -103,6 +104,55 @@ namespace Renderer
             else if (auto layout = dynamic_cast<const NNsLayout::LayoutNode*>(node))
             {
                 renderTarget.fillRectangle(layout->getRect(), layout->style.color);
+                if (layout->style.border.style != Border::Style::NONE)
+                {
+                    const Border& border = layout->style.border;
+                    const NbRect<int>& rect = layout->getRect();
+                    if (border.sideMask == Border::Side::ALL)
+                    {
+                        renderTarget.drawRectangle(
+                            layout->getRect(), layout->style.border.color,
+                            layout->style.border.width.top
+                        );
+                    }
+                    else
+                    {
+                        if (hasFlag(border.sideMask, Border::Side::TOP))
+                        {
+                            renderTarget.drawLine(
+                                {rect.x, rect.y}, {rect.x + rect.width, rect.y},
+                                layout->style.border.color
+                            );
+                        }
+                        if (hasFlag(border.sideMask, Border::Side::RIGHT))
+                        {
+                            renderTarget.drawLine(
+                                {rect.x + rect.width, rect.y}, {rect.x + rect.width, rect.y + rect.height},
+                                layout->style.border.color
+                            );
+                        }
+                        if (hasFlag(border.sideMask, Border::Side::LEFT))
+                        {
+                            renderTarget.drawLine(
+                                {rect.x, rect.y},
+                                {rect.x, rect.y + rect.height},
+                                layout->style.border.color
+
+                            );
+                        }
+                        if (hasFlag(border.sideMask, Border::Side::BOTTOM))
+                        {
+                            renderTarget.drawLine(
+                                {rect.x, rect.y + rect.height},
+                                {rect.x + rect.width, rect.y + rect.height},
+                                layout->style.border.color,
+                                layout->style.border.width.bottom
+                            );
+                        }
+                    }
+                    
+                }
+
             }
 
             for (int i = (int)node->getChildrenSize() - 1; i >= 0; i--)

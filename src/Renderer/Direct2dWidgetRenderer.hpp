@@ -9,6 +9,8 @@
 #include "Widgets/ComboBox.hpp"
 #include "Geometry/BorderGeometryCache.hpp"
 #include "Geometry/WidgetsGeometryCache.hpp"
+#include "Direct2dTextFormatCache.hpp"
+
 #include "Debug.hpp"
 
 #include <queue>
@@ -55,6 +57,16 @@ namespace Renderer
         );
 
         void renderToolBar(
+            IWidget* widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        );
+
+        void renderSlider(
+            IWidget* widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        );
+
+        void renderThumbnail(
             IWidget* widget,
             const NNsLayout::LayoutStyle& layoutStyle
         );
@@ -136,7 +148,6 @@ namespace Renderer
         std::queue<PopUpRenderParams> popupQueue;
         Geometry::BorderGeometryCache cache;
         Geometry::WidgetsGeometryCache widgetsCache;
-
         
 
     };

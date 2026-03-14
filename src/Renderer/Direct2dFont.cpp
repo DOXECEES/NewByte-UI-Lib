@@ -2,12 +2,12 @@
 
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "Direct2dFont.hpp"
-
+#include "FactorySingleton.hpp"
 
 
 Direct2dFont::Direct2dFont(const Font& fontParam) noexcept
 	: font(fontParam)
-{
+{ 
 	Microsoft::WRL::ComPtr<IDWriteFactory> directFactory = Renderer::FactorySingleton::getDirectWriteFactory();
 	
 	directFactory->CreateTextFormat(

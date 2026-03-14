@@ -10,6 +10,7 @@
 #include <Color.hpp>
 
 #include "GlobalWidgetContext.hpp"
+#include "MouseState.hpp"
 
 namespace Widgets
 {
@@ -56,9 +57,9 @@ public:
         nbui::GlobalWidgetContext::releaseWidget(this);
     }
 
-    void onMouseMove(const NbPoint<int>& pos) noexcept override
+    void onMouseMove(const MouseState& pos) noexcept override
     {
-        updateFromMouse(pos);
+        updateFromMouse(pos.position);
     }
 
     void updateFromMouse(const NbPoint<int>& pos)
@@ -130,9 +131,9 @@ public:
         return isInside;
     }
 
-    void onMouseMove(const NbPoint<int>& pos) noexcept override
+    void onMouseMove(const MouseState& pos) noexcept override
     {
-        updateFromMouse(pos);
+        updateFromMouse(pos.position);
     }
 
     void onClick() override
@@ -247,9 +248,9 @@ public:
         return isInside;
     }
 
-    void onMouseMove(const NbPoint<int>& pos) noexcept override
+    void onMouseMove(const MouseState& pos) noexcept override
     {
-        updateFromMouse(pos);
+        updateFromMouse(pos.position);
     }
 
     void onClick() override
@@ -708,17 +709,17 @@ private:
     std::shared_ptr<HueBar> hueBar = std::make_shared<HueBar>(NbRect<int>{0, 0, 0, 0});
 
     std::shared_ptr<ColorBar> redBar = std::make_shared<ColorBar>(NbRect<int>{0, 0, 0, 0}, ColorBar::Channel::Red);
-    std::shared_ptr<ColorBar> greenBar= std::make_shared<ColorBar>(NbRect<int>{0, 0, 0, 0}, ColorBar::Channel::Green);
-    std::shared_ptr<ColorBar> blueBar= std::make_shared<ColorBar>(NbRect<int>{0, 0, 0, 0}, ColorBar::Channel::Blue);;
-    std::shared_ptr<ColorBar> alphaBar= std::make_shared<ColorBar>(NbRect<int>{0, 0, 0, 0}, ColorBar::Channel::Alpha);
+    std::shared_ptr<ColorBar> greenBar = std::make_shared<ColorBar>(NbRect<int>{0, 0, 0, 0}, ColorBar::Channel::Green);
+    std::shared_ptr<ColorBar> blueBar = std::make_shared<ColorBar>(NbRect<int>{0, 0, 0, 0}, ColorBar::Channel::Blue);;
+    std::shared_ptr<ColorBar> alphaBar = std::make_shared<ColorBar>(NbRect<int>{0, 0, 0, 0}, ColorBar::Channel::Alpha);
 
-    std::shared_ptr<IntSpinBox> redColorSpinbox;
-    std::shared_ptr<IntSpinBox> greenColorSpinbox;
-    std::shared_ptr<IntSpinBox> blueColorSpinbox;
-    std::shared_ptr<IntSpinBox> alphaColorSpinbox;
+    std::shared_ptr<IntSpinBox> redColorSpinbox = std::make_shared<IntSpinBox>();
+    std::shared_ptr<IntSpinBox> greenColorSpinbox = std::make_shared<IntSpinBox>();
+    std::shared_ptr<IntSpinBox> blueColorSpinbox = std::make_shared<IntSpinBox>();
+    std::shared_ptr<IntSpinBox> alphaColorSpinbox = std::make_shared<IntSpinBox>();
 
-    std::shared_ptr<Button> okButton;
-    std::shared_ptr<Button> closeButton;
+    std::shared_ptr<Button> okButton = std::make_shared<Button>();
+    std::shared_ptr<Button> closeButton = std::make_shared<Button>();
 };
 
 };

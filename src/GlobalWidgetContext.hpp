@@ -3,6 +3,8 @@
 
 #include "Core.hpp"
 
+#include "MouseState.hpp"
+
 namespace Widgets
 {
     class IWidget;
@@ -15,8 +17,9 @@ namespace nbui
     public:
         static void captureWidget(Widgets::IWidget* widget) noexcept;
         static void releaseWidget(Widgets::IWidget* widget) noexcept;
+        static Widgets::IWidget* getCapturedWidget() noexcept;
 
-        static void onMouseMove(const NbPoint<int>& pos) noexcept;
+        static void onMouseMove(const MouseState& pos) noexcept;
 
         static void capturePressedWidget(Widgets::IWidget* widget) noexcept;
         static void releasePressedWidget() noexcept;

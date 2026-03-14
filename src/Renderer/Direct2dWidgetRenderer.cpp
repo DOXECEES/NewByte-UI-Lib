@@ -14,6 +14,8 @@
 #include "Widgets/SpinBox.hpp"
 #include "Widgets/Calendar.hpp"
 #include "Widgets/Section.hpp"
+#include "Widgets/Slider.hpp"
+#include "Widgets/Thumbnail.hpp"
 
 #include "Widgets/ToolBar.hpp"
 
@@ -28,6 +30,7 @@
 
 #include <stack>
 #include <Array.hpp>
+#include <string>
 
 #include "Geometry/BorderGeometryBuilder.hpp"
 
@@ -89,9 +92,14 @@ namespace Renderer
         {
             renderToolBar(widget, layoutStyle);
         }
-        
-
-
+        else if (strncmp(widgetName, Slider<float>::CLASS_NAME, size) == 0)
+        {
+            renderSlider(widget, layoutStyle);
+        }
+        else if (strncmp(widgetName, Thumbnail::CLASS_NAME, size) == 0)
+        {
+            renderThumbnail(widget, layoutStyle);
+        }
     }
 
 
@@ -140,6 +148,7 @@ namespace Renderer
         }
     }
 
+    // TODO: изменить width border с top на конкретные размеры
     void Direct2dWidgetRenderer::drawBorder(IWidget* widget, const Border& border) noexcept
     {
         const NbRect<int>& rect = widget->getRect();
@@ -159,13 +168,13 @@ namespace Renderer
         {
             case Border::Style::SOLID:
             {
-                renderTarget->drawRectangle(rect, border.color, border.width);
+                renderTarget->drawRectangle(rect, border.color, border.width.top);
                 break;
             }
             case Border::Style::DASHED:
             {
                 Direct2dHandleRenderTarget::LineStyle ls;
-                ls.strokWidth = border.width;
+                ls.strokWidth = border.width.top;
                 ls.dotLength = 3.0f;
                 ls.gapLength = 0.5f;
 
@@ -178,7 +187,7 @@ namespace Renderer
             case Border::Style::DOTTED:
             {
                 Direct2dHandleRenderTarget::LineStyle ls;
-                ls.strokWidth = border.width;
+                ls.strokWidth = border.width.top;
 
                 renderTarget->drawStyledLine(rect.getTopLeft(), rect.getTopRight(), border.color, ls);
                 renderTarget->drawStyledLine(rect.getBottomLeft(), rect.getBottomRight(), border.color, ls);
@@ -188,14 +197,14 @@ namespace Renderer
             }
             case Border::Style::DOUBLE:
             {
-                renderTarget->drawRectangle(rect.expand(border.width / 2), border.color, border.width);
-                NbRect<int> expd = rect.expand(2 * border.width + border.width / 2);
-                renderTarget->drawRectangle(expd, border.color, border.width);
+                renderTarget->drawRectangle(rect.expand(border.width.top / 2), border.color, border.width.top);
+                NbRect<int> expd = rect.expand(2 * border.width.top + border.width.top / 2);
+                renderTarget->drawRectangle(expd, border.color, border.width.top);
                 break;
             }
             case Border::Style::INSET:
             {
-                auto& mesh = cache.getMesh({ border.style, rect, border.width });
+                auto& mesh = cache.getMesh({border.style, rect, border.width.top});
                 NB_ASSERT(mesh.geometries.size() == 2, "INSET border must have exactly 2 geometries");
 
                 nbstl::Array<NbColor, 2> colors = {
@@ -208,7 +217,7 @@ namespace Renderer
             }
             case Border::Style::OUTSET:
             {
-                auto& mesh = cache.getMesh({ border.style, rect, border.width });
+                auto& mesh = cache.getMesh({border.style, rect, border.width.top});
                 NB_ASSERT(mesh.geometries.size() == 2, "OUTSET border must have exactly 2 geometries");
 
                 nbstl::Array<NbColor, 2> colors = {
@@ -221,7 +230,7 @@ namespace Renderer
             }
             case Border::Style::RIDGE:
             {
-                auto& mesh = cache.getMesh({ border.style, rect, border.width });
+                auto& mesh = cache.getMesh({border.style, rect, border.width.top});
                 NB_ASSERT(mesh.geometries.size() == 4, "RIDGE border must have exactly 4 geometries");
 
                 nbstl::Array<NbColor, 4> colors = {
@@ -236,7 +245,7 @@ namespace Renderer
             }
             case Border::Style::GROOVE:
             {
-                auto& mesh = cache.getMesh({ border.style, rect, border.width });
+                auto& mesh = cache.getMesh({border.style, rect, border.width.top});
                 NB_ASSERT(mesh.geometries.size() == 4, "GROOVE border must have exactly 4 geometries");
 
                 nbstl::Array<NbColor, 4> colors = {
@@ -266,6 +275,9 @@ namespace Renderer
         WidgetState state = button->getState();
 
         bool isSelected = button->getIsChecked();
+
+        const Font& font = bStyle.font(); 
+        const TextFormatAlignment& alignment = bStyle.textAlignment();
 
         NbColor color, textColor;
 
@@ -308,8 +320,15 @@ namespace Renderer
         {
             textRect.y += 1;
         }
+        
+        Renderer::TextFormatStyle textFormatStyle
+        {
+            .font = font,
+            .alignment = alignment.textAlignment,
+            .paragraphAlignment = alignment.paragraphAlignment
+        };
 
-        renderTarget->drawText(button->getText(), textRect, textColor);
+        renderTarget->drawTextByFormat(button->getText(), textRect, textColor, textFormatStyle);
     }
 
     void Direct2dWidgetRenderer::renderSection(
@@ -535,12 +554,60 @@ namespace Renderer
         const NbRect<int>& widgetRect = toolbar->getRect();
         const WidgetStyle& style = toolbar->getStyle();
 
+        
+      
+
+        // TODO: border temp
+        const Border& border = layoutStyle.border;
+        if (border.sideMask == Border::Side::ALL)
+        {
+            renderTarget->drawRectangle(
+                widgetRect, border.color,
+                border.width.top
+            );
+        }
+        else
+        {
+            if (hasFlag(border.sideMask, Border::Side::TOP))
+            {
+                renderTarget->drawLine(
+                    {widgetRect.x, widgetRect.y}, {widgetRect.x + widgetRect.width, widgetRect.y},
+                    border.color
+                );
+            }
+            if (hasFlag(border.sideMask, Border::Side::RIGHT))
+            {
+                renderTarget->drawLine(
+                    {widgetRect.x + widgetRect.width, widgetRect.y}, {widgetRect.x + widgetRect.width, widgetRect.y + widgetRect.height},
+                    border.color
+                );
+            }
+            if (hasFlag(border.sideMask, Border::Side::LEFT))
+            {
+                renderTarget->drawLine(
+                    {widgetRect.x, widgetRect.y},
+                    {widgetRect.x, widgetRect.y + widgetRect.height},
+                    border.color
+                );
+            }
+            if (hasFlag(border.sideMask, Border::Side::BOTTOM))
+            {
+                renderTarget->drawLine(
+                    {widgetRect.x, widgetRect.y + widgetRect.height},
+                    {widgetRect.x + widgetRect.width, widgetRect.y + widgetRect.height},
+                    border.color
+                );
+            }
+        }
+
         renderTarget->fillRectangle(widgetRect, style.baseColor);
 
         for (auto& w : toolbar->getChildrens())
         {
             render(w.get(), layoutStyle);
         }
+
+       
     }
 
 
@@ -702,26 +769,49 @@ namespace Renderer
         const NbRect<int>& widgetRect = label->getRect();
         const WidgetStyle& style = label->getStyle();
 
-        Label::VTextAlign vTextAlign = label->getVTextAlign();
-		Label::HTextAlign hTextAlign = label->getHTextAlign();
+        NbRect<int> contentRect = widgetRect;
+        int bw = layoutStyle.border.width.top;
+        
+        contentRect.x += bw + layoutStyle.padding.left;
+        contentRect.y += bw + layoutStyle.padding.top;
+        contentRect.width -= (bw * 2 + layoutStyle.padding.left + layoutStyle.padding.right);
+        contentRect.height -= (bw * 2 + layoutStyle.padding.top + layoutStyle.padding.bottom);
+
+        renderTarget->fillRectangle(widgetRect, style.baseColor);
+
+        if (bw > 0) 
+        {
+            renderTarget->drawRectangle(widgetRect, layoutStyle.border.color, static_cast<float>(bw));
+        }
 
         if (label->getFont().isDirty() || label->isSizeChange)
         {
             if (label->hasEllipsis())
-            {
                 createTextLayoutForLabelClipped(label);
-            }
             else
-            {
                 createTextLayoutForLabel(label);
-            }
         }
 
+        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout = Direct2dGlobalWidgetMapper::getTextLayoutByWidget(label);
 
-        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout =  Direct2dGlobalWidgetMapper::getTextLayoutByWidget(label);
-        
-        renderTarget->fillRectangle(widgetRect, style.baseColor);
-        renderTarget->drawText(textLayout.Get(), widgetRect, style.baseTextColor, static_cast<TextAlignment>(vTextAlign));
+
+        //Renderer::TextFormatStyle textFormatStyle{
+        //    .font = label->getFont(),
+        //    .alignment = label->getStyle().alignment.textAlignment,
+        //    .paragraphAlignment = label->getStyle().alignment.paragraphAlignment
+        //};
+
+        //renderTarget->drawTextByFormat(label->getText(), widgetRect, style.baseTextColor, textFormatStyle);
+
+        if (textLayout) 
+        {
+            renderTarget->drawText(
+                textLayout.Get(), 
+                contentRect, 
+                style.baseTextColor, 
+                static_cast<TextAlignment>(label->getVTextAlign())
+            );
+        }
     }
 
 
@@ -825,8 +915,6 @@ namespace Renderer
             }
         }
     }
-
-
 
     void Direct2dWidgetRenderer::renderComboBox(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
     {
@@ -940,6 +1028,71 @@ namespace Renderer
         //else {
         //    // Обычная рамка
         //}
+    }
+
+    void Direct2dWidgetRenderer::renderSlider(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
+    {
+        using namespace Widgets;
+        Slider<float>* slider = castWidget<Slider<float>>(widget);
+
+        const NbRect<int>& rect = slider->getRect();
+        const WidgetStyle& style = slider->getStyle();
+
+        NbColor backgroundColor;
+        NbColor textColor;
+
+        getWidgetThemeColorByState(slider, backgroundColor, textColor);
+
+        renderTarget->fillRectangle(rect, backgroundColor);
+        
+        renderTarget->drawText(std::to_wstring(slider->getValue()), rect, textColor);
+    }
+
+    void Direct2dWidgetRenderer::renderThumbnail(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
+    {
+        using namespace Widgets;
+        Thumbnail* thumbnail = castWidget<Thumbnail>(widget);
+
+        const NbRect<int>& rect = thumbnail->getRect();
+        NbColor backgroundColor;
+        NbColor textColor;
+
+        getWidgetThemeColorByState(thumbnail, backgroundColor, textColor);
+        
+        renderTarget->fillRectangle(rect, backgroundColor);
+
+        if (thumbnail->getNameLabel())
+        {
+            renderLabel(thumbnail->getNameLabel().get(), layoutStyle);
+        }
+
+        if (thumbnail->getTypeLabel())
+        {
+            renderLabel(thumbnail->getTypeLabel().get(), layoutStyle);
+        }
+
+        HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+        
+
+        // 2. Объявляем указатель на фабрику
+        ComPtr<IWICImagingFactory> pWICFactory;
+
+        // 3. Создаем экземпляр фабрики через CoCreateInstance
+        hr = CoCreateInstance(
+            CLSID_WICImagingFactory,      // Класс объекта
+            NULL,                          // Агрегация не используется
+            CLSCTX_INPROC_SERVER,          // Запуск в контексте текущего процесса
+            IID_PPV_ARGS(&pWICFactory)     // Получаем интерфейс IWICImagingFactory
+        );
+
+        const wchar_t* path = L"C:\\Users\\Admin\\Pictures\\Screenshots\\Screenshot 2026-01-14 113146.png";
+
+
+        static auto bitmap = renderTarget->LoadBitmapFromFile(
+            renderTarget->getRawContext(), pWICFactory.Get(), path
+        );
+        renderTarget->drawBitmap(rect, bitmap);
+
     }
 
 

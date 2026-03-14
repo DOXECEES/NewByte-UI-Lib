@@ -31,6 +31,9 @@ namespace WindowInterface
     class IWindow
     {
     public:
+
+        
+
         IWindow() noexcept;
         virtual ~IWindow() = default;
 

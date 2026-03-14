@@ -8,7 +8,9 @@
 #include <algorithm>
 
 #include <Utility.hpp>
+#include <winuser.h>
 #include "Widgets/CheckBox.hpp"
+#include "Layout/LayoutWidget.hpp"
 
 #include "GlobalWidgetContext.hpp"
 
@@ -35,6 +37,19 @@ namespace Win32Window
         void addCaption() noexcept;
         void setRenderable(bool flag) noexcept;
 		bool getIsRenderable() const noexcept { return isRenderable; };
+        void setSize(const NbSize<int>& newSize)
+        {
+            state.setSize(newSize);
+            SetWindowPos(handle.as<HWND>(), nullptr, 0, 0, state.size.width, state.size.height, SWP_NOMOVE | SWP_NOOWNERZORDER) ;
+        }
+
+        void setPosition(const NbPoint<int>& point)
+        {
+            SetWindowPos(
+                handle.as<HWND>(), nullptr, point.x, point.y, 0, 0,
+                SWP_NOSIZE | SWP_NOOWNERZORDER
+            );
+        }
 
         inline static Widgets::IWidget* focusedWidget = nullptr; // only one widget can have focus
 
@@ -72,6 +87,8 @@ namespace Win32Window
 
     public:
         Signal<void(const NbSize<int>&)> onSizeChanged;
+        NbPoint<int> prevMousePoint = {-1, -1};
+
 
         LRESULT wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
@@ -221,91 +238,131 @@ namespace Win32Window
                 case WM_LBUTTONDOWN:
                 {
                     SetCapture(hWnd);
-                    NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+                    NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
 
-                    // Функция-помощник для получения ZIndex из узла лейаута
-                    auto getZIndex = [](const NNsLayout::LayoutNode* node) -> Core::ZIndex {
-                        if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node)) {
-                            if (auto widget = widgetLayout->getWidget().get()) {
+                    // --- 1. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+                    auto getZIndex = [](const NNsLayout::LayoutNode* node) -> Core::ZIndex
+                    {
+                        if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                        {
+                            if (auto widget = widgetLayout->getWidget().get())
+                            {
                                 return widget->getZIndex();
                             }
                         }
-                        return Core::ZIndex(Core::ZIndex::ZType::MAIN, 0); // Для контейнеров без виджетов
-                        };
+                        return Core::ZIndex(Core::ZIndex::ZType::MAIN, 0);
+                    };
 
-                    // Лямбда для получения детей, отсортированных по ZIndex (сначала верхние)
-                    auto getSortedChildren = [&](const NNsLayout::LayoutNode* node) {
+                    auto getSortedChildren = [&](const NNsLayout::LayoutNode* node)
+                    {
                         nbstl::Vector<const NNsLayout::LayoutNode*> children;
                         int count = node->getChildrenSize();
                         children.reserve(count);
-                        for (int i = 0; i < count; i++) {
+                        for (int i = 0; i < count; i++)
+                        {
                             children.pushBack(node->getChildrenAt(i));
                         }
-
-                        // Сортируем детей по ZIndex. 
-                        // Если ZIndex одинаковый, сохраняем порядок отрисовки (кто позже добавлен — тот выше)
-                        std::stable_sort(children.begin(), children.end(), [&](const NNsLayout::LayoutNode* a, const NNsLayout::LayoutNode* b) {
-                            return getZIndex(a) > getZIndex(b);
-                            });
-
+                        std::stable_sort(
+                            children.begin(), children.end(),
+                            [&](const NNsLayout::LayoutNode* a, const NNsLayout::LayoutNode* b)
+                            {
+                                return getZIndex(a) > getZIndex(b);
+                            }
+                        );
                         return children;
-                        };
+                    };
+
+                    std::function<::Widgets::IWidget*(::Widgets::IWidget*, NbPoint<int>)>
+                        findDeepestWidget;
+                    findDeepestWidget = [&](::Widgets::IWidget* current,
+                                            NbPoint<int> p) -> ::Widgets::IWidget*
+                    {
+                        const auto& subChildren = current->getChildrens();
+                        for (auto it = subChildren.rbegin(); it != subChildren.rend(); ++it)
+                        {
+                            auto* sub = it->get();
+                            if (sub && !sub->isHide() && !sub->isDisable() && sub->hitTest(p))
+                            {
+                                return findDeepestWidget(sub, p);
+                            }
+                        }
+                        return current;
+                    };
+
+                    // --- 2. ОСНОВНАЯ ЛОГИКА ---
 
                     bool isFocusChanged = false;
+                    ::Widgets::IWidget* clickedTarget = nullptr;
 
-                    // ПЕРВЫЙ ПРОХОД: Поиск виджета под курсором с учетом ZIndex
+                    // ПРОХОД 1: Определяем, кто получает ФОКУС
                     nbstl::dfs(
-                        this->getLayoutRoot(),
-                        getSortedChildren, // Используем сортировку здесь
+                        this->getLayoutRoot(), getSortedChildren,
                         [&](const NNsLayout::LayoutNode* node)
                         {
-                            if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                            if (auto widgetLayout =
+                                    dynamic_cast<const NNsLayout::LayoutWidget*>(node))
                             {
-                                auto widget = widgetLayout->getWidget().get();
-                                // hitTest должен проверять и внутренних детей (как мы писали для ComboBox)
-                                if (widget && !widget->isHide() && widget->hitTest(point))
+                                auto rootWidget = widgetLayout->getWidget().get();
+                                if (rootWidget && !rootWidget->isHide() &&
+                                    rootWidget->hitTest(point))
                                 {
-                                    isFocusChanged = true;
-                                    if (focusedWidget && focusedWidget != widget) {
-                                        focusedWidget->setUnfocused();
+                                    clickedTarget = findDeepestWidget(rootWidget, point);
+                                    if (clickedTarget)
+                                    {
+                                        isFocusChanged = true;
+                                        if (focusedWidget && focusedWidget != clickedTarget)
+                                        {
+                                            focusedWidget->setUnfocused();
+                                        }
+                                        focusedWidget = clickedTarget;
+                                        focusedWidget->setFocused();
+                                        clicked = true;
+                                        return true; // Нашли цель для фокуса
                                     }
-                                    focusedWidget = widget;
-                                    focusedWidget->setFocused();
-                                    clicked = true;
-                                    widget->onClick();
-                                    return true; // Нашли самый верхний виджет, прерываем DFS
                                 }
                             }
                             return false;
                         }
                     );
 
-                    // ВТОРОЙ ПРОХОД: Логика клика (ComboBox toggle и т.д.)
+                    // ПРОХОД 2: Выполняем ДЕЙСТВИЕ (onClick)
+                    // Сначала даем шанс "умным" виджетам (ComboBox и т.д.) перехватить клик
+                    bool clickHandled = false;
                     nbstl::dfs(
-                        this->getLayoutRoot(),
-                        getSortedChildren, // И здесь тоже
+                        this->getLayoutRoot(), getSortedChildren,
                         [&](const NNsLayout::LayoutNode* node)
                         {
-                            if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                            if (auto widgetLayout =
+                                    dynamic_cast<const NNsLayout::LayoutWidget*>(node))
                             {
                                 auto widget = widgetLayout->getWidget().get();
+                                // Если hitTestClick возвращает true, значит он САМ вызвал onClick
+                                // внутри себя
                                 if (widget && !widget->isHide() && widget->hitTestClick(point))
                                 {
-                                    return true; // Событие обработано самым верхним виджетом
+                                    clickHandled = true;
+                                    return true;
                                 }
                             }
                             return false;
                         }
                     );
 
+                    // Если второй проход (hitTestClick) не сработал,
+                    // но первый проход нашел цель — вызываем onClick вручную.
+                    if (!clickHandled && clickedTarget)
+                    {
+                        clickedTarget->onClick();
+                    }
+
+                    // --- 3. КЛИК В ПУСТОТУ ---
                     if (!isFocusChanged)
                     {
-                        if (focusedWidget) {
+                        if (focusedWidget)
+                        {
                             focusedWidget->setUnfocused();
                             focusedWidget = nullptr;
                         }
-                        // Закрываем все выпадающие списки, если кликнули по пустому месту
-                        // (убедитесь, что метод объявлен как static в ComboBox.hpp)
                         //::Widgets::ComboBox::closeAllDropDowns();
                     }
 
@@ -335,8 +392,39 @@ namespace Win32Window
                 {
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
+                    MouseState mouseState = {.position = point};
+
+                    if (prevMousePoint.x == -1 && prevMousePoint.y == -1)
                     {
-                        nbui::GlobalWidgetContext::onMouseMove(point);
+                        prevMousePoint.x = point.x;
+                        prevMousePoint.y = point.y;
+                    }
+
+                    int dx = point.x - prevMousePoint.x;
+                    int dy = point.y - prevMousePoint.y;
+
+                    if (dx > 0)
+                    {
+                        mouseState.direction = MouseDirection::RIGHT;
+                    }
+                    else if (dx < 0)
+                    {
+                        mouseState.direction = MouseDirection::LEFT;
+                    }
+
+                    if (dy > 0)
+                    {
+                        mouseState.direction = MouseDirection::DOWN;
+                    }
+                    else if (dy < 0)
+                    {
+                        mouseState.direction = MouseDirection::UP;
+                    }
+
+                    prevMousePoint = point;
+
+                    {
+                        nbui::GlobalWidgetContext::onMouseMove(mouseState);
                         bool isHoveredSet = false;
 
                         std::vector<NNsLayout::LayoutNode*> stack;
@@ -355,6 +443,10 @@ namespace Win32Window
                                 {
                                     for (auto& w : widget->getChildrens())
                                     {
+                                        if (w->isHide())
+                                        {
+                                            continue;
+                                        }
                                         if (w->isDisable())
                                         {
                                             continue;
@@ -441,6 +533,12 @@ namespace Win32Window
                  
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
+                    if (auto pressedWidget = nbui::GlobalWidgetContext::getCapturedWidget(); pressedWidget)
+                    {
+                        pressedWidget->onRelease();
+                        nbui::GlobalWidgetContext::releasePressedWidget();
+                        return 0;
+                    }
                     
                     nbstl::dfs(
                         this->getLayoutRoot(),

@@ -153,7 +153,7 @@ namespace Widgets
 
         virtual void layout(const NbRect<int>& rect) noexcept override
         {
-            this->rect= rect;
+            this->rect = rect;
 
             const int itemHeight = static_cast<int>(HEIGHT_OF_ITEM_IN_PIXEL);
 

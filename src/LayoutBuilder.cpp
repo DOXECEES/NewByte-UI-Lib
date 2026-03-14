@@ -4,7 +4,6 @@
 #include "LayoutBuilder.hpp"
 
 #include <Error/ErrorManager.hpp>
-#include "Layout.hpp"
 #include "Widgets/IWidget.hpp"
 #include "Widgets/Spacer.hpp"
 #include "Widgets/Label.hpp"
@@ -12,6 +11,9 @@
 #include "Widgets/CheckBox.hpp"
 #include "Widgets/TreeView.hpp"
 #include "Widgets/ToolBar.hpp"
+#include "Widgets/Thumbnail.hpp"
+
+#include "Layout/ButtonGroup.hpp"
 #include <Color.hpp>
 
 namespace nbui
@@ -76,6 +78,21 @@ namespace nbui
         return b;
     }
 
+    LayoutBuilder LayoutBuilder::spacerAbsolute(
+        float absolutWidth,
+        float absolutHeigth
+    )
+    {
+        LayoutBuilder b;
+        b.node = std::make_unique<NNsLayout::LayoutWidget>(new Widgets::Spacer());
+        b.currentNode = b.node.get();
+        b.currentNode->style.widthSizeType = NNsLayout::SizeType::ABSOLUTE;
+        b.currentNode->style.width = absolutWidth;
+        b.currentNode->style.heightSizeType = NNsLayout::SizeType::ABSOLUTE;
+        b.currentNode->style.height = absolutHeigth;
+        return b;
+    }
+
     LayoutBuilder LayoutBuilder::toolbar()
     {
         auto tb = std::make_shared<Widgets::ToolBar>();
@@ -99,10 +116,20 @@ namespace nbui
         return b;
     }
 
-
-    LayoutBuilder&& LayoutBuilder::buttonGroup() &&
+    LayoutBuilder&& LayoutBuilder::buttonGroupOnlyOne() &&
     {
-        auto groupNode = std::make_unique<NNsLayout::ButtonGroup>();
+        return std::move(*this).buttonGroup(NNsLayout::ButtonGroupType::ONLY_ONE);
+    }
+
+    LayoutBuilder&& LayoutBuilder::buttonGroupMultiple() &&
+    {
+        return std::move(*this).buttonGroup(NNsLayout::ButtonGroupType::MULTI);
+    }
+
+
+    LayoutBuilder&& LayoutBuilder::buttonGroup(NNsLayout::ButtonGroupType type) &&
+    {
+        auto groupNode = std::make_unique<NNsLayout::ButtonGroup>(type);
         auto* raw = groupNode.get();
 
         if (currentNode)
@@ -111,7 +138,7 @@ namespace nbui
         }
 
         currentNode = raw;
-        currentNodeWidget = nullptr; // Чтобы child() начал искать родителя выше
+        currentNodeWidget = nullptr; 
         return std::move(*this);
     }
 
@@ -119,12 +146,19 @@ namespace nbui
     {
         if (auto* group = dynamic_cast<NNsLayout::ButtonGroup*>(currentNode))
         {
-            group->syncInternalState(); // Подписываемся на клики, когда все дети добавлены
+            group->syncInternalState(); 
         }
         currentNode = currentNode->getParent();
         return std::move(*this);
     }
 
+    LayoutBuilder LayoutBuilder::thumbnail()
+    {
+        LayoutBuilder b;
+        b.node = std::make_unique<NNsLayout::LayoutWidget>(new Widgets::Thumbnail({}));
+        b.currentNode = b.node.get();
+        return b;
+    }
 
     LayoutBuilder LayoutBuilder::treeView()
     {
@@ -141,7 +175,6 @@ namespace nbui
             return std::move(*this);
         }
 
-        // 1. Ищем, куда приткнуть виджет для РЕНДЕРИНГА
         if (auto* childWidgetNode = dynamic_cast<NNsLayout::LayoutWidget*>(childBuilder.node.get()))
         {
             NNsLayout::LayoutNode* search = currentNode;
@@ -151,7 +184,7 @@ namespace nbui
             {
                 if (visualParent = search->getOwner())
                 {
-                    break; // Нашли Тулбар или Окно
+                    break; 
                 }
                 search = search->getParent();
             }
@@ -182,8 +215,11 @@ namespace nbui
             WidgetStyle& style = currentNode->getOwner()->getStyle();
             switch (stateStyle)
             {
-            case nbui::LayoutBuilder::StateStyle::ACTIVE:
+            case nbui::LayoutBuilder::StateStyle::BASE:
                 style.baseColor = color;
+                break;
+            case nbui::LayoutBuilder::StateStyle::ACTIVE:
+                style.activeColor = color;
                 break;
             case nbui::LayoutBuilder::StateStyle::HOVER:
                 style.hoverColor = color;
@@ -210,16 +246,35 @@ namespace nbui
     LayoutBuilder&& LayoutBuilder::border(
         int width,
         Border::Style style,
-        const NbColor& color
+        const NbColor& color,
+        Border::Side side
     )&&
     {
         if (currentNode)
         {
             currentNode->style.border = {
                 .style = style,
-                .width = width,
-                .color = color 
+                //.width = width,
+                .color = color, 
+                .sideMask = side
             };
+
+            if (hasFlag(side, Border::Side::TOP))
+            {
+                currentNode->style.border.width.top = width;
+            }
+            if (hasFlag(side, Border::Side::BOTTOM))
+            {
+                currentNode->style.border.width.bottom = width;
+            }
+            if (hasFlag(side, Border::Side::LEFT))
+            {
+                currentNode->style.border.width.left = width;
+            }
+            if (hasFlag(side, Border::Side::RIGHT))
+            {
+                currentNode->style.border.width.right = width;
+            }
         }
         return std::move(*this);
     }
@@ -286,7 +341,6 @@ namespace nbui
         if (currentNode)
         {
             currentNode->style.widthSizeType = NNsLayout::SizeType::AUTO;
-            //currentNode->style.width = static_cast<float>(w);
         }
         return std::move(*this);
     }
@@ -296,7 +350,6 @@ namespace nbui
         if (currentNode)
         {
             currentNode->style.heightSizeType = NNsLayout::SizeType::AUTO;
-            // currentNode->style.width = static_cast<float>(w);
         }
         return std::move(*this);
     }
@@ -328,24 +381,48 @@ namespace nbui
         return std::move(*this);
     }
 
+    LayoutBuilder&& LayoutBuilder::spacing(int spacing) &&
+    {
+        if (auto layout = dynamic_cast<NNsLayout::VLayout*>(currentNode))
+        {
+            layout->setSpacing(spacing);
+        }
+        return std::move(*this);
+    }
+
     LayoutBuilder&& LayoutBuilder::checked(bool state)&&
     {
-        nb::Error::ErrorManager::instance()
-            .report(nb::Error::Type::INFO, "Checked not implemented");
+        if (auto* button = dynamic_cast<Widgets::Button*>(currentNode))
+        {
+            button->setIsChecked(true);
+        }
+        return std::move(*this);
+    }
+
+    LayoutBuilder&& LayoutBuilder::checkedGroupIndex(bool state, int index)&&
+    {
+        if (auto* group = dynamic_cast<NNsLayout::ButtonGroup*>(currentNode))
+        {
+            group->setCheckedIndex(true, index);
+        }
         return std::move(*this);
     }
 
     LayoutBuilder&& LayoutBuilder::fontSize(int size)&&
     {
-        nb::Error::ErrorManager::instance()
-            .report(nb::Error::Type::INFO, "Font size not implemented");
+        if (currentNode && currentNode->getOwner())
+        {
+            currentNode->getOwner()->getStyle().font.setSize(size);
+        }
         return std::move(*this);
     }
 
-    LayoutBuilder&& LayoutBuilder::textAlign(Widgets::TextAlign align)&&
+    LayoutBuilder&& LayoutBuilder::textAlignment(TextFormatAlignment align)&&
     {
-        nb::Error::ErrorManager::instance()
-            .report(nb::Error::Type::INFO, "TextAlign not implemented");
+        if (currentNode && currentNode->getOwner())
+        {
+           currentNode->getOwner()->getStyle().alignment = align;
+        }
         return std::move(*this);
     }
 

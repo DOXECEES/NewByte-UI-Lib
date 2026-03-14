@@ -2,12 +2,6 @@
 #define NBUI_SRC_RENDERER_DIRECT2DWRAPPER_HPP
 
 #include "../Core.hpp"
-#include "../WindowInterface/WindowCore.hpp"
-#include "FactorySingleton.hpp"
-#include "../Utils.hpp"
-
-#include "Font.hpp"
-#include "Direct2dGlobalWidgetMapper.hpp"
 
 #include <unordered_map>
 #include <memory>
@@ -18,11 +12,29 @@
 #include <dxgi1_2.h>
 #include <d2d1_1.h>
 #include <wrl/client.h>
+#include <wincodec.h> 
+#pragma comment(lib, "windowscodecs.lib")  
+
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dwrite.lib")
 
+#include "TextAlignment.hpp"
+#include "Direct2dTextFormat.hpp"
+#include "Direct2dTextFormatCache.hpp"
+
+
+#include "../Utils.hpp"
+#include "../WindowInterface/WindowCore.hpp"
+#include "FactorySingleton.hpp"
+
+#include "Font.hpp"
+#include "Direct2dGlobalWidgetMapper.hpp"
+
+
 #include "Debug.hpp"
+
+
 
 // Используем ComPtr везде
 using Microsoft::WRL::ComPtr;
@@ -33,21 +45,6 @@ namespace Direct2dUtils
     D2D1_COLOR_F toD2D1Color(const NbColor& color) noexcept;
     D2D1_POINT_2F toD2D1Point(const NbPoint<int>& point) noexcept;
 }
-
-enum class TextAlignment
-{
-    CENTER,
-    LEFT,
-    RIGHT,
-    JUSTIFY
-};
-
-enum class ParagraphAlignment
-{
-    TOP,
-    BOTTOM,
-    CENTER,
-};
 
 class Direct2dHandleRenderTarget
 {
@@ -630,7 +627,8 @@ public:
     void drawLine(
         const NbPoint<int>& p1,
         const NbPoint<int>& p2,
-        const NbColor& color
+        const NbColor& color,
+        float width = 1.0f
     ) const noexcept
     {
         if (!m_d2dContext) return;
@@ -641,10 +639,39 @@ public:
             m_d2dContext->DrawLine(
                 Direct2dUtils::toD2D1Point(p1),
                 Direct2dUtils::toD2D1Point(p2),
-                brush.Get()
+                brush.Get(),
+                width
             );
         }
     }
+
+    void drawTextByFormat(
+        const std::wstring& text,
+        const NbRect<int>& rect,
+        const NbColor& color,
+        const Renderer::TextFormatStyle& style
+    ) const noexcept
+    {
+        if (!m_d2dContext)
+        {
+            return;
+        }
+
+
+        ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
+        if (brush)
+        {
+            m_d2dContext->DrawText(
+                text.c_str(),
+                static_cast<UINT32>(text.length()), 
+                textFormatCache.get(style).Get(),
+                Direct2dUtils::toD2D1Rect(rect),
+                brush.Get()
+            );
+        }
+
+    }
+
 
     void drawText(
         const std::wstring& text,
@@ -696,9 +723,6 @@ public:
                 Direct2dUtils::toD2D1Rect(rect),
                 brush.Get()
             );
-            
-
-
         }
     }
 
@@ -890,6 +914,44 @@ public:
         return nullptr;
     }
 
+    ID2D1Bitmap* LoadBitmapFromFile(
+        ID2D1RenderTarget *pRenderTarget,
+        IWICImagingFactory *pWICFactory,
+        PCWSTR uri // Путь к файлу
+    ) {
+        IWICBitmapDecoder *pDecoder = NULL;
+        IWICBitmapFrameDecode *pSource = NULL;
+        IWICFormatConverter *pConverter = NULL;
+
+        
+
+        HRESULT hr = pWICFactory->CreateDecoderFromFilename(uri, NULL, GENERIC_READ, 
+            WICDecodeMetadataCacheOnLoad, &pDecoder);
+
+        hr = pDecoder->GetFrame(0, &pSource);
+
+        pWICFactory->CreateFormatConverter(&pConverter);
+        pConverter->Initialize(pSource, GUID_WICPixelFormat32bppPBGRA, 
+            WICBitmapDitherTypeNone, NULL, 0.f, WICBitmapPaletteTypeMedianCut);
+
+        ID2D1Bitmap *pBitmap = NULL;
+        pRenderTarget->CreateBitmapFromWicBitmap(pConverter, NULL, &pBitmap);
+
+        pDecoder->Release();
+        pSource->Release();
+        pConverter->Release();
+
+        return pBitmap;
+    }
+
+    void drawBitmap(
+        const NbRect<int>& rect,
+        ID2D1Bitmap *pBitmap
+    )
+    {
+        m_d2dContext->DrawBitmap(pBitmap, Direct2dUtils::toD2D1Rect(rect));
+    }
+
     // Геттер для сырого контекста
     ID2D1DeviceContext* getRawContext() const noexcept
     {
@@ -905,6 +967,9 @@ private:
     ComPtr<ID2D1Bitmap1> m_d2dTargetBitmap;
     ComPtr<IDWriteTextFormat> m_textFormat;
     ComPtr<ID2D1Layer> m_layer;
+
+    Renderer::Direct2dTextFormatCache textFormatCache;
+
 
     mutable std::unordered_map<NbColor, ComPtr<ID2D1SolidColorBrush>> m_colorMap;
 };

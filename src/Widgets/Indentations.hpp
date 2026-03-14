@@ -2,9 +2,7 @@
 #define NBUI_SRC_WIDGETS_INDENTATIONS_HPP
 
 #include <Core.hpp>
-
 #include <TypeTraits.hpp>
-
 
 template<typename T, typename = nbstl::isArithmetic<T>>
 struct Margin

@@ -14,7 +14,7 @@
 #include "Theme.hpp"
 
 #include <functional>
-
+#include "MouseState.hpp"
 
 
 namespace Widgets
@@ -89,7 +89,7 @@ namespace Widgets
         virtual void onSymbolButtonClicked(const wchar_t symbol) {};
         virtual void onTimer() {};
 
-        virtual void onMouseMove(const NbPoint<int>& pos) noexcept {};
+        virtual void onMouseMove(const MouseState& pos) noexcept {};
 
         virtual bool hitTest(const NbPoint<int>& pos) = 0;
         virtual bool hitTestClick(const NbPoint<int>& pos) noexcept 

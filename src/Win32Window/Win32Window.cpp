@@ -32,7 +32,7 @@ namespace Win32Window
     {
         if(!registerWindowClass())
         {
-            throw std::runtime_error("Failed to register window class.");
+            //throw std::runtime_error("Failed to register window class.");
         }
 
         state.setSize({800, 600});
@@ -59,7 +59,7 @@ namespace Win32Window
 
         std::vector<CaptionButton> captionButtons =
         {
-            { L"✕", 50, 35, { 45, 45, 45 }, {240, 7, 23} },
+            { L"✕", 50, 35, { 35, 35, 35 }, {240, 7, 23} },
             { L"🗖", 30, 35 },
             { L"🗕", 30, 35 },
         };

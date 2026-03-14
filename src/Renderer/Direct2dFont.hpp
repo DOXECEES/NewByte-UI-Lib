@@ -1,11 +1,15 @@
 #ifndef NBUI_SRC_DIRECT2DFONT_HPP
 #define NBUI_SRC_DIRECT2DFONT_HPP
 
-#include "Font.hpp"
-#include "Direct2dWrapper.hpp"
 
-
+#include <d2d1.h>
+#pragma comment(lib, "d2d1")
+#include <d2d1_1.h>
+#include <dwrite.h>      
+#include <wrl/client.h>  
 #include <memory>
+
+#include "Font.hpp"
 
 inline DWRITE_FONT_STYLE toDWriteFontStyle(FontStyle style)
 {

@@ -14,7 +14,13 @@ namespace nbui
         capturedWidget = nullptr;
     }
 
-    void GlobalWidgetContext::onMouseMove(const NbPoint<int>& pos) noexcept
+    Widgets::IWidget* GlobalWidgetContext::getCapturedWidget() noexcept
+    {
+        return capturedWidget;
+    }
+
+
+    void GlobalWidgetContext::onMouseMove(const MouseState& pos) noexcept
     {
         if (!capturedWidget)
         {

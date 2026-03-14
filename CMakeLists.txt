@@ -5,6 +5,7 @@ project(NewByte_UI_Lib)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 
@@ -31,6 +32,8 @@ set (SRC
         src/TempDocking.hpp
         src/LayoutBuilder.cpp
         src/LayoutBuilder.hpp
+
+        src/MouseState.hpp
 
         src/GlobalWidgetContext.hpp
         src/GlobalWidgetContext.cpp
@@ -84,6 +87,12 @@ set (SRC
         src/Renderer/Geometry/GeometryFactory.cpp
         src/Renderer/Geometry/GeometryFactory.hpp
 
+        src/Renderer/Direct2dTextFormatCache.cpp
+        src/Renderer/Direct2dTextFormatCache.hpp
+
+        src/Renderer/Direct2dTextFormat.cpp
+        src/Renderer/Direct2dTextFormat.hpp
+
         src/Renderer/Geometry/BorderGeometryBuilder.cpp
         src/Renderer/Geometry/BorderGeometryBuilder.hpp
         src/Renderer/Geometry/BorderGeometryCache.cpp
@@ -92,6 +101,8 @@ set (SRC
         src/Renderer/Geometry/WidgetsGeometryBuilder.hpp
         src/Renderer/Geometry/WidgetsGeometryCache.cpp
         src/Renderer/Geometry/WidgetsGeometryCache.hpp
+
+        src/Renderer/TextAlignment.hpp
 
 
         src/RendererInterface/IRenderContext.cpp
@@ -147,18 +158,29 @@ set (SRC
         src/Widgets/Spacer.hpp
         src/Widgets/FloatSpinBox.cpp
         src/Widgets/FloatSpinBox.hpp
+
         src/Widgets/Section.hpp
+
+        src/Widgets/Thumbnail.hpp
+
 
         src/Widgets/ColorPicker.hpp
         src/Widgets/ToolBar.cpp
         src/Widgets/ToolBar.hpp
         src/Widgets/ButtonGroup.hpp
         src/Widgets/ButtonGroup.cpp
+        src/Widgets/Slider.hpp
 
 
         src/Layout/LayoutNode.cpp
         src/Layout/LayoutNode.hpp
-
+        src/Layout/ButtonGroup.cpp
+        src/Layout/ButtonGroup.hpp
+        src/Layout/LayoutWindow.cpp
+        src/Layout/LayoutWindow.hpp
+        src/Layout/LayoutWidget.cpp
+        src/Layout/LayoutWidget.hpp
+        
         src/Utils/Windows/WindowPositionQueue.cpp
         src/Utils/Windows/WindowPositionQueue.hpp
         src/Utils/Validator.cpp

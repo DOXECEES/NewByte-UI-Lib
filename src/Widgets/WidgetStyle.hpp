@@ -4,6 +4,10 @@
 #include <NbCore.hpp>
 #include "../Core.hpp"
 
+
+#include "Renderer/TextAlignment.hpp"
+#include "Renderer/Font.hpp"
+
 struct Border
 {
     enum class Style
@@ -20,11 +24,56 @@ struct Border
     };
 
     Style   style   = Style::NONE;
-    int     width   = 1;
+    struct BorderWidth 
+    {
+        int top     = 0;
+        int right   = 0;
+        int bottom  = 0;
+        int left    = 0;
+    };
+
+    BorderWidth     width   = {};
     int     radius  = 0;
     NbColor color   = {255, 255, 255};
+    
+    enum class Side : uint8_t
+    {
+        NONE   = 0,
+        TOP =  1<< 0,
+        RIGHT = 1<< 1,
+        BOTTOM = 1<< 2,
+        LEFT = 1<< 3,
+        ALL = TOP | RIGHT | BOTTOM | LEFT,
+    };
+
+    Side sideMask = Side::ALL;
+    
+
 };
 
+
+inline Border::Side operator|(Border::Side lhs, Border::Side rhs)
+{
+    return static_cast<Border::Side>(
+        static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs)
+    );
+}
+
+inline Border::Side& operator|=(Border::Side& lhs, Border::Side rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
+
+inline Border::Side operator&(Border::Side lhs, Border::Side rhs) {
+    return static_cast<Border::Side>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
+}
+
+
+inline bool hasFlag(Border::Side mask, Border::Side flag)
+{
+    return (mask & flag) != Border::Side::NONE;
+}
 
 // Общий стиль для всех виджетов
 struct WidgetStyle
@@ -42,6 +91,8 @@ struct WidgetStyle
 	NbColor disableTextColor = { 100, 100, 100 }; // отключённый текст
 
     Border  border;
+    Font font;
+    TextFormatAlignment alignment;
 };
 
 // Стиль для TreeView
@@ -100,6 +151,12 @@ struct ButtonStyle
 
     NB_NODISCARD Border& border() noexcept { return baseStyle.border; }
     NB_NODISCARD const Border& border() const noexcept { return baseStyle.border; }
+
+    NB_NODISCARD Font& font() noexcept { return baseStyle.font; }
+    NB_NODISCARD const Font& font() const noexcept { return baseStyle.font; }
+
+    NB_NODISCARD TextFormatAlignment& textAlignment() noexcept { return baseStyle.alignment; }
+    NB_NODISCARD const TextFormatAlignment& textAlignment() const noexcept{ return baseStyle.alignment; }
 
     void updateFrom(const WidgetStyle& ws) noexcept
     {

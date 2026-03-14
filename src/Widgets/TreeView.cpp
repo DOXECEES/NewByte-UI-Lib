@@ -55,38 +55,68 @@ namespace Widgets
 
     bool TreeView::hitTest(const NbPoint<int>& pos)
     {
-        size_t index = hitElement(pos);
-        lastHitIndex = indexFromVisibleRow(index);
+        // 1. Сначала проверяем, входит ли точка в прямоугольник виджета
+        if (!rect.isInside(pos))
+        {
+            lastHitIndex = ModelIndex{}; // Сбрасываем индекс наведения
+            return false;                // Сообщаем системе, что мышь НЕ над виджетом
+        }
+
+        // 2. Если внутри, вычисляем какой именно элемент
+        size_t row = hitElement(pos);
+        lastHitIndex = indexFromVisibleRow(row);
+
         return true;
     }
 
+    size_t TreeView::hitElement(const NbPoint<int>& pos) const noexcept
+    {
+        // Мы уже проверили isInside в hitTest или hitTestClick,
+        // но для надежности оставим локальный расчет.
+
+        int localY = pos.y - rect.y;
+
+        // Важно: range.first — это смещение скролла в ПИКСЕЛЯХ.
+        // Если это так, то формула верна:
+        size_t absoluteY = static_cast<size_t>(range.first + localY);
+
+        return absoluteY / HEIGHT_OF_ITEM_IN_PIXEL;
+    }
+
+
     bool TreeView::hitTestClick(const NbPoint<int>& pos) noexcept
     {
-        if (!model)
+        if (!model || !rect.isInside(pos))
         {
             return false;
         }
 
-        size_t row = hitElement(pos);
+        // 1. Переходим в локальные координаты виджета
+        NbPoint<int> localPos = {pos.x - rect.x, pos.y - rect.y};
+
+        // 2. Определяем индекс строки с учетом скролла
+        // range.first - это смещение скролла в пикселях
+        size_t row = (localPos.y + range.first) / HEIGHT_OF_ITEM_IN_PIXEL;
+
         static ModelIndex prevClickedIndex;
         lastClickedIndex = indexFromVisibleRow(row);
+
         if (!lastClickedIndex.isValid())
         {
             return false;
         }
-   
+
         const ModelItem* item = uuidMap.at(lastClickedIndex.getUuid());
-        
+
+
+        int buttonLocalY = (int)(row * HEIGHT_OF_ITEM_IN_PIXEL) - range.first;
+        int buttonLocalX = (int)20 * (int)item->getDepth();
+
+        NbRect<int> buttonRectLocal = {buttonLocalX, buttonLocalY, 20, 20};
 
         if (isItemHaveChildrens(lastClickedIndex))
         {
-            NbRect<int> buttonRect = {
-                (int)20 * (int)item->getDepth(),
-                (int)row * 20,
-                20,
-                20
-            };
-            if (buttonRect.isInside(pos))
+            if (buttonRectLocal.isInside(localPos))
             {
                 onItemButtonClickSignal.emit(lastClickedIndex);
             }
@@ -98,7 +128,6 @@ namespace Widgets
                     onItemChangeSignal.emit(lastClickedIndex);
                 }
             }
-
         }
         else
         {
@@ -108,9 +137,11 @@ namespace Widgets
                 onItemChangeSignal.emit(lastClickedIndex);
             }
         }
+
         prevClickedIndex = lastClickedIndex;
         return true;
     }
+
 
     const char* TreeView::getClassName() const
     {
@@ -236,11 +267,7 @@ namespace Widgets
         return *uuidMap.at(uuid);
     }
 
-    size_t TreeView::hitElement(const NbPoint<int>& pos) const noexcept
-    {
-        size_t elementIndex = range.first + pos.y;
-        return elementIndex / HEIGHT_OF_ITEM_IN_PIXEL;
-    }
+    
 
     size_t TreeView::getVisibleCount() const noexcept
     {

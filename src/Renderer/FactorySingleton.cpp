@@ -4,6 +4,8 @@
 
 
 #include "FactorySingleton.hpp"
+#include "Error/ErrorManager.hpp"
+#include <winnt.h>
 
 namespace Renderer
 {
@@ -95,5 +97,28 @@ namespace Renderer
         sink->Close();
 
         return geometry;
+    }
+
+    Microsoft::WRL::ComPtr<IWICImagingFactory>
+    getWicFactory() noexcept
+    {
+        static Microsoft::WRL::ComPtr<IWICImagingFactory> pFactory = nullptr;
+        if (!pFactory)
+        {
+            HRESULT hr = CoCreateInstance(
+                CLSID_WICImagingFactory,      
+                NULL,                          
+                CLSCTX_INPROC_SERVER,          
+                IID_PPV_ARGS(&pFactory)     
+            );
+
+            if(hr != S_OK)
+            {
+                nb::Error::ErrorManager::instance()
+                    .report(nb::Error::Type::FATAL, "Failed to create WIC factory");
+                return nullptr;
+            }
+        }
+        return pFactory;
     }
 };

@@ -5,6 +5,7 @@
 #include "Core.hpp"
 #include "Direct2dWidgetRenderer.hpp"
 
+#include "Renderer/FactorySingleton.hpp"
 #include "Widgets/Button.hpp"
 #include "Widgets/TextEdit.hpp"
 #include "Widgets/TreeView.hpp"
@@ -1075,15 +1076,7 @@ namespace Renderer
         
 
         // 2. Объявляем указатель на фабрику
-        ComPtr<IWICImagingFactory> pWICFactory;
-
-        // 3. Создаем экземпляр фабрики через CoCreateInstance
-        hr = CoCreateInstance(
-            CLSID_WICImagingFactory,      // Класс объекта
-            NULL,                          // Агрегация не используется
-            CLSCTX_INPROC_SERVER,          // Запуск в контексте текущего процесса
-            IID_PPV_ARGS(&pWICFactory)     // Получаем интерфейс IWICImagingFactory
-        );
+        ComPtr<IWICImagingFactory> pWICFactory = FactorySingleton::getWicFactory();
 
         const wchar_t* path = L"C:\\Users\\Admin\\Pictures\\Screenshots\\Screenshot 2026-01-14 113146.png";
 

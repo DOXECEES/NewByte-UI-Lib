@@ -101,6 +101,8 @@ set (SRC
         src/Renderer/Geometry/WidgetsGeometryBuilder.hpp
         src/Renderer/Geometry/WidgetsGeometryCache.cpp
         src/Renderer/Geometry/WidgetsGeometryCache.hpp
+        src/Renderer/Direct2dBitmapCache.cpp
+        src/Renderer/Direct2dBitmapCache.hpp
 
         src/Renderer/TextAlignment.hpp
 

@@ -63,7 +63,7 @@ namespace nbui
 
         LayoutBuilder&& endGroup() &&;
         
-        static LayoutBuilder thumbnail();
+        static LayoutBuilder thumbnail(const std::wstring& name, const std::wstring& type);
         static LayoutBuilder treeView();
 
         LayoutBuilder&& child(LayoutBuilder&& childBuilder)&&;

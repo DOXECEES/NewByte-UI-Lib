@@ -69,6 +69,7 @@ namespace Win32Window
     {
         WindowInterface::WindowMapper::unregisterWindow(handle);
         delete renderer;
+        close();
     }
 
     void ModalWindow::show()

@@ -5,6 +5,8 @@
 #include "Core.hpp"
 #include "Direct2dWidgetRenderer.hpp"
 
+#include "Direct2dBitmapCache.hpp"
+#include "Renderer/FactorySingleton.hpp"
 #include "Widgets/Button.hpp"
 #include "Widgets/TextEdit.hpp"
 #include "Widgets/TreeView.hpp"
@@ -39,7 +41,8 @@
 namespace Renderer
 {
     Direct2dWidgetRenderer::Direct2dWidgetRenderer(Direct2dHandleRenderTarget *renderTarget)
-        :renderTarget(renderTarget)
+        : renderTarget(renderTarget)
+        , bitmapCache(renderTarget)
     {}
 
 
@@ -1059,7 +1062,12 @@ namespace Renderer
 
         getWidgetThemeColorByState(thumbnail, backgroundColor, textColor);
         
-        renderTarget->fillRectangle(rect, backgroundColor);
+        NbRect<int> cardRect = {
+            rect.x - 2, rect.y - 2, rect.width + 4, rect.height + 4
+
+        };
+
+        renderTarget->fillRoundedRectangle(cardRect, 4, backgroundColor);
 
         if (thumbnail->getNameLabel())
         {
@@ -1073,26 +1081,11 @@ namespace Renderer
 
         HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
         
-
-        // 2. Объявляем указатель на фабрику
-        ComPtr<IWICImagingFactory> pWICFactory;
-
-        // 3. Создаем экземпляр фабрики через CoCreateInstance
-        hr = CoCreateInstance(
-            CLSID_WICImagingFactory,      // Класс объекта
-            NULL,                          // Агрегация не используется
-            CLSCTX_INPROC_SERVER,          // Запуск в контексте текущего процесса
-            IID_PPV_ARGS(&pWICFactory)     // Получаем интерфейс IWICImagingFactory
-        );
-
-        const wchar_t* path = L"C:\\Users\\Admin\\Pictures\\Screenshots\\Screenshot 2026-01-14 113146.png";
-
-
-        static auto bitmap = renderTarget->LoadBitmapFromFile(
-            renderTarget->getRawContext(), pWICFactory.Get(), path
-        );
-        renderTarget->drawBitmap(rect, bitmap);
-
+        auto bitmap = bitmapCache.get(std::wstring(L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\res\\") + thumbnail->getName());
+        if (bitmap)
+        {
+            renderTarget->drawBitmap(thumbnail->getDrawRect(), bitmap.Get());
+        }
     }
 
 

@@ -9,6 +9,8 @@
 #include "Widgets/ComboBox.hpp"
 #include "Geometry/BorderGeometryCache.hpp"
 #include "Geometry/WidgetsGeometryCache.hpp"
+#include "Direct2dBitmapCache.hpp"
+
 #include "Direct2dTextFormatCache.hpp"
 
 #include "Debug.hpp"
@@ -86,8 +88,6 @@ namespace Renderer
             return castWidget;
         }
 
-        // color - OUT
-        // textColor - OUT
         void getWidgetThemeColorByState(IWidget* widget, NbColor& color, NbColor& textColor) const noexcept;
 
         void addWidgetPopUpToQueue(IWidget* widget) noexcept
@@ -148,6 +148,7 @@ namespace Renderer
         std::queue<PopUpRenderParams> popupQueue;
         Geometry::BorderGeometryCache cache;
         Geometry::WidgetsGeometryCache widgetsCache;
+        Direct2dBitmapCache bitmapCache;
         
 
     };

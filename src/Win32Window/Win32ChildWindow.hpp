@@ -85,8 +85,19 @@ namespace Win32Window
         }
 
 
+        void close() override
+        {
+            if (handle.as<HWND>())
+            {
+                PostMessage(handle.as<HWND>(), WM_CLOSE, 0, 0);
+            }
+        }
+
+
+
     public:
         Signal<void(const NbSize<int>&)> onSizeChanged;
+        Signal<void()> onDraw;
         NbPoint<int> prevMousePoint = {-1, -1};
 
 
@@ -141,6 +152,7 @@ namespace Win32Window
                         renderer->render(this);
                     }
 
+                    onDraw.emit();
                     ValidateRect(hWnd, nullptr);
             
                     return 0;
@@ -588,6 +600,30 @@ namespace Win32Window
                 case WM_ERASEBKGND:
                 {
                     return 1;
+                }
+                case WM_CLOSE:
+                {
+                    DestroyWindow(hWnd);
+                    return 0;
+                }
+                case WM_DESTROY:
+                {
+                    if (timer)
+                    {
+                        SetThreadpoolTimer(timer, NULL, 0, 0);        
+                        WaitForThreadpoolTimerCallbacks(timer, TRUE); 
+                        CloseThreadpoolTimer(timer);                  
+                        timer = nullptr;
+                    }
+
+                    if (focusedWidget)
+                    {
+                        focusedWidget = nullptr;
+                    }
+
+                    onClose.emit();
+
+                    return 0;
                 }
 
             }

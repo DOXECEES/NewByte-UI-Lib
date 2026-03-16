@@ -1089,7 +1089,10 @@ namespace Renderer
 
 
         auto bitmap = bitmapCache.get(std::wstring(L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\res\\") + thumbnail->getName());
-        renderTarget->drawBitmap(thumbnail->getDrawRect(), bitmap.Get());
+        if (bitmap)
+        {
+            renderTarget->drawBitmap(thumbnail->getDrawRect(), bitmap.Get());
+        }
     }
 
 

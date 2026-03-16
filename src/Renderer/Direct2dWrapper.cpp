@@ -23,6 +23,18 @@ D2D1_POINT_2F Direct2dUtils::toD2D1Point(const NbPoint<int> &point) noexcept
     return D2D1::Point2F(static_cast<float>(point.x), static_cast<float>(point.y));
 }
 
+D2D1_ROUNDED_RECT Direct2dUtils::toD2D1RoundedRect(const NbRect<int>& rect, const int radius) noexcept
+{
+    return D2D1::RoundedRect(
+        D2D1::RectF(
+            static_cast<float>(rect.x), static_cast<float>(rect.y),
+            static_cast<float>(rect.x + rect.width), static_cast<float>(rect.y + rect.height)
+        ),
+        static_cast<FLOAT>(radius),
+        static_cast<FLOAT>(radius)
+    );
+}
+
 Direct2dHandleRenderTarget Direct2dWrapper::createRenderTarget(const NbWindowHandle& handle, const NbSize<int>& size) noexcept
 {
     D2D1_SIZE_U renderTargetSize = D2D1::SizeU(size.width, size.height);

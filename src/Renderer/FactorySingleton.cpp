@@ -22,18 +22,6 @@ namespace Renderer
     }
 
 
-/*************  ✨ Windsurf Command ⭐  *************/
-/**
- * Releases the Direct2D factory singleton.
- *
- * This function releases the Direct2D factory singleton, which
- * is a singleton object that is used to create Direct2D
- * resources. It is typically used when the application is
- * shutting down.
- *
- * @note This function does not throw any exceptions.
- */
-/*******  3368261a-876f-4ace-815c-03709e47ef9a  *******/
     void FactorySingleton::releaseFactory() noexcept
     {
         Microsoft::WRL::ComPtr<ID2D1Factory> pFactory = getFactory();

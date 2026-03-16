@@ -28,6 +28,14 @@ namespace Win32Window
         void show() override;
         void repaint() const noexcept override;
 
+        void close() override
+        {
+            if (handle.as<HWND>())
+            {
+                SendMessage(handle.as<HWND>(), WM_CLOSE, 0, 0);
+            }
+        }
+
         void onSize(const NbSize<int>& newSize) override
         {
             OutputDebugString(L"Window resized\n");
@@ -552,13 +560,36 @@ namespace Win32Window
             }
 
             case WM_CLOSE:
-                NB_FALLTHROUGH;
-            case WM_DESTROY:
             {
-                ShowWindow(hWnd, SW_HIDE);
-                // PostQuitMessage(0);
+                HWND hParent = (parent) ? parent->getHandle().as<HWND>() : NULL;
+
+                if (hParent)
+                {
+                    EnableWindow(hParent, TRUE);
+                    SetForegroundWindow(hParent);
+                }
+
+
+                DestroyWindow(hWnd);
                 return 0;
             }
+
+            case WM_DESTROY:
+            {
+                focusedWidget = nullptr;
+
+                onClose.emit();
+                //onClose.disconnectAll();
+
+                return 0;
+            }
+            case WM_NCDESTROY:
+            {
+                SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
+                return 0;
+            }
+
+
             }
             return DefWindowProc(hWnd, message, wParam, lParam);
         }

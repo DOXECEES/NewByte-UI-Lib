@@ -39,6 +39,7 @@ namespace WindowInterface
 
         virtual void onSize(const NbSize<int>& newSize) = 0;
         virtual void show() = 0;
+        virtual void close() = 0;
         virtual void repaint() const noexcept = 0;
 
         const NbWindowHandle &getHandle() const noexcept { return handle; };
@@ -82,6 +83,9 @@ namespace WindowInterface
 
         NNsLayout::LayoutNode* getLayoutRoot() noexcept { return rootLayout.get(); }
         void recalculateLayout() noexcept;
+
+        Signal<void()> onClose;
+
     protected:
         NbWindowHandle                              handle;
         WindowState                                 state;

@@ -1062,7 +1062,12 @@ namespace Renderer
 
         getWidgetThemeColorByState(thumbnail, backgroundColor, textColor);
         
-        renderTarget->fillRectangle(rect, backgroundColor);
+        NbRect<int> cardRect = {
+            rect.x - 2, rect.y - 2, rect.width + 4, rect.height + 4
+
+        };
+
+        renderTarget->fillRoundedRectangle(cardRect, 4, backgroundColor);
 
         if (thumbnail->getNameLabel())
         {
@@ -1080,11 +1085,11 @@ namespace Renderer
         // 2. Объявляем указатель на фабрику
         ComPtr<IWICImagingFactory> pWICFactory = FactorySingleton::getWicFactory();
 
-        const wchar_t* path = L"C:\\Users\\Admin\\Pictures\\Screenshots\\Screenshot 2026-01-14 113146.png";
+        //const wchar_t* path = L"C:\\Users\\Admin\\Pictures\\Screenshots\\Screenshot 2026-01-14 113146.png";
 
 
-        auto bitmap = bitmapCache.get(path);
-        renderTarget->drawBitmap(rect, bitmap.Get());
+        auto bitmap = bitmapCache.get(std::wstring(L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\res\\") + thumbnail->getName());
+        renderTarget->drawBitmap(thumbnail->getDrawRect(), bitmap.Get());
     }
 
 

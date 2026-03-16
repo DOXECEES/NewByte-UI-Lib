@@ -26,6 +26,15 @@ namespace Win32Window
         
         void onSize(const NbSize<int>& newSize) override;
         void show() override;
+
+        void close() override
+        {
+            if (handle.as<HWND>())
+            {
+                PostMessage(handle.as<HWND>(), WM_CLOSE, 0, 0);
+            }
+        }
+
         void repaint() const noexcept override;
 
         const NbWindowHandle &getHandle() const noexcept { return handle; };

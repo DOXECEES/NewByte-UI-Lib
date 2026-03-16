@@ -7,6 +7,7 @@
 
 #include "Widgets/Label.hpp"
 #include <oaidl.h>
+#include <string>
 
 namespace Widgets
 {
@@ -14,9 +15,13 @@ namespace Widgets
 	{
 
     public:
-		Thumbnail()
+		Thumbnail(const std::wstring& name, const std::wstring& type)
 			:IWidget({})
         {
+            typeLabel->setText(type);
+            nameLabel->setText(name);
+            nameLabel->setEllipsis(true);
+            
 			typeLabel->getStyle().alignment = {TextAlignment::LEFT, ParagraphAlignment::CENTER};
 			typeLabel->getStyle().font.setSize(8);
 		}
@@ -72,7 +77,7 @@ namespace Widgets
             return typeLabel;
         }
 
-		const NbRect<int>& getDrawRect() const noexcept
+		NbRect<int> getDrawRect() const noexcept
 		{
 			NbRect<int> rc = {
                 rect.x,
@@ -84,6 +89,15 @@ namespace Widgets
 			return rc;
 		}
 
+        const std::wstring& getName() const noexcept
+        {
+            return nameLabel->getText();
+        }
+
+        const std::wstring& getType() const noexcept
+        {
+            return typeLabel->getText();
+        }
 
     private:
         std::shared_ptr<Label> nameLabel = std::make_shared<Label>(L"Some name");

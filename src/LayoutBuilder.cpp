@@ -152,10 +152,10 @@ namespace nbui
         return std::move(*this);
     }
 
-    LayoutBuilder LayoutBuilder::thumbnail()
+    LayoutBuilder LayoutBuilder::thumbnail(const std::wstring& name, const std::wstring& type)
     {
         LayoutBuilder b;
-        b.node = std::make_unique<NNsLayout::LayoutWidget>(new Widgets::Thumbnail({}));
+        b.node = std::make_unique<NNsLayout::LayoutWidget>(new Widgets::Thumbnail(name, type));
         b.currentNode = b.node.get();
         return b;
     }

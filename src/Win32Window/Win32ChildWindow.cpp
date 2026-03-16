@@ -73,6 +73,11 @@ namespace Win32Window
 
 	ChildWindow::~ChildWindow()
 	{
+        if (handle.as<HWND>())
+        {
+            DestroyWindow(handle.as<HWND>());
+        }
+
         delete renderer;
 	}
 

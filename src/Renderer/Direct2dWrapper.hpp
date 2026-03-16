@@ -44,6 +44,11 @@ namespace Direct2dUtils
     D2D1_RECT_F toD2D1Rect(const NbRect<int>& rect) noexcept;
     D2D1_COLOR_F toD2D1Color(const NbColor& color) noexcept;
     D2D1_POINT_2F toD2D1Point(const NbPoint<int>& point) noexcept;
+    D2D1_ROUNDED_RECT toD2D1RoundedRect(
+        const NbRect<int>& rect,
+        const int radius
+    ) noexcept;
+
 }
 
 class Direct2dHandleRenderTarget
@@ -539,6 +544,26 @@ public:
                 strokeWidth
             );
         }
+    }
+
+    void fillRoundedRectangle(
+        const NbRect<int>& rect,
+        const int radius,
+        const NbColor& color,
+        const float strokeWidth = 1.0f
+    ) const noexcept
+    {
+        if (!m_d2dContext)
+        {
+            return;
+        }
+
+        ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
+        if (brush)
+        {
+            m_d2dContext->FillRoundedRectangle(Direct2dUtils::toD2D1RoundedRect(rect, radius), brush.Get());
+        }
+
     }
 
     void fillRectangle(

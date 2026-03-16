@@ -1081,13 +1081,6 @@ namespace Renderer
 
         HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
         
-
-        // 2. Объявляем указатель на фабрику
-        ComPtr<IWICImagingFactory> pWICFactory = FactorySingleton::getWicFactory();
-
-        //const wchar_t* path = L"C:\\Users\\Admin\\Pictures\\Screenshots\\Screenshot 2026-01-14 113146.png";
-
-
         auto bitmap = bitmapCache.get(std::wstring(L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\res\\") + thumbnail->getName());
         if (bitmap)
         {

@@ -88,8 +88,6 @@ namespace Renderer
             return castWidget;
         }
 
-        // color - OUT
-        // textColor - OUT
         void getWidgetThemeColorByState(IWidget* widget, NbColor& color, NbColor& textColor) const noexcept;
 
         void addWidgetPopUpToQueue(IWidget* widget) noexcept

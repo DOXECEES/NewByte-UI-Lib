@@ -93,7 +93,15 @@ namespace Win32Window
             }
         }
 
+        bool isMouseCurrentlyDragging()
+        {
+            return isMouseDragging;
+        }
 
+        const NbPoint<int> getMouseCapturePoint()
+        {
+            return mouseCapturePoint;
+        }
 
     public:
         Signal<void(const NbSize<int>&)> onSizeChanged;
@@ -250,7 +258,9 @@ namespace Win32Window
                 case WM_LBUTTONDOWN:
                 {
                     SetCapture(hWnd);
+                    isMouseDragging = true;
                     NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                    mouseCapturePoint = point;
 
                     // --- 1. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
                     auto getZIndex = [](const NNsLayout::LayoutNode* node) -> Core::ZIndex
@@ -403,6 +413,8 @@ namespace Win32Window
                 case WM_MOUSEMOVE:
                 {
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+                    NbPoint<float> floatPoint = {(float)point.x, (float)point.y};
+                    onMouseMove.emit(floatPoint);
 
                     MouseState mouseState = {.position = point};
 
@@ -541,6 +553,8 @@ namespace Win32Window
                 case WM_LBUTTONUP:
                 {
                     ReleaseCapture();
+                    isMouseDragging = false;
+                    mouseCapturePoint = {-1, -1};
                     dragging = false;
                  
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
@@ -648,6 +662,8 @@ namespace Win32Window
                     
         }
     private:
+        bool isMouseDragging = false;
+        NbPoint<int> mouseCapturePoint = {-1, -1};
         bool isRenderable = true;
         PTP_TIMER           timer;
 

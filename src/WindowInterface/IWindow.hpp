@@ -85,6 +85,7 @@ namespace WindowInterface
         void recalculateLayout() noexcept;
 
         Signal<void()> onClose;
+        Signal<void(NbPoint<float>&)> onMouseMove;
 
     protected:
         NbWindowHandle                              handle;

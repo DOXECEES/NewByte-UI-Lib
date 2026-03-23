@@ -153,7 +153,7 @@ namespace Renderer
 
         if (swapChain)
         {
-            hr = swapChain->Present(1, 0);
+            hr = swapChain->Present(0, 0);
             if (FAILED(hr) && hr != DXGI_ERROR_WAS_STILL_DRAWING)
             {
                 // Обработка потери устройства или изменений размера

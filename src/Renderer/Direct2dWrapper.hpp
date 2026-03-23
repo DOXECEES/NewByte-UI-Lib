@@ -19,6 +19,8 @@
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dwrite.lib")
 
+#include <dxgi1_3.h>
+
 #include "TextAlignment.hpp"
 #include "Direct2dTextFormat.hpp"
 #include "Direct2dTextFormatCache.hpp"
@@ -212,6 +214,13 @@ private:
             return;
         }
 
+
+        /*ComPtr<IDXGISwapChain2> swapChain2;
+        if (SUCCEEDED(m_swapChain.As(&swapChain2)))
+        {
+            swapChain2->SetMaximumFrameLatency(1);
+        }*/
+
         CreateBitmapFromSwapChain();
 
         // Установка DPI
@@ -369,7 +378,7 @@ public:
         }
 
         DXGI_PRESENT_PARAMETERS params = {};
-        hr = m_swapChain->Present1(1, 0, &params);
+        hr = m_swapChain->Present1(0, 0, &params);
 
         return hr;
     }

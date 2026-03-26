@@ -414,7 +414,7 @@ namespace Temp
             manager->registerNode(rootNode);
 
             // Обновление layout
-            NbRect<int> rect{ 0, 0, mainWindow->getWidth(), mainWindow->getHeight() };
+            NbRect<int> rect = { 0, 32, mainWindow->getWidth(), mainWindow->getHeight() -32 };
             rootNode->updateLayout(rect);
         }
 
@@ -583,7 +583,7 @@ namespace Temp
 
         void onSize(int width, int height)
         {
-            NbRect<int> rect{ 0, 0, width, height };
+            NbRect<int> rect{ 0, 32, width, height -32};
             rootNode->updateLayout(rect);
             recalcLayout();
         }

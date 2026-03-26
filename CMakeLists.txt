@@ -62,7 +62,7 @@ set (SRC
         src/WindowInterface/WindowState.cpp
         src/WindowInterface/WindowStyle.cpp
         src/WindowInterface/WindowStyle.hpp
-      
+        src/WindowInterface/PopupMenu.hpp    
 
         src/WindowInterface/WindowCore.hpp
 
@@ -172,6 +172,9 @@ set (SRC
         src/Widgets/ButtonGroup.hpp
         src/Widgets/ButtonGroup.cpp
         src/Widgets/Slider.hpp
+        src/Widgets/Menu.hpp
+        src/Widgets/Menu.cpp
+        src/Widgets/PopUp.hpp
 
 
         src/Layout/LayoutNode.cpp

@@ -28,6 +28,12 @@ namespace Win32Window
         };
     }
 
+    void Window::excludeFromClientRect(const NbRect<int>& exclude) noexcept
+    {
+        state.setExcludeFromTop(exclude.x);
+    }
+
+
     Window::Window()
     {
         if(!registerWindowClass())
@@ -102,6 +108,7 @@ namespace Win32Window
         captionButtonsContainer.addButton(captionButtons[1]);
         captionButtonsContainer.addButton(captionButtons[2]);
 
+        popupManager.init(handle.as<HWND>());
     }
 
 	Window::~Window()

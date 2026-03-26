@@ -12,7 +12,7 @@
 #include "Widgets/TreeView.hpp"
 #include "Widgets/ToolBar.hpp"
 #include "Widgets/Thumbnail.hpp"
-
+#include "Widgets/Menu.hpp"
 #include "Layout/ButtonGroup.hpp"
 #include <Color.hpp>
 
@@ -195,7 +195,6 @@ namespace nbui
             }
         }
 
-        // 2. Строим дерево НОД
         if (currentNode)
         {
             currentNode->addChild(std::move(childBuilder.node));
@@ -203,6 +202,8 @@ namespace nbui
 
         return std::move(*this);
     }
+
+
 
 
     LayoutBuilder&& LayoutBuilder::background(

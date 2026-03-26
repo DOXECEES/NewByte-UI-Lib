@@ -9,7 +9,7 @@
 
 #include "Widgets/WidgetStyle.hpp"
 #include "Widgets/Indentations.hpp"
-
+#include "Widgets/Menu.hpp"
 #include "Layout/LayoutNode.hpp"
 #include "Signal.hpp"
 
@@ -67,6 +67,8 @@ namespace nbui
         static LayoutBuilder treeView();
 
         LayoutBuilder&& child(LayoutBuilder&& childBuilder)&&;
+        
+
         LayoutBuilder&& background(
             const NbColor& color,
             StateStyle stateStyle = StateStyle::BASE
@@ -133,6 +135,21 @@ namespace nbui
 
             return std::move(*this);
 
+        }
+
+        template <typename Func>
+        LayoutBuilder&& menu(Func&& fn) &&
+        {
+            if (currentNode && currentNode->getOwner())
+            {
+                Widgets::Menu* menu = new Widgets::Menu();
+
+                fn(*menu); 
+
+                currentNode->getOwner()->addMenu(menu);
+            }
+
+            return std::move(*this);
         }
 
         std::unique_ptr<NNsLayout::LayoutNode> build()&&;

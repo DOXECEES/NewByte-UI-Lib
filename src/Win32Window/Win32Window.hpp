@@ -42,7 +42,16 @@ namespace Win32Window
         static void hideCursor() noexcept;
         static void showCursor() noexcept;
 
+        void excludeFromClientRect(const NbRect<int>& exclude) noexcept;
+
         inline static Widgets::IWidget *focusedWidget = nullptr; // only one widget can have focus
+
+        NbPoint<int> getMousePosition()
+        {
+            POINT pt;
+            GetCursorPos(&pt);
+            return {pt.x, pt.y};
+        }
 
     public:
         Signal<void(const NbRect<int>&)> onRectChanged;

@@ -68,6 +68,7 @@ namespace Win32Window
      
         renderer = new Renderer::Direct2dRenderer(this);
         //state.setSize({ 0, 0 });
+        popupManager.init(handle.as<HWND>());
 
     }
 

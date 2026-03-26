@@ -2,6 +2,8 @@
 
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "IWidget.hpp"
+#include "Menu.hpp"
+#include "PopUp.hpp"
 
 namespace Widgets
 {
@@ -10,7 +12,24 @@ namespace Widgets
 		isHide_ = true;
 	}
 
-	void IWidget::show() noexcept
+	void IWidget::onClick()
+    {
+        if (state == WidgetState::DISABLE)
+        {
+            return;
+        }
+        if (onClickCallback)
+        {
+            onClickCallback();
+        }
+        if (contextMenu)
+        {
+            dynamic_cast<Menu*>(contextMenu)->hideMenu();
+        }
+        onPressedSignal.emit();
+    };
+
+    void IWidget::show() noexcept
 	{
 		isHide_ = false;
 	}
@@ -87,6 +106,16 @@ namespace Widgets
 	const Core::ZIndex& IWidget::getZIndex() const noexcept
 	{
 		return zIndex;
-	}
+    }
+
+    void IWidget::onRightClick(const NbPoint<int>& point) noexcept
+    {
+        if (contextMenu)
+        {
+            //dynamic_cast<Menu*>(contextMenu)->showMenu(point.x, point.y);
+            //PopupMenuManager manager;
+			//manager
+		}
+    }
 
 };

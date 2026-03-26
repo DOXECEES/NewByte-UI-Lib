@@ -18,7 +18,7 @@
 #include "Widgets/Section.hpp"
 #include "Widgets/Slider.hpp"
 #include "Widgets/Thumbnail.hpp"
-
+#include "Widgets/Menu.hpp"
 #include "Widgets/ToolBar.hpp"
 
 #include "Direct2dGlobalWidgetMapper.hpp"
@@ -127,6 +127,7 @@ namespace Renderer
         {
             PopUpRenderParams params = popupQueue.front();
             popupQueue.pop();
+
             
             renderTarget->fillRectangle(params.rect, params.color);
             if (!params.addictionalRects.empty())
@@ -149,6 +150,26 @@ namespace Renderer
 
             
         }
+    }
+
+    void Direct2dWidgetRenderer::addMenuToPopupQueue(Widgets::Menu* menu)
+    {
+        if (!menu)
+        {
+            return;
+        }
+
+        PopUpRenderParams params;
+
+        params.rect = menu->getRect();
+        params.color = {30, 30, 30};
+
+        for (const auto& item : menu->getItems())
+        {
+            params.items.push_back({Utils::toWstring(item.text), item.callback});
+        }
+
+        popupQueue.push(params);
     }
 
     // TODO: изменить width border с top на конкретные размеры
@@ -755,12 +776,33 @@ namespace Renderer
                 renderTarget->drawLine({ box.x + 2, box.y + 4 }, { box.x + 6, box.y + 4 }, treeViewStyle.inButtonColor); // горизонталь
             }
 
-            // Текст
-            std::wstring text = Utils::toWstring(model->data(*item));
-            renderTarget->drawText(text, itemRect, style.baseTextColor,
-                TextAlignment::LEFT, ParagraphAlignment::TOP);
+            ModelIndex index(uuid);
+
+            std::wstring text;
+
+            if (treeView->isEditingItem(index))
+            {
+                text = Utils::toWstring(treeView->getEditingText());
+
+                renderTarget->fillRectangle(itemRect, treeViewStyle.buttonColor );
+
+                renderTarget->drawRectangle(itemRect, treeViewStyle.buttonColor);
+            }
+            else
+            {
+                text = Utils::toWstring(model->data(*item));
+            }
+
+            renderTarget->drawText(
+                text, itemRect, style.baseTextColor, TextAlignment::LEFT, ParagraphAlignment::TOP
+            );
 
             y += itemHeight;
+
+            if (treeView->hasMenu() && castWidget<Menu>(treeView->getMenu())->isMenuVisible())
+            {
+                addMenuToPopupQueue(castWidget<Menu>(treeView->getMenu()));
+            }
         }
     }
 
@@ -1085,6 +1127,28 @@ namespace Renderer
         if (bitmap)
         {
             renderTarget->drawBitmap(thumbnail->getDrawRect(), bitmap.Get());
+        }
+    }
+
+    void Direct2dWidgetRenderer::renderMenu(
+        IWidget* widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    )
+    {
+        using namespace Widgets;
+        Menu* menu = castWidget<Menu>(widget);
+
+        const NbRect<int>& rect = menu->getRect();
+        NbColor backgroundColor;
+        NbColor textColor;
+
+        getWidgetThemeColorByState(menu, backgroundColor, textColor);
+
+        renderTarget->fillRectangle(rect, backgroundColor);
+        
+        for (const auto& item : menu->getItems())
+        {
+            renderTarget->drawText(Utils::toWstring(item.text), item.rect, textColor);
         }
     }
 

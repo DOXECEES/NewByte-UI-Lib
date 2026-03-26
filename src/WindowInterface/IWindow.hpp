@@ -16,7 +16,7 @@
 #include "../Widgets/IWidget.hpp"
 
 #include "Layout/LayoutNode.hpp"
-
+#include "PopupMenu.hpp"
 
 
 namespace WindowInterface
@@ -87,11 +87,25 @@ namespace WindowInterface
         Signal<void()> onClose;
         Signal<void(NbPoint<float>&)> onMouseMove;
 
+        void attachMenuToWidget(
+            Widgets::IWidget* widget,
+            nbui::PopupMenu* popup
+        )
+        {
+            //popupManager.attachToWidget(widget, popup);
+        }
+
+        const nbui::PopupManager& getPopupManager() noexcept
+        {
+            return popupManager;
+        }
+
     protected:
         NbWindowHandle                              handle;
         WindowState                                 state;
         std::set<IWindowStateChangedListener*>      stateChangedListeners;
         WindowStyle                                 style;
+        nbui::PopupManager popupManager;
 
         IWindowRenderer*                            renderer                    = nullptr;
 

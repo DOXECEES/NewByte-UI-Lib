@@ -13,6 +13,7 @@
 #include "WidgetStyle.hpp"
 #include "Theme.hpp"
 
+
 #include <functional>
 #include "MouseState.hpp"
 
@@ -62,18 +63,8 @@ namespace Widgets
         virtual ~IWidget() = default;
         
         
-        virtual void onClick() 
-        {
-            if (state == WidgetState::DISABLE)
-            {
-                return;
-            }
-            if (onClickCallback)
-            {
-                onClickCallback();
-            }
-            onPressedSignal.emit();
-        };
+        virtual void onClick(); 
+        
 
         virtual void onRelease() noexcept
         {
@@ -117,6 +108,12 @@ namespace Widgets
 
             return false;
         } // temporary non abstract
+
+        virtual bool hitTestRightClick(const NbPoint<int>& pos) noexcept
+        {
+            return false;
+        };
+
 
         inline void setSize(const NbSize<int>& newSize) 
         {
@@ -194,6 +191,25 @@ namespace Widgets
             return {};
         }
 
+        void addMenu(IWidget* menu) noexcept
+        {
+            contextMenu = menu;
+        }
+
+        bool hasMenu() noexcept
+        {
+            return contextMenu != nullptr;
+        }
+
+        IWidget* getMenu()
+        {
+            return contextMenu;
+        }
+
+        virtual void onRightClick(const NbPoint<int>& point) noexcept;
+        
+
+
         
     public:
         Signal<void(const NbRect<int>&)> onSizeChangedSignal;
@@ -205,6 +221,7 @@ namespace Widgets
 
     protected:
 
+        IWidget* contextMenu = nullptr;
 
         std::vector<std::shared_ptr<IWidget>> childrens;
         NbRect<int>             rect                = { 0, 0, 0, 0 };

@@ -7,6 +7,7 @@
 #include "Widgets/TreeView.hpp"
 #include "Widgets/Label.hpp"
 #include "Widgets/ComboBox.hpp"
+#include "Widgets/Menu.hpp"
 #include "Geometry/BorderGeometryCache.hpp"
 #include "Geometry/WidgetsGeometryCache.hpp"
 #include "Direct2dBitmapCache.hpp"
@@ -69,6 +70,11 @@ namespace Renderer
         );
 
         void renderThumbnail(
+            IWidget* widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        );
+
+        void renderMenu(
             IWidget* widget,
             const NNsLayout::LayoutStyle& layoutStyle
         );
@@ -135,6 +141,9 @@ namespace Renderer
                 popupQueue.push(params);
             }
         }
+
+        void addMenuToPopupQueue(Widgets::Menu* menu);
+
 
         void createTextLayoutForWidget(IWidget* widget, const std::wstring& data = L"");
 

@@ -126,7 +126,7 @@ namespace Win32Window
 
                         if (focusedWidget)
                         {
-                            focusedWidget->onTimer();
+                            //focusedWidget->onTimer();
                         }
                         
                         }, reinterpret_cast<PVOID>(hWnd), nullptr);
@@ -257,6 +257,7 @@ namespace Win32Window
                 }
                 case WM_LBUTTONDOWN:
                 {
+                    SetFocus(hWnd);
                     SetCapture(hWnd);
                     isMouseDragging = true;
                     NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
@@ -385,7 +386,109 @@ namespace Win32Window
                             focusedWidget->setUnfocused();
                             focusedWidget = nullptr;
                         }
+                        // ::Widgets::Menu::closeAllMenu()
                         //::Widgets::ComboBox::closeAllDropDowns();
+                    }
+
+                    InvalidateRect(hWnd, nullptr, FALSE);
+                    return 0;
+                }
+                case WM_RBUTTONDOWN:
+                {
+                    SetFocus(hWnd);
+
+                    NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+
+
+                    auto getZIndex = [](const NNsLayout::LayoutNode* node) -> Core::ZIndex
+                    {
+                        if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                        {
+                            if (auto widget = widgetLayout->getWidget().get())
+                            {
+                                return widget->getZIndex();
+                            }
+                        }
+                        return Core::ZIndex(Core::ZIndex::ZType::MAIN, 0);
+                    };
+
+                    auto getSortedChildren = [&](const NNsLayout::LayoutNode* node)
+                    {
+                        nbstl::Vector<const NNsLayout::LayoutNode*> children;
+                        int count = node->getChildrenSize();
+                        children.reserve(count);
+
+                        for (int i = 0; i < count; i++)
+                        {
+                            children.pushBack(node->getChildrenAt(i));
+                        }
+
+                        std::stable_sort(
+                            children.begin(), children.end(),
+                            [&](const NNsLayout::LayoutNode* a, const NNsLayout::LayoutNode* b)
+                            {
+                                return getZIndex(a) > getZIndex(b);
+                            }
+                        );
+
+                        return children;
+                    };
+
+                    std::function<::Widgets::IWidget*(::Widgets::IWidget*, NbPoint<int>)>
+                        findDeepestWidget;
+
+                    findDeepestWidget = [&](::Widgets::IWidget* current,
+                                            NbPoint<int> p) -> ::Widgets::IWidget*
+                    {
+                        const auto& subChildren = current->getChildrens();
+
+                        for (auto it = subChildren.rbegin(); it != subChildren.rend(); ++it)
+                        {
+                            auto* sub = it->get();
+
+                            if (sub && !sub->isHide() && !sub->isDisable() && sub->hitTest(p))
+                            {
+                                return findDeepestWidget(sub, p);
+                            }
+                        }
+
+                        return current;
+                    };
+
+
+                    ::Widgets::IWidget* target = nullptr;
+
+                    nbstl::dfs(
+                        this->getLayoutRoot(), getSortedChildren,
+                        [&](const NNsLayout::LayoutNode* node)
+                        {
+                            if (auto widgetLayout =
+                                    dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                            {
+                                auto rootWidget = widgetLayout->getWidget().get();
+
+                                if (rootWidget && !rootWidget->isHide() &&
+                                    rootWidget->hitTest(point))
+                                {
+                                    target = findDeepestWidget(rootWidget, point);
+
+                                    if (target)
+                                    {
+                                        return true; 
+                                    }
+                                }
+                            }
+
+                            return false;
+                        }
+                    );
+
+                    if (target)
+                    {
+                        if (target->hitTestRightClick(point))
+                        {
+                            target->onRightClick(point);
+                        }
                     }
 
                     InvalidateRect(hWnd, nullptr, FALSE);

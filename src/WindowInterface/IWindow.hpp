@@ -42,6 +42,9 @@ namespace WindowInterface
         virtual void close() = 0;
         virtual void repaint() const noexcept = 0;
 
+        virtual void onMouseWheel(int delta) {};
+
+
         const NbWindowHandle &getHandle() const noexcept { return handle; };
 
         const NbSize<int>& getSize() const noexcept { return state.size; };

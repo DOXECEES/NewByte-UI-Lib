@@ -32,11 +32,121 @@ namespace NNsLayout
 }
 
 
+namespace NNsLayout
+{
+    class CollapsibleLayout : public VLayout
+    {
+    public:
+        CollapsibleLayout() noexcept
+            : VLayout(),
+              isCollapsed(false)
+        {
+        }
+
+        void setCollapsed(bool collapsed) noexcept
+        {
+            if (isCollapsed != collapsed)
+            {
+                isCollapsed = collapsed;
+                markDirty();
+
+                // Если у вас есть указатель на родителя, помечаем всю ветку как грязную
+                LayoutNode* curr = this->getParent();
+                while (curr)
+                {
+                    curr->markDirty();
+                    curr = curr->getParent();
+                }
+            }
+        }
+
+        bool getCollapsed() const noexcept
+        {
+            return isCollapsed;
+        }
+
+        void measure(const NbSize<int>& available) noexcept override
+        {
+            if (!isCollapsed)
+            {
+                // Если развернуто, считаем как обычный VLayout
+                VLayout::measure(available);
+            }
+            else
+            {
+                // Если свернуто, измеряем ТОЛЬКО первый элемент (Заголовок)
+                if (!children.empty() && children[0] != nullptr)
+                {
+                    children[0]->measure(available);
+                    measuredSize = children[0]->getMeasuredSize();
+
+                    // Учитываем паддинги самого CollapsibleLayout (если они есть)
+                    measuredSize.width += style.padding.left + style.padding.right;
+                    measuredSize.height += style.padding.top + style.padding.bottom;
+                }
+                else
+                {
+                    measuredSize = {0, 0};
+                }
+            }
+        }
+
+        void layout(const NbRect<int>& bounds) noexcept override
+        {
+            if (!isCollapsed)
+            {
+                // Если развернуто, позиционируем как обычный VLayout
+                VLayout::layout(bounds);
+            }
+            else
+            {
+                layoutRect = bounds;
+
+                if (!children.empty() && children[0] != nullptr)
+                {
+                    // Позиционируем только Заголовок
+                    NbRect<int> headerBounds = bounds;
+                    headerBounds.x += style.padding.left;
+                    headerBounds.y += style.padding.top;
+                    headerBounds.width -= (style.padding.left + style.padding.right);
+                    headerBounds.height = children[0]->getMeasuredSize().height;
+
+                    children[0]->layout(headerBounds);
+
+                    // ОСТАЛЬНЫМ элементам принудительно ставим нулевой размер,
+                    // чтобы они исчезли с экрана и не перехватывали клики мышкой
+                    for (size_t i = 1; i < children.size(); ++i)
+                    {
+                        if (children[i])
+                        {
+                            children[i]->setRect({0, 0, 0, 0});
+                            children[i]->layout({0, 0, 0, 0}); // Опционально пробрасываем нули ниже
+                        }
+                    }
+                }
+            }
+        }
+
+    private:
+        bool isCollapsed;
+    };
+} // namespace NNsLayout
+
 namespace nbui
 {
     class LayoutBuilder
     {
     public:
+
+        LayoutBuilder() = default;
+
+        explicit LayoutBuilder(NNsLayout::LayoutNode* nodePtr)
+            : node(nullptr),
+              currentNode(nodePtr),
+              currentNodeWidget(nullptr)
+        {
+        }
+
         enum class StateStyle
         {
             BASE,
@@ -44,6 +154,14 @@ namespace nbui
             HOVER, 
             DISABLE
         };
+
+        static LayoutBuilder collapsibleBox()
+        {
+            LayoutBuilder b;
+            b.node = std::make_unique<NNsLayout::CollapsibleLayout>();
+            b.currentNode = b.node.get();
+            return b;
+        }
 
         static LayoutBuilder widget(Widgets::IWidget* w);
         static LayoutBuilder label(const std::wstring& text);
@@ -155,6 +273,11 @@ namespace nbui
         std::unique_ptr<NNsLayout::LayoutNode> build()&&;
 
         std::shared_ptr<Widgets::IWidget> buildRawWidget();
+
+        const std::unique_ptr<NNsLayout::LayoutNode>& getNode()
+        {
+            return node;
+        }
 
     private:
 

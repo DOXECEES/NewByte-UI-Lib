@@ -198,7 +198,8 @@ namespace NNsLayout
         if (visibleCount > 1) totalFixed += (visibleCount - 1) * spacing;
 
         int remaining = (std::max)(0, bounds.height - totalFixed);
-        int y = bounds.y;
+        int y = bounds.y - scrollOffset; 
+
 
         for (size_t i = 0; i < children.size(); ++i)
         {
@@ -214,21 +215,24 @@ namespace NNsLayout
             }
 
             NbRect<int> childRect;
-            // Учитываем левую и правую рамки/отступы для ширины контента
             childRect.x = bounds.x + st.margin.left + st.border.width.left + st.padding.left;
             childRect.y = y + st.margin.top + st.border.width.top + st.padding.top;
-            childRect.width = bounds.width - (st.margin.left + st.margin.right + st.border.width.left + st.border.width.right + st.padding.left + st.padding.right);
+            childRect.width =
+                bounds.width - (st.margin.left + st.margin.right + st.border.width.left +
+                                st.border.width.right + st.padding.left + st.padding.right);
             childRect.height = contentHeight;
 
             child->setRect(childRect);
             child->layout(childRect);
 
-            // ЗАМЕНА: Инкремент Y с учетом всех сторон
-            y += contentHeight + st.margin.top + st.margin.bottom + 
-                 st.border.width.top + st.border.width.bottom + 
-                 st.padding.top + st.padding.bottom;
+            y += contentHeight + st.margin.top + st.margin.bottom + st.border.width.top +
+                 st.border.width.bottom + st.padding.top + st.padding.bottom;
 
-            if (i < children.size() - 1) y += spacing;
+            if (i < children.size() - 1)
+            {
+                y += spacing;
+            }
+
         }
     }
 

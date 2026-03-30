@@ -356,7 +356,7 @@ namespace Renderer
     }
 
     void Direct2dWidgetRenderer::renderSection(
-        IWidget* widget,
+        Widgets::IWidget* widget,
         const NNsLayout::LayoutStyle& layoutStyle
     )
     {
@@ -364,61 +364,64 @@ namespace Renderer
         SectionWidget* section = castWidget<SectionWidget>(widget);
 
         NbRect<int> rect = section->getRect();
-        bool isExpanded = section->isExpanded();
+        bool isExpanded = section->isExpanded(); // заменяем isExpanded()
         WidgetState state = section->getState();
 
-        NbColor headerBgColor = NbColor(45, 45, 45); // Темно-серый фон шапки
-        NbColor textColor = NbColor(200, 200, 200);  // Светло-серый текст
-        NbColor arrowColor = NbColor(150, 150, 150); // Цвет стрелочки
+        constexpr NbColor HEADER_COLOR = {45, 45, 45};
+        constexpr NbColor HEADER_HOVER_COLOR = {55, 55, 55};
+        constexpr NbColor TEXT_COLOR = {200, 200, 200};
+        constexpr NbColor ARROW_COLOR = {150, 150, 150};
+        constexpr NbColor SEPARATOR_COLOR = {30, 30, 30, 255};
+        constexpr int HEADER_HEIGHT = 24;
 
-        if (state == WidgetState::HOVER)
-        {
-            headerBgColor = NbColor(55, 55, 55); // Чуть светлее при наведении
-        }
+        NbColor headerBg = (state == WidgetState::HOVER) ? HEADER_HOVER_COLOR : HEADER_COLOR;
+        NbRect<int> headerRect = {rect.x, rect.y, rect.width, HEADER_HEIGHT};
 
-        int headerHeight = 24;
-        NbRect<int> headerRect = {rect.x, rect.y, rect.width, headerHeight};
+        // Фон шапки
+        renderTarget->fillRectangle(headerRect, headerBg);
 
-        renderTarget->fillRectangle(headerRect, headerBgColor);
-
+        // Стрелка раскрытия
         std::wstring arrowSymbol = isExpanded ? L"▼" : L"▶";
+        NbRect<int> arrowRect = {headerRect.x + 5, headerRect.y, 20, HEADER_HEIGHT};
+        renderTarget->drawText(arrowSymbol.c_str(), arrowRect, ARROW_COLOR);
 
-        NbRect<int> arrowRect = {headerRect.x + 5, headerRect.y, 20, headerHeight};
-        renderTarget->drawText(arrowSymbol.c_str(), arrowRect, arrowColor);
-
-        // 4. Рисуем текст заголовка (с отступом от стрелочки)
-        NbRect<int> textRect
-            = {headerRect.x + 25, headerRect.y, headerRect.width - 25, headerHeight};
-        renderTarget->drawText(section->getTitle().c_str(), textRect, textColor);
-
-        NbRect<int> separatorLine = {
-            headerRect.x,
-            headerRect.y + headerHeight - 1,
-            headerRect.width,
-            1
+        // Заголовок
+        NbRect<int> titleRect = {
+            headerRect.x + 25, headerRect.y, headerRect.width - 25, HEADER_HEIGHT
         };
-        renderTarget->fillRectangle(separatorLine, NbColor(30, 30, 30, 255));
+        renderTarget->drawText(section->getTitle().c_str(), titleRect, TEXT_COLOR);
 
-        if (isExpanded)
+        // Разделитель
+        NbRect<int> separator = {
+            headerRect.x, headerRect.y + HEADER_HEIGHT - 1, headerRect.width, 1
+        };
+        renderTarget->fillRectangle(separator, SEPARATOR_COLOR);
+
+        // Контент
+        if (isExpanded && section->getInnerLayout())
         {
-            NbRect<int> contentRect= {
-                rect.x,
-                rect.y + headerHeight,
-                rect.width,
-                rect.height - headerHeight
+            NbRect<int> contentRect = {
+                rect.x, rect.y + HEADER_HEIGHT, rect.width, rect.height - HEADER_HEIGHT
             };
+            renderTarget->fillRectangle(contentRect, NbColor(35, 35, 35));
 
-            renderTarget->fillRectangle(
-                contentRect,
-                NbColor(35, 255, 255)
-            ); 
-
-            for (auto& child : section->getChildrens())
+            // Рендерим всех дочерних виджетов через innerLayout
+            for (auto& childNode : section->getInnerLayout()->getChildren())
             {
-                render(child.get(), layoutStyle);
+                if (!childNode || !childNode->getOwner())
+                {
+                    continue;
+                }
+
+                // безопасный dynamic_cast к IWidget*
+                if (auto* childWidget = dynamic_cast<Widgets::IWidget*>(childNode->getOwner()))
+                {
+                    render(childWidget, layoutStyle);
+                }
             }
         }
 
+        // Бордер
         drawBorder(section, layoutStyle.border);
     }
 

@@ -28,6 +28,52 @@ namespace Win32Window
         ChildWindow(IWindow *parentWindow, bool setOwnDc = false);
         ~ChildWindow();
 
+        void onMouseWheel(int delta) override
+        {
+            // 1. Получаем корень разметки
+            auto* root = this->getLayoutRoot();
+            if (!root)
+            {
+                return;
+            }
+
+            // 2. Находим наш VLayout (он обычно первый или единственный ребенок корня)
+            // В вашем коде: Window -> LayoutRoot -> VLayout (финальный UI)
+            auto& children = root->getChildren();
+            if (children.empty())
+            {
+                return;
+            }
+
+            // Нам нужен именно VLayout, в котором лежат компоненты
+            auto* vLayout = dynamic_cast<NNsLayout::VLayout*>(children[0].get());
+            if (!vLayout)
+            {
+                return;
+            }
+
+            // 3. Вычисляем границы скролла
+            int contentHeight = vLayout->getMeasuredSize().height; // Полная высота всех полей
+            int viewHeight = vLayout->getRect().height;            // Высота видимого окна
+            int maxScroll = std::max(0, contentHeight - viewHeight);
+
+            // 4. Обновляем смещение (delta обычно +1 или -1, умножаем на скорость скролла)
+            int currentOffset = vLayout->getScrollOffset();
+            int scrollSpeed = 30; // Пикселей за один щелчок колеса
+            int newOffset = std::clamp(currentOffset - (delta * scrollSpeed), 0, maxScroll);
+
+            // 5. Применяем и помечаем разметку как "грязную", чтобы она пересчиталась
+            if (newOffset != currentOffset)
+            {
+                vLayout->setScrollOffset(newOffset);
+                vLayout->markDirty();
+            }
+        
+        }
+
+
+
+
         void onSize(const NbSize<int>& newSize) override { };
         void show() override;
         void repaint() const noexcept override;
@@ -255,6 +301,72 @@ namespace Win32Window
 
                     return FALSE;
                 }
+                case WM_MOUSEWHEEL:
+                {
+                    int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+                    POINT pt;
+                    pt.x = GET_X_LPARAM(lParam);
+                    pt.y = GET_Y_LPARAM(lParam);
+                    ScreenToClient(hWnd, &pt);
+                    NbPoint<int> mousePoint = {(int)pt.x, (int)pt.y};
+
+                    NNsLayout::VLayout* targetScrollLayout = nullptr;
+
+                    nbstl::dfs(
+                        this->getLayoutRoot(),
+                        [](
+                            const NNsLayout::LayoutNode* node
+                        ) 
+                        {
+                            nbstl::Vector<const NNsLayout::LayoutNode*> children;
+                            int count = node->getChildrenSize();
+                            children.reserve(count);
+                            for (int i = 0; i < count; i++)
+                            {
+                                children.pushBack(node->getChildrenAt(i));
+                            }
+                            return children;
+                        },
+                        [&](const NNsLayout::LayoutNode* node) 
+                        {
+                            auto vLayout = dynamic_cast<const NNsLayout::VLayout*>(node);
+                            if (vLayout)
+                            {
+                                const auto& rect = vLayout->getRect();
+                                if (mousePoint.x >= rect.x && mousePoint.x <= rect.x + rect.width &&
+                                    mousePoint.y >= rect.y && mousePoint.y <= rect.y + rect.height)
+                                {
+                                    targetScrollLayout = const_cast<NNsLayout::VLayout*>(vLayout);
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    );
+
+                    if (targetScrollLayout)
+                    {
+                        int contentHeight = targetScrollLayout->getMeasuredSize().height;
+                        int viewHeight = targetScrollLayout->getRect().height;
+                        int maxScroll = (std::max)(0, contentHeight - viewHeight);
+
+                        int currentOffset = targetScrollLayout->getScrollOffset();
+
+                        int scrollStep = 40;
+                        int scrollAmount = (delta / WHEEL_DELTA) * scrollStep;
+
+                        int newOffset = (std::clamp)(currentOffset - scrollAmount, 0, maxScroll);
+
+                        if (newOffset != currentOffset)
+                        {
+                            targetScrollLayout->setScrollOffset(newOffset);
+                            targetScrollLayout->markDirty();
+
+                            InvalidateRect(hWnd, NULL, FALSE);
+                        }
+                    }
+                    return 0;
+                }
                 case WM_LBUTTONDOWN:
                 {
                     SetFocus(hWnd);
@@ -263,7 +375,6 @@ namespace Win32Window
                     NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
                     mouseCapturePoint = point;
 
-                    // --- 1. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
                     auto getZIndex = [](const NNsLayout::LayoutNode* node) -> Core::ZIndex
                     {
                         if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
@@ -312,12 +423,10 @@ namespace Win32Window
                         return current;
                     };
 
-                    // --- 2. ОСНОВНАЯ ЛОГИКА ---
 
                     bool isFocusChanged = false;
                     ::Widgets::IWidget* clickedTarget = nullptr;
 
-                    // ПРОХОД 1: Определяем, кто получает ФОКУС
                     nbstl::dfs(
                         this->getLayoutRoot(), getSortedChildren,
                         [&](const NNsLayout::LayoutNode* node)
@@ -340,7 +449,7 @@ namespace Win32Window
                                         focusedWidget = clickedTarget;
                                         focusedWidget->setFocused();
                                         clicked = true;
-                                        return true; // Нашли цель для фокуса
+                                        return true; 
                                     }
                                 }
                             }
@@ -348,8 +457,6 @@ namespace Win32Window
                         }
                     );
 
-                    // ПРОХОД 2: Выполняем ДЕЙСТВИЕ (onClick)
-                    // Сначала даем шанс "умным" виджетам (ComboBox и т.д.) перехватить клик
                     bool clickHandled = false;
                     nbstl::dfs(
                         this->getLayoutRoot(), getSortedChildren,
@@ -359,8 +466,6 @@ namespace Win32Window
                                     dynamic_cast<const NNsLayout::LayoutWidget*>(node))
                             {
                                 auto widget = widgetLayout->getWidget().get();
-                                // Если hitTestClick возвращает true, значит он САМ вызвал onClick
-                                // внутри себя
                                 if (widget && !widget->isHide() && widget->hitTestClick(point))
                                 {
                                     clickHandled = true;
@@ -371,14 +476,11 @@ namespace Win32Window
                         }
                     );
 
-                    // Если второй проход (hitTestClick) не сработал,
-                    // но первый проход нашел цель — вызываем onClick вручную.
                     if (!clickHandled && clickedTarget)
                     {
                         clickedTarget->onClick();
                     }
 
-                    // --- 3. КЛИК В ПУСТОТУ ---
                     if (!isFocusChanged)
                     {
                         if (focusedWidget)

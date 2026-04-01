@@ -85,7 +85,7 @@ namespace Widgets
 	void IWidget::setUnfocused() noexcept
 	{
 		isFocused = false;
-		onUnfocusedSignal.emit();
+		//onUnfocusedSignal.emit();
 	}
 
 	NbRect<int> IWidget::getRequestedSize() const noexcept

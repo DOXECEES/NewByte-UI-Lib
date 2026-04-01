@@ -14,19 +14,13 @@ namespace Widgets
     TextEdit::TextEdit() noexcept
         :IWidget({})
     {
-        onUnfocusedSignal.connect([this]() {
-            this->isCaretVisible = false;
-            Debug::debug("Unfocused signal");
-        });
+        
     }
 
     TextEdit::TextEdit(const NbRect<int>& rect) noexcept
         :IWidget(rect)
     {
-        onUnfocusedSignal.connect([this]() {
-            this->isCaretVisible = false;
-            Debug::debug("Unfocused signal");
-        });
+        
     }
 
     bool TextEdit::hitTest(const NbPoint<int> &pos)

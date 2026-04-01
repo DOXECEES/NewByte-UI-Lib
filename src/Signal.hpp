@@ -109,16 +109,24 @@
 
         void emit(Args... args)
         {
-            std::map<size_t, Callback> temp_observers;
+            //std::map<size_t, Callback> temp_observers;
+            //{
+            //    std::lock_guard<std::mutex> lock(m_mutex);
+            //    temp_observers = m_observers; 
+            //                                  
+            //}
+
+            if (m_observers.empty())
             {
-                std::lock_guard<std::mutex> lock(m_mutex);
-                temp_observers = m_observers; 
-                                              
+                return;
             }
 
-            for (auto const& [id, cb] : temp_observers)
+            for (auto const& [id, cb] : m_observers)
             {
-                cb(args...);
+                if (cb != nullptr)
+                {
+                    cb(args...);
+                }
             }
         }
 

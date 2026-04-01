@@ -153,6 +153,8 @@ namespace Win32Window
         Signal<void(const NbSize<int>&)> onSizeChanged;
         Signal<void()> onDraw;
         NbPoint<int> prevMousePoint = {-1, -1};
+        NbPoint<int> mousePosition = {0, 0};
+        bool leftMouseClicked = false;
 
 
         LRESULT wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -372,6 +374,7 @@ namespace Win32Window
                     SetFocus(hWnd);
                     SetCapture(hWnd);
                     isMouseDragging = true;
+                    leftMouseClicked = true;
                     NbPoint<int> point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
                     mouseCapturePoint = point;
 
@@ -406,18 +409,23 @@ namespace Win32Window
                         return children;
                     };
 
-                    std::function<::Widgets::IWidget*(::Widgets::IWidget*, NbPoint<int>)>
+                    std::function<::Widgets::IWidget*(::Widgets::IWidget*, NbPoint<int>, int)>
                         findDeepestWidget;
-                    findDeepestWidget = [&](::Widgets::IWidget* current,
-                                            NbPoint<int> p) -> ::Widgets::IWidget*
+                    findDeepestWidget = [&](::Widgets::IWidget* current, NbPoint<int> p,
+                                            int depth = 0) -> ::Widgets::IWidget*
                     {
+                        if (depth > 100)
+                        {
+                            return current; // Защита от зависания
+                        }
                         const auto& subChildren = current->getChildrens();
                         for (auto it = subChildren.rbegin(); it != subChildren.rend(); ++it)
                         {
                             auto* sub = it->get();
-                            if (sub && !sub->isHide() && !sub->isDisable() && sub->hitTest(p))
+                            if (sub && sub != current && !sub->isHide() && !sub->isDisable() &&
+                                sub->hitTest(p))
                             {
-                                return findDeepestWidget(sub, p);
+                                return findDeepestWidget(sub, p, depth + 1);
                             }
                         }
                         return current;
@@ -438,7 +446,7 @@ namespace Win32Window
                                 if (rootWidget && !rootWidget->isHide() &&
                                     rootWidget->hitTest(point))
                                 {
-                                    clickedTarget = findDeepestWidget(rootWidget, point);
+                                    clickedTarget = findDeepestWidget(rootWidget, point, 0);
                                     if (clickedTarget)
                                     {
                                         isFocusChanged = true;
@@ -618,6 +626,7 @@ namespace Win32Window
                 case WM_MOUSEMOVE:
                 {
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+                    mousePosition = point;
                     NbPoint<float> floatPoint = {(float)point.x, (float)point.y};
                     onMouseMove.emit(floatPoint);
 
@@ -761,6 +770,8 @@ namespace Win32Window
                     isMouseDragging = false;
                     mouseCapturePoint = {-1, -1};
                     dragging = false;
+                    leftMouseClicked = false;
+
                  
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 

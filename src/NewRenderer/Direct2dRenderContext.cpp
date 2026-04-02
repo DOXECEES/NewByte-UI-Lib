@@ -347,8 +347,8 @@ namespace Renderer
         GetClientRect(hwnd, &clientRect);
 
         DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-        swapChainDesc.Width = max(1, clientRect.right - clientRect.left);
-        swapChainDesc.Height = max(1, clientRect.bottom - clientRect.top);
+        swapChainDesc.Width = std::max(1l, clientRect.right - clientRect.left);
+        swapChainDesc.Height = std::max(1l, clientRect.bottom - clientRect.top);
         swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         swapChainDesc.Stereo = FALSE;
         swapChainDesc.SampleDesc.Count = 1;

@@ -73,8 +73,8 @@ namespace nbui
         {
             activePopup = menu;
 
-            int width = 180;
-            int height = int(menu->getItems().size() * itemHeight);
+            width = 240;
+            height = int(menu->getItems().size() * itemHeight);
 
             SetWindowPos(popupHwnd, HWND_TOPMOST, x, y, width, height, SWP_SHOWWINDOW);
 
@@ -99,6 +99,9 @@ namespace nbui
         mutable Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
         mutable Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> hoverBrush;
         mutable Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> borderBrush;
+
+        mutable int width = 0;
+        mutable int height = 0;
 
         const int itemHeight = 20;
         mutable int hoveredIndex = -1;
@@ -207,6 +210,7 @@ namespace nbui
         {
             if (popupRT)
             {
+                popupRT->Resize(D2D1_SIZE_U(width, height));
                 return;
             }
 
@@ -262,7 +266,7 @@ namespace nbui
             // Фон меню
             popupRT->Clear(D2D1::ColorF(0.10f, 0.10f, 0.10f));
 
-            const float width = 180.0f;
+            const float width = 240.0f;
             const float padding = 8.0f;
 
             int index = 0;

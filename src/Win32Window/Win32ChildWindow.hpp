@@ -489,6 +489,8 @@ namespace Win32Window
                         clickedTarget->onClick();
                     }
 
+                    nbui::GlobalWidgetContext::capturePressedWidget(clickedTarget);
+
                     if (!isFocusChanged)
                     {
                         if (focusedWidget)
@@ -775,7 +777,8 @@ namespace Win32Window
                  
                     NbPoint<int> point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
-                    if (auto pressedWidget = nbui::GlobalWidgetContext::getCapturedWidget(); pressedWidget)
+                    if (auto pressedWidget = nbui::GlobalWidgetContext::getPressedWidget();
+                        pressedWidget)
                     {
                         pressedWidget->onRelease();
                         nbui::GlobalWidgetContext::releasePressedWidget();

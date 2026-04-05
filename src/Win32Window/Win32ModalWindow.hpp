@@ -297,7 +297,7 @@ namespace Win32Window
                             }
                         );
                     }
-
+                    nbui::GlobalWidgetContext::capturePressedWidget(clickedTarget);
                     // --- 3. ОБРАБОТКА КЛИКА "В ПУСТОТУ" ---
                     if (!isFocusChanged)
                     {

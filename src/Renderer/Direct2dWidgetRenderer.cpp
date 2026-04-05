@@ -1263,18 +1263,18 @@ namespace Renderer
         Microsoft::WRL::ComPtr<IDWriteFactory> factory = FactorySingleton::getDirectWriteFactory();
 		factory->CreateTextLayout(text.c_str(), text.length(), textFormat.Get(), rect.width, rect.height, &textLayout);
 		textLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-		Direct2dGlobalWidgetMapper::addTextlayout(label, textLayout);
+		Direct2dGlobalWidgetMapper::addTextlayout(label, std::move(textLayout));
 	}
 
 
 	void Direct2dWidgetRenderer::createTextLayoutForLabelClipped(Label* label) noexcept
 	{
-		IDWriteTextLayout* textLayout = nullptr;
+        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout = nullptr;
         Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(label);
         if (!textFormat || label->getFont().isDirty())
         {
-            Direct2dWrapper::createTextFormatForWidget(label, label->getFont());
-            textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(label);
+            textFormat = Direct2dWrapper::createTextFormatForWidget(label, label->getFont());
+            //Direct2dGlobalWidgetMapper::getTextFormatByWidget(label);
             label->getFont().clearDirty();
         }
 
@@ -1297,7 +1297,7 @@ namespace Renderer
 
 		factory->CreateTextLayout(text.c_str(), text.length(), textFormat.Get(), rect.width, rect.height, &textLayout);
 		textLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-		Direct2dGlobalWidgetMapper::addTextlayout(label, textLayout);
+		Direct2dGlobalWidgetMapper::addTextlayout(label, std::move(textLayout));
 	}
 
 };//////////////////////////////////////

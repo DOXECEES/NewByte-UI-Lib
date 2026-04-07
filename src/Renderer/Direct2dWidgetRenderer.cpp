@@ -20,6 +20,7 @@
 #include "Widgets/Thumbnail.hpp"
 #include "Widgets/Menu.hpp"
 #include "Widgets/ToolBar.hpp"
+#include "Widgets/MaterialWidget.hpp"
 
 #include "Direct2dGlobalWidgetMapper.hpp"
 
@@ -102,6 +103,10 @@ namespace Renderer
         else if (strncmp(widgetName, Thumbnail::CLASS_NAME, size) == 0)
         {
             renderThumbnail(widget, layoutStyle);
+        }
+        else if (strncmp(widgetName, MaterialWidget::CLASS_NAME, size) == 0)
+        {
+            renderMaterialWidget(widget, layoutStyle);
         }
     }
 
@@ -1153,6 +1158,52 @@ namespace Renderer
         {
             renderTarget->drawText(Utils::toWstring(item.text), item.rect, textColor);
         }
+    }
+
+    void Direct2dWidgetRenderer::renderMaterialWidget(
+        IWidget*                      widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    )
+    {
+        using namespace Widgets;
+        MaterialWidget* matWidget = castWidget<MaterialWidget>(widget);
+        if (!matWidget)
+        {
+            return;
+        }
+
+        const NbRect<int>& rect = matWidget->getRect();
+        NbColor            bgColor, textColor;
+        getWidgetThemeColorByState(matWidget, bgColor, textColor);
+
+        NbColor slotBg = {35, 35, 35, 255};
+        if (matWidget->getState() == Widgets::WidgetState::HOVER)
+        {
+            slotBg = {45, 45, 45, 255}; 
+        }
+
+        renderTarget->fillRoundedRectangle(rect, 2, slotBg);
+
+        NbRect<int> pRect = matWidget->getPreviewRect();
+        NbColor     matColor =
+            matWidget->isMaterialAssigned() ? NbColor(70, 110, 190) : NbColor(50, 50, 50);
+
+        renderTarget->fillRectangle(pRect, matColor);
+        renderTarget->drawRectangle(pRect, {0, 0, 0, 100}, 1.0f);
+
+        if (matWidget->getNameLabel())
+        {
+            renderLabel(matWidget->getNameLabel().get(), layoutStyle);
+        }
+        if (matWidget->getTypeLabel())
+        {
+            renderLabel(matWidget->getTypeLabel().get(), layoutStyle);
+        }
+
+        NbColor borderColor = matWidget->getState() == Widgets::WidgetState::HOVER
+                                  ? NbColor(0, 120, 215)
+                                  : NbColor(60, 60, 60);
+        renderTarget->drawRectangle(rect, borderColor, 1.0f);
     }
 
 

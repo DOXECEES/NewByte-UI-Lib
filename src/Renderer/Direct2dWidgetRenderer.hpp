@@ -78,6 +78,12 @@ namespace Renderer
             IWidget* widget,
             const NNsLayout::LayoutStyle& layoutStyle
         );
+
+        void renderMaterialWidget(
+            IWidget*                      widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        );
+        
         
 
         template<typename T>

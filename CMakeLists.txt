@@ -165,6 +165,9 @@ set (SRC
 
         src/Widgets/Thumbnail.hpp
 
+        src/Widgets/MaterialWidget.hpp
+
+
         src/Widgets/Scrollbar.cpp
         src/Widgets/Scrollbar.hpp
 

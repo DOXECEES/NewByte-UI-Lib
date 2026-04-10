@@ -313,6 +313,8 @@ namespace Win32Window
             , rect.bottom - rect.top - state.frameSize.top - state.frameSize.bot
         );
 
+        recalculateLayout();
+
         renderer->resize(this);
 
         onRectChanged.emit(state.clientRect);

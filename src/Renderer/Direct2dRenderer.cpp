@@ -165,9 +165,18 @@ namespace Renderer
 
      
 
+        NbColor commonBorderColor = {80, 80, 80};
+        float   borderThickness   = 1.0f;
+
+        renderTarget.drawRectangle(
+            {0, 0, windowSize.width, windowSize.height}, commonBorderColor, borderThickness
+        );
+
+
         widgetRenderer->renderPopUp();
-        
         renderPopup(window->getPopupManager());
+
+
         
         HRESULT hr = renderTarget.endDraw();
 

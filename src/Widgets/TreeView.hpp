@@ -260,7 +260,7 @@ namespace Widgets
         ModelIndex                                          lastClickedIndex;
 
         std::pair<size_t, size_t>                           range               = { 0 , 0 };
-
+        int                       scrollOffsetY = 0;
         void buildUuidMap() noexcept;
         void collectVisibleRecursive(const ModelItem* node) noexcept;
     };

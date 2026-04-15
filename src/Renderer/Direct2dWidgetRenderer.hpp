@@ -83,8 +83,18 @@ namespace Renderer
             IWidget*                      widget,
             const NNsLayout::LayoutStyle& layoutStyle
         );
+
+        void renderFilePicker(
+            IWidget*                      widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        );
         
-        
+        void renderTriangleIcon(
+            const NbRect<int>& rect,
+            bool               expanded,
+            const NbColor&     color
+        ) noexcept;
+
 
         template<typename T>
         T* castWidget(IWidget* widget) const noexcept

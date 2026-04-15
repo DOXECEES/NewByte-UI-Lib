@@ -48,23 +48,23 @@ namespace Widgets
         {
             setRect(rect);
 
-            NbRect<int> nameLabelRect = {
-                rect.x,
-                rect.y + rect.height - 45,
-                rect.width,
-                30
-            };
+            //NbRect<int> nameLabelRect = {
+            //    rect.x,
+            //    rect.y + rect.height - 45,
+            //    rect.width,
+            //    30
+            //};
 
-            nameLabel->setRect(nameLabelRect);
+            //nameLabel->setRect(nameLabelRect);
 
-            NbRect<int> typeLabelRect = {
-                rect.x,
-                rect.y + rect.height - 15,
-                rect.width,
-                15
-            };
+            //NbRect<int> typeLabelRect = {
+            //    rect.x,
+            //    rect.y + rect.height - 15,
+            //    rect.width,
+            //    15
+            //};
 
-            typeLabel->setRect(typeLabelRect);
+            //typeLabel->setRect(typeLabelRect);
         }
 
         std::shared_ptr<Label> getNameLabel() const noexcept
@@ -83,7 +83,7 @@ namespace Widgets
                 rect.x,
                 rect.y,
                 rect.width,
-				rect.height - 45
+				rect.height
             };
 
 			return rc;

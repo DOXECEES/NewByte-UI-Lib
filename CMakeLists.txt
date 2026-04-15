@@ -173,6 +173,10 @@ set (SRC
 
 
         src/Widgets/ColorPicker.hpp
+        src/Widgets/FilePicker.hpp
+        src/Widgets/ListView.hpp
+
+
         src/Widgets/ToolBar.cpp
         src/Widgets/ToolBar.hpp
         src/Widgets/ButtonGroup.hpp

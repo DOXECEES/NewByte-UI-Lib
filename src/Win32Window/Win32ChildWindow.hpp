@@ -305,7 +305,7 @@ namespace Win32Window
                 }
                 case WM_MOUSEWHEEL:
                 {
-                    int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+                    int   delta = GET_WHEEL_DELTA_WPARAM(wParam);
                     POINT pt;
                     pt.x = GET_X_LPARAM(lParam);
                     pt.y = GET_Y_LPARAM(lParam);
@@ -316,9 +316,7 @@ namespace Win32Window
 
                     nbstl::dfs(
                         this->getLayoutRoot(),
-                        [](
-                            const NNsLayout::LayoutNode* node
-                        ) 
+                        [](const NNsLayout::LayoutNode* node)
                         {
                             nbstl::Vector<const NNsLayout::LayoutNode*> children;
                             int count = node->getChildrenSize();
@@ -329,7 +327,7 @@ namespace Win32Window
                             }
                             return children;
                         },
-                        [&](const NNsLayout::LayoutNode* node) 
+                        [&](const NNsLayout::LayoutNode* node)
                         {
                             auto vLayout = dynamic_cast<const NNsLayout::VLayout*>(node);
                             if (vLayout)
@@ -348,13 +346,25 @@ namespace Win32Window
 
                     if (targetScrollLayout)
                     {
-                        int contentHeight = targetScrollLayout->getMeasuredSize().height;
+                        int contentHeight = 0;
+
+                        int count = targetScrollLayout->getChildrenSize();
+                        for (int i = 0; i < count; i++)
+                        {
+                            auto child = targetScrollLayout->getChildrenAt(i);
+                            if (child)
+                            {
+                                contentHeight += child->getRect().height;
+                            }
+                        }
+
                         int viewHeight = targetScrollLayout->getRect().height;
+
                         int maxScroll = (std::max)(0, contentHeight - viewHeight);
 
                         int currentOffset = targetScrollLayout->getScrollOffset();
 
-                        int scrollStep = 40;
+                        int scrollStep   = 40;
                         int scrollAmount = (delta / WHEEL_DELTA) * scrollStep;
 
                         int newOffset = (std::clamp)(currentOffset - scrollAmount, 0, maxScroll);

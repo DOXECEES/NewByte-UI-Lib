@@ -57,14 +57,27 @@ namespace Widgets
     {
         if (!rect.isInside(pos))
         {
-            lastHitIndex = ModelIndex{}; 
-            return false;                
+            lastHitIndex = ModelIndex{};
+            return false;
         }
 
-        size_t row = hitElement(pos);
-        lastHitIndex = indexFromVisibleRow(row);
+        int localY = pos.y - rect.y;
 
-        return true;
+        size_t absoluteRow = (scrollOffsetY + rect.y + localY) / HEIGHT_OF_ITEM_IN_PIXEL;
+
+        if (absoluteRow >= range.first)
+        {
+            size_t relativeIdx = absoluteRow - range.first;
+
+            if (relativeIdx < visibleItems.size())
+            {
+                lastHitIndex = ModelIndex(visibleItems[relativeIdx]->getUuid());
+                return true;
+            }
+        }
+
+        lastHitIndex = ModelIndex{};
+        return false;
     }
 
     size_t TreeView::hitElement(const NbPoint<int>& pos) const noexcept

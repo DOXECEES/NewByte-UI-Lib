@@ -80,7 +80,7 @@ public:
 	void clearDirty() const noexcept;
 
 private:
-	std::wstring    name		= L"Times New Roman";
+	std::wstring    name		= L"Segoe UI";
 	FontStyle       style		= FontStyle::NORMAL;
 	FontWeight      weight		= FontWeight::Normal;
 	FontStretch     stretch		= FontStretch::Normal;

@@ -99,40 +99,28 @@ namespace Widgets
         }
 
         NbPoint<int> localPos = {pos.x - rect.x, pos.y - rect.y};
+        size_t       row      = (localPos.y + range.first) / HEIGHT_OF_ITEM_IN_PIXEL;
 
-      
-        size_t row = (localPos.y + range.first) / HEIGHT_OF_ITEM_IN_PIXEL;
-
-        static ModelIndex prevClickedIndex;
-        lastClickedIndex = indexFromVisibleRow(row);
-
-        if (!lastClickedIndex.isValid())
+        ModelIndex clickedIndex = indexFromVisibleRow(row);
+        if (!clickedIndex.isValid())
         {
             return false;
         }
 
+        setItemState(clickedIndex, ItemState::SELECTED);
+
+        static ModelIndex prevClickedIndex;
+        lastClickedIndex = clickedIndex;
+
         const ModelItem* item = uuidMap.at(lastClickedIndex.getUuid());
 
-
-        int buttonLocalY = (int)(row * HEIGHT_OF_ITEM_IN_PIXEL) - range.first;
-        int buttonLocalX = (int)20 * (int)item->getDepth();
-
+        int         buttonLocalY    = (int)(row * HEIGHT_OF_ITEM_IN_PIXEL) - range.first;
+        int         buttonLocalX    = (int)20 * (int)item->getDepth();
         NbRect<int> buttonRectLocal = {buttonLocalX, buttonLocalY, 20, 20};
 
-        if (isItemHaveChildrens(lastClickedIndex))
+        if (isItemHaveChildrens(lastClickedIndex) && buttonRectLocal.isInside(localPos))
         {
-            if (buttonRectLocal.isInside(localPos))
-            {
-                onItemButtonClickSignal.emit(lastClickedIndex);
-            }
-            else
-            {
-                onItemClickSignal.emit(lastClickedIndex);
-                if (prevClickedIndex != lastClickedIndex)
-                {
-                    onItemChangeSignal.emit(lastClickedIndex);
-                }
-            }
+            onItemButtonClickSignal.emit(lastClickedIndex);
         }
         else
         {
@@ -147,6 +135,7 @@ namespace Widgets
         return true;
     }
 
+
     bool TreeView::hitTestRightClick(const NbPoint<int>& pos) noexcept
     {
         if (!model || !rect.isInside(pos))
@@ -155,28 +144,21 @@ namespace Widgets
         }
 
         NbPoint<int> localPos = {pos.x - rect.x, pos.y - rect.y};
+        size_t       row      = (localPos.y + range.first) / HEIGHT_OF_ITEM_IN_PIXEL;
 
-        size_t row = (localPos.y + range.first) / HEIGHT_OF_ITEM_IN_PIXEL;
-
-        lastClickedIndex = indexFromVisibleRow(row);
-
-        if (!lastClickedIndex.isValid())
+        ModelIndex clickedIndex = indexFromVisibleRow(row);
+        if (!clickedIndex.isValid())
         {
             return false;
         }
 
-        const ModelItem* item = uuidMap.at(lastClickedIndex.getUuid());
-
-        int buttonLocalY = (int)(row * HEIGHT_OF_ITEM_IN_PIXEL) - range.first;
-        int buttonLocalX = (int)20 * (int)item->getDepth();
-
-        NbRect<int> buttonRectLocal = {buttonLocalX, buttonLocalY, 20, 20};
+        setItemState(clickedIndex, ItemState::SELECTED);
+        lastClickedIndex = clickedIndex;
 
         onItemRightClickSignal.emit(lastClickedIndex);
-        
-
         return true;
     }
+
 
 
     const char* TreeView::getClassName() const
@@ -247,6 +229,41 @@ namespace Widgets
         onItemChangeSignal.emit(index);
 
         rebuildVisibleList();
+    }
+
+    void TreeView::setSelectedItem(const ModelIndex& index) noexcept
+    {
+        if (!index.isValid() || !model)
+        {
+            return;
+        }
+
+        auto itTarget = uuidMap.find(index.getUuid());
+        if (itTarget == uuidMap.end())
+        {
+            return;
+        }
+
+        for (auto& [uuid, state] : nodeStates)
+        {
+            state.selected = false;
+        }
+
+        nodeStates[index.getUuid()].selected = true;
+
+        const ModelItem* current = itTarget->second;
+        if (current)
+        {
+            ModelItem* parent = current->parent;
+            while (parent)
+            {
+                nodeStates[parent->getUuid()].expanded = true;
+                parent                                 = parent->parent;
+            }
+        }
+
+        rebuildVisibleList();
+        onItemChangeSignal.emit(index);
     }
 
     void TreeView::buildUuidMap() noexcept
@@ -484,9 +501,10 @@ namespace Widgets
             nodeState.expanded = true;
             break;
         case ItemState::SELECTED:
-            // Снимаем выделение со всех, если нужно single-select
             for (auto& [uuid, st] : nodeStates)
+            {
                 st.selected = false;
+            }
             nodeState.selected = true;
             break;
         default:

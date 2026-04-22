@@ -744,18 +744,14 @@ namespace Renderer
                 continue;
             }
 
-            const nbstl::Uuid uuid = item->getUuid();
-            const ModelIndex  index(uuid);
+            const ModelIndex index(item->getUuid());
 
-            bool isSelected    = treeView->isItemSelected(index);
-            bool isLastClicked = treeView->getLastClickIndex().isValid() &&
-                                 treeView->getLastClickIndex().getUuid() == uuid;
-
-            bool isHovered = (treeView->getLastHitIndex().getUuid() == uuid);
+            bool isSelected = treeView->isItemSelected(index);
+            bool isHovered  = (treeView->getLastHitIndex().getUuid() == item->getUuid());
 
             NbRect<int> fullRowRect = {viewRect.x, y, viewRect.width, itemHeight};
 
-            if (isLastClicked || isSelected)
+            if (isSelected)
             {
                 renderTarget->fillRectangle(fullRowRect, NbColor{0, 120, 215});
             }
@@ -767,7 +763,7 @@ namespace Renderer
             const int depth    = static_cast<int>(item->getDepth());
             int       contentX = viewRect.x + baseOffset + (depth * indentStep);
 
-            NbColor guideColor = (isSelected || isLastClicked) ? NbColor{60, 140, 230} : NbColor{50, 50, 50};
+            NbColor guideColor = isSelected ? NbColor{60, 140, 230} : NbColor{50, 50, 50};
             for (int d = 0; d < depth; ++d)
             {
                 int lineX = viewRect.x + baseOffset + (d * indentStep) - 8;
@@ -778,8 +774,7 @@ namespace Renderer
             {
                 bool        isExpanded = treeView->isItemExpanded(index);
                 NbRect<int> iconRect   = {contentX - 8, y + (itemHeight - 8) / 2, 8, 8};
-
-                NbColor chevronColor = (isLastClicked || isSelected) ? NbColor{255, 255, 255} : NbColor{140, 140, 140};
+                NbColor chevronColor = isSelected ? NbColor{255, 255, 255} : NbColor{140, 140, 140};
                 renderTriangleIcon(iconRect, isExpanded, chevronColor);
             }
 
@@ -791,8 +786,7 @@ namespace Renderer
                                     ? Utils::toWstring(treeView->getEditingText())
                                     : Utils::toWstring(model->data(*item));
 
-            NbColor textColor =
-                (isLastClicked || isSelected) ? NbColor{255, 255, 255} : style.baseTextColor;
+            NbColor textColor = isSelected ? NbColor{255, 255, 255} : style.baseTextColor;
 
             renderTarget->drawText(
                 text, textRect, textColor, TextAlignment::LEFT, ParagraphAlignment::CENTER
@@ -806,6 +800,7 @@ namespace Renderer
             addMenuToPopupQueue(castWidget<Menu>(treeView->getMenu()));
         }
     }
+
 
     void Direct2dWidgetRenderer::renderTriangleIcon(
         const NbRect<int>& rect,

@@ -143,6 +143,8 @@ namespace Widgets
             const std::string& name
         ) noexcept;
 
+        void setSelectedItem(const ModelIndex& index) noexcept;
+
         void setModel(const std::shared_ptr<ITreeModel>& modelParam) noexcept;
         std::shared_ptr<ITreeModel> getModel() const noexcept { return model; }
 

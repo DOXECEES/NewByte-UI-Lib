@@ -388,6 +388,10 @@ namespace nbui
         {
             layout->setSpacing(spacing);
         }
+        if (auto layout = dynamic_cast<NNsLayout::GridLayout*>(currentNode))
+        {
+            //layout->setSpacing(spacing);
+        }
         return std::move(*this);
     }
 

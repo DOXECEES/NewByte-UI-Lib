@@ -102,6 +102,7 @@ namespace Widgets
         data.insert(caretPosition, 1, symbol);
         caretPosition++;
         isDataChanged = true;
+        onTextChanged.emit();
         isCaretVisible = true;
     }
 
@@ -115,6 +116,7 @@ namespace Widgets
         this->data = data;
         caretPosition = data.length();  
         isDataChanged = true;
+        onTextChanged.emit();
     }
 
     void TextEdit::decrementCaretPos() noexcept
@@ -170,6 +172,7 @@ namespace Widgets
             data.erase(caretPosition - 1, 1);
             caretPosition--;
             isDataChanged = true;
+            onTextChanged.emit();
         }
     }
     void TextEdit::deleteCharRight() noexcept
@@ -178,6 +181,7 @@ namespace Widgets
         {
             data.erase(caretPosition, 1);
             isDataChanged = true;
+            onTextChanged.emit();
         }
     }
     void TextEdit::deleteWord() noexcept
@@ -245,6 +249,7 @@ namespace Widgets
         if (rect.width != newRect.width || rect.height != newRect.height)
         {
             isDataChanged = true; 
+            onTextChanged.emit();
         }
         rect = newRect;
         isSizeChange = true;
@@ -265,6 +270,8 @@ namespace Widgets
     {
         isRTL = rtl;
         isDataChanged = true;
+        onTextChanged.emit();
+
     }
 
 };

@@ -246,6 +246,8 @@ endif()
 
 
 if(WIN32)
+    target_compile_options(${PROJECT_NAME} PRIVATE /utf-8)
+
     target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE _UNICODE)
     target_link_libraries(${PROJECT_NAME} PRIVATE user32 PUBLIC NbCommon)
     

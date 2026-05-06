@@ -32,104 +32,108 @@ namespace NNsLayout
 }
 
 
+// В LayoutBuilder.hpp (уточненная версия)
 namespace NNsLayout
 {
     class CollapsibleLayout : public VLayout
     {
     public:
-        CollapsibleLayout() noexcept
-            : VLayout(),
-              isCollapsed(false)
+        CollapsibleLayout() noexcept : VLayout()
         {
         }
 
         void setCollapsed(bool collapsed) noexcept
         {
-            if (isCollapsed != collapsed)
+            if (isCollapsed == collapsed)
             {
-                isCollapsed = collapsed;
-                markDirty();
-
-                // Если у вас есть указатель на родителя, помечаем всю ветку как грязную
-                LayoutNode* curr = this->getParent();
-                while (curr)
-                {
-                    curr->markDirty();
-                    curr = curr->getParent();
-                }
+                return;
             }
+            isCollapsed = collapsed;
+
+            if (isCollapsed)
+            {
+                m_savedHeightType = style.heightSizeType;
+                style.heightSizeType = SizeType::AUTO;
+            }
+            else
+            {
+                style.heightSizeType = m_savedHeightType;
+            }
+
+            this->markDirty();
         }
 
-        bool getCollapsed() const noexcept
+        void toggle() noexcept
         {
-            return isCollapsed;
+            setCollapsed(!isCollapsed);
         }
 
         void measure(const NbSize<int>& available) noexcept override
         {
-            if (!isCollapsed)
+            if (children.empty())
             {
-                // Если развернуто, считаем как обычный VLayout
-                VLayout::measure(available);
+                return;
+            }
+
+            children[0]->measure(available);
+            NbSize<int> headerSize = children[0]->getMeasuredSize();
+
+            if (isCollapsed)
+            {
+                measuredSize = headerSize;
             }
             else
             {
-                // Если свернуто, измеряем ТОЛЬКО первый элемент (Заголовок)
-                if (!children.empty() && children[0] != nullptr)
-                {
-                    children[0]->measure(available);
-                    measuredSize = children[0]->getMeasuredSize();
+                VLayout::measure(available);
 
-                    // Учитываем паддинги самого CollapsibleLayout (если они есть)
-                    measuredSize.width += style.padding.left + style.padding.right;
-                    measuredSize.height += style.padding.top + style.padding.bottom;
-                }
-                else
-                {
-                    measuredSize = {0, 0};
-                }
             }
         }
 
         void layout(const NbRect<int>& bounds) noexcept override
         {
-            if (!isCollapsed)
+            this->layoutRect = bounds;
+
+            if (bounds.height <= 0 || bounds.width <= 0)
             {
-                // Если развернуто, позиционируем как обычный VLayout
-                VLayout::layout(bounds);
+                for (auto& child : children)
+                {
+                    child->setRect({0, 0, 0, 0});
+                    child->layout({0, 0, 0, 0}); 
+                }
+                return;
+            }
+
+            if (children.empty())
+            {
+                return;
+            }
+
+            if (isCollapsed)
+            {
+                children[0]->measure({bounds.width, bounds.height});
+                NbSize<int> headerSize = children[0]->getMeasuredSize();
+
+                NbRect<int> headerRect = {bounds.x, bounds.y, bounds.width, headerSize.height};
+                children[0]->layout(headerRect);
+
+                for (size_t i = 1; i < children.size(); ++i)
+                {
+                    children[i]->setRect({0, 0, 0, 0});
+                    children[i]->layout({0, 0, 0, 0});
+                }
             }
             else
             {
-                layoutRect = bounds;
-
-                if (!children.empty() && children[0] != nullptr)
-                {
-                    // Позиционируем только Заголовок
-                    NbRect<int> headerBounds = bounds;
-                    headerBounds.x += style.padding.left;
-                    headerBounds.y += style.padding.top;
-                    headerBounds.width -= (style.padding.left + style.padding.right);
-                    headerBounds.height = children[0]->getMeasuredSize().height;
-
-                    children[0]->layout(headerBounds);
-
-                    // ОСТАЛЬНЫМ элементам принудительно ставим нулевой размер,
-                    // чтобы они исчезли с экрана и не перехватывали клики мышкой
-                    for (size_t i = 1; i < children.size(); ++i)
-                    {
-                        if (children[i])
-                        {
-                            children[i]->setRect({0, 0, 0, 0});
-                            children[i]->layout({0, 0, 0, 0}); // Опционально пробрасываем нули ниже
-                        }
-                    }
-                }
+                VLayout::layout(bounds);
             }
+
         }
 
     private:
-        bool isCollapsed;
+        bool     isCollapsed       = false;
+        SizeType m_savedHeightType = SizeType::AUTO;
     };
+
 } // namespace NNsLayout
 
 namespace nbui
@@ -278,6 +282,13 @@ namespace nbui
         {
             return node;
         }
+
+        static LayoutBuilder section(
+            const std::wstring& title,
+            bool                collapsed = false
+        );
+
+
 
     private:
 

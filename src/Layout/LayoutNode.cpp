@@ -80,10 +80,11 @@ namespace NNsLayout
 
         int remainingWidth = (std::max)(0, bounds.width - totalFixed);
 
+
         for (auto& child : children)
         {
-            const auto& st = child->style;
-            int width = 0;
+            const auto& st    = child->style;
+            int         width = 0;
 
             switch (st.widthSizeType)
             {
@@ -91,29 +92,46 @@ namespace NNsLayout
                 width = static_cast<int>(st.width);
                 break;
             case SizeType::RELATIVE:
-                width = (totalRelative > 0) ? static_cast<int>(remainingWidth * (st.width / totalRelative)) : 0;
+                width = (totalRelative > 0)
+                            ? static_cast<int>(remainingWidth * (st.width / totalRelative))
+                            : 0;
                 break;
             case SizeType::AUTO:
                 width = child->getMeasuredSize().width;
                 break;
             }
 
-            // Расчет высоты с учетом сторон
-            int height = bounds.height - (st.margin.top + st.margin.bottom + st.border.width.top + st.border.width.bottom + st.padding.top + st.padding.bottom);
-            if (st.heightSizeType == SizeType::ABSOLUTE) height = static_cast<int>(st.height);
-            else if (st.heightSizeType == SizeType::AUTO) height = child->getMeasuredSize().height;
+            int decorationW   = st.margin.left + st.margin.right + st.border.width.left +
+                                st.border.width.right + st.padding.left + st.padding.right;
+            int maxAvailableW = (std::max)(0, (bounds.x + bounds.width) - (x + decorationW));
+            width             = (std::min)(width, maxAvailableW);
+
+            int decorationH = st.margin.top + st.margin.bottom + st.border.width.top +
+                              st.border.width.bottom + st.padding.top + st.padding.bottom;
+            int height =
+                (std::max)(0, bounds.height - decorationH); 
+
+            if (st.heightSizeType == SizeType::ABSOLUTE)
+            {
+                height = (std::min)(height, static_cast<int>(st.height)); 
+            }
+            else if (st.heightSizeType == SizeType::AUTO)
+            {
+                height = (std::min)(height, child->getMeasuredSize().height); 
+            }
 
             NbRect<int> childRect;
-            childRect.x = x + st.margin.left + st.border.width.left + st.padding.left;
-            childRect.y = bounds.y + st.margin.top + st.border.width.top + st.padding.top;
-            childRect.width = width;
-            childRect.height = height;
+            childRect.x      = x + st.margin.left + st.border.width.left + st.padding.left;
+            childRect.y      = bounds.y + st.margin.top + st.border.width.top + st.padding.top;
+            childRect.width  = (std::max)(0, width);
+            childRect.height = (std::max)(0, height);
 
             child->setRect(childRect);
             child->layout(childRect);
 
-            x += width + st.margin.left + st.margin.right + st.border.width.left + st.border.width.right + st.padding.left + st.padding.right;
+            x += width + decorationW;
         }
+
     }
 
     void VLayout::measure(const NbSize<int>& available) noexcept
@@ -221,6 +239,11 @@ namespace NNsLayout
                 bounds.width - (st.margin.left + st.margin.right + st.border.width.left +
                                 st.border.width.right + st.padding.left + st.padding.right);
             childRect.height = contentHeight;
+            
+            if (childRect.width == 0)
+            {
+                childRect.height = 0;
+            }
 
             child->setRect(childRect);
             child->layout(childRect);

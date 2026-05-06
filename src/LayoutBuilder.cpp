@@ -401,6 +401,10 @@ namespace nbui
         {
             button->setIsChecked(true);
         }
+        else if (auto* checkBox = dynamic_cast<Widgets::CheckBox*>(currentNode))
+        {
+            checkBox->setChecked(state);
+        }
         return std::move(*this);
     }
 
@@ -450,5 +454,55 @@ namespace nbui
         }
         
         
+    }
+
+    // В LayoutBuilder.cpp
+
+    LayoutBuilder LayoutBuilder::section(
+        const std::wstring& title,
+        bool                collapsed
+    )
+    {
+        LayoutBuilder b;
+        auto          colNode = std::make_unique<NNsLayout::CollapsibleLayout>();
+        auto*         rawPtr  = colNode.get();
+
+        // Настройки контейнера секции
+        colNode->style.widthSizeType  = NNsLayout::SizeType::RELATIVE;
+        colNode->style.width          = 1.0f;                      // Занимает 100% ширины родителя
+        colNode->style.heightSizeType = NNsLayout::SizeType::AUTO; // Высота зависит от содержимого
+
+        colNode->setCollapsed(collapsed);
+        colNode->setSpacing(5); // Отступ между заголовком и контентом внутри
+
+        b.node        = std::move(colNode);
+        b.currentNode = b.node.get();
+
+        // Создаем виджет заголовка (Кнопка)
+        auto headerBtn = std::make_shared<Widgets::Button>();
+        headerBtn->setText(title);
+        subscribe(
+            headerBtn.get(), &Widgets::Button::onReleasedSignal,
+            [rawPtr]()
+            {
+                rawPtr->toggle();
+            }
+        );
+        
+
+        // Обертка для кнопки в системе лейаутов
+        auto headerNode = std::make_unique<NNsLayout::LayoutWidget>(headerBtn);
+
+        // --- УКАЗАНИЕ РАЗМЕРОВ ЗАГОЛОВКА ---
+        headerNode->style.widthSizeType  = NNsLayout::SizeType::RELATIVE;
+        headerNode->style.width          = 1.0f; // Ширина 100%
+        headerNode->style.heightSizeType = NNsLayout::SizeType::ABSOLUTE;
+        headerNode->style.height         = 30.0f; // Фиксированная высота заголовка 30px
+        headerBtn->setColor({32, 32, 32});
+
+        // Добавляем заголовок как первый элемент (индекс 0)
+        b.currentNode->addChild(std::move(headerNode));
+
+        return b;
     }
 }

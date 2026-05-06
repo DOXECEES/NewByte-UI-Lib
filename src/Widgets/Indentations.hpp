@@ -33,16 +33,50 @@ struct Padding
     T bottom    = static_cast<T>(0);
     T left      = static_cast<T>(0);
 
-    template<typename U>
+    Padding() = default;
+
+    Padding(T all)
+        : top(all)
+        , right(all)
+        , bottom(all)
+        , left(all)
+    {
+    }
+
+    Padding(
+        T v,
+        T h
+    )
+        : top(v)
+        , right(h)
+        , bottom(v)
+        , left(h)
+    {
+    }
+
+    Padding(
+        T t,
+        T r,
+        T b,
+        T l
+    )
+        : top(t)
+        , right(r)
+        , bottom(b)
+        , left(l)
+    {
+    }
+
+
+    template <typename U>
     Padding<U> to() const noexcept
     {
-        return Padding<U>
-        {
-            .top = static_cast<U>(top),
-            .right = static_cast<U>(right),
-            .bottom = static_cast<U>(bottom),
-            .left = static_cast<U>(left)
-        };
+        return Padding<U>(
+            static_cast<U>(top),
+            static_cast<U>(right),
+            static_cast<U>(bottom),
+            static_cast<U>(left)
+        );
     }
 };
 

@@ -160,6 +160,8 @@ set (SRC
         src/Widgets/Spacer.hpp
         src/Widgets/FloatSpinBox.cpp
         src/Widgets/FloatSpinBox.hpp
+        src/Widgets/CollapsibleSection.cpp
+        src/Widgets/CollapsibleSection.hpp
 
         src/Widgets/Section.hpp
 

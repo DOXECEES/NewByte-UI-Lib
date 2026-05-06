@@ -309,6 +309,11 @@ namespace Renderer
 
         bool isSelected = button->getIsChecked();
 
+        if (button->getRect().isEmpty())
+        {
+            return;
+        }
+
         const Font& font = bStyle.font(); 
         const TextFormatAlignment& alignment = bStyle.textAlignment();
 
@@ -652,6 +657,11 @@ namespace Renderer
         const NbRect<int>& widgetRect = textEdit->getRect();
         const WidgetStyle& style = textEdit->getStyle();
 
+        if (widgetRect.isEmpty())
+        {
+            return;
+        }
+
         renderTarget->drawRectangle(widgetRect, style.baseColor);
 
         if (textEdit->getIsDataChanged())
@@ -924,6 +934,11 @@ namespace Renderer
 		NbColor color;
 		NbColor textColor;
 
+        if (checkBox->getRect().isEmpty())
+        {
+            return;
+        }
+
         getWidgetThemeColorByState(checkBox, color, textColor);
 		
 		renderTarget->fillRectangle(checkBox->getRect(), color);
@@ -1139,6 +1154,11 @@ namespace Renderer
 
         NbColor backgroundColor;
         NbColor textColor;
+
+        if (rect.isEmpty())
+        {
+            return;
+        }
 
         getWidgetThemeColorByState(slider, backgroundColor, textColor);
 

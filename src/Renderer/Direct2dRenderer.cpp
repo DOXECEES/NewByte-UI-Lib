@@ -93,7 +93,6 @@ namespace Renderer
                 auto widgetPtr = widgetLayout->getWidget();
                 if (widgetPtr)
                 {
-                    // 2. Проверяем сам рендерер
                     if (widgetRenderer)
                     {
                         widgetRenderer->render(widgetPtr.get(), widgetLayout->style);
@@ -101,7 +100,7 @@ namespace Renderer
                 }
 
             }
-            else if (auto layout = dynamic_cast<const NNsLayout::LayoutNode*>(node))
+            else if (auto layout = node)
             {
                 renderTarget.fillRectangle(layout->getRect(), layout->style.color);
                 if (layout->style.border.style != Border::Style::NONE)

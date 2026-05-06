@@ -57,11 +57,11 @@ namespace Widgets
             int iconSize = rect.height - 10;
             previewRect  = {rect.x + 5, rect.y + 5, iconSize, iconSize};
 
-            int textX     = previewRect.x + previewRect.width + 10;
+            int textX     = previewRect.x + previewRect.width + 5;
             int textWidth = rect.width - previewRect.width - 10 - 5;
 
-            nameLabel->setRect({textX, rect.y + 5, textWidth, 20});
-            typeLabel->setRect({textX, rect.y + 25, textWidth, 20});
+            nameLabel->setRect({textX, rect.y + 5, textWidth, iconSize / 2});
+            typeLabel->setRect({textX, rect.y + (iconSize / 2) + 5, textWidth, iconSize / 2});
         }
 
         NbRect<int> getPreviewRect() const noexcept

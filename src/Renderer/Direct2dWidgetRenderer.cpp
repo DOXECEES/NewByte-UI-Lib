@@ -1257,7 +1257,17 @@ namespace Renderer
             matWidget->isMaterialAssigned() ? NbColor(70, 110, 190) : NbColor(50, 50, 50);
 
         renderTarget->fillRectangle(pRect, matColor);
-        renderTarget->drawRectangle(pRect, {0, 0, 0, 100}, 1.0f);
+        auto bitmap = bitmapCache.get(
+            std::wstring(
+                L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\res\\"
+            ) +
+            L"Blockbuster14.tga"
+        );
+        if (bitmap)
+        {
+            renderTarget->drawBitmap(pRect, bitmap.Get());
+        }
+        //renderTarget->drawRectangle(pRect, {0, 0, 0, 100}, 1.0f);
 
         if (matWidget->getNameLabel())
         {
@@ -1272,6 +1282,8 @@ namespace Renderer
                                   ? NbColor(0, 120, 215)
                                   : NbColor(60, 60, 60);
         renderTarget->drawRectangle(rect, borderColor, 1.0f);
+
+
     }
 
     void Direct2dWidgetRenderer::renderFilePicker(

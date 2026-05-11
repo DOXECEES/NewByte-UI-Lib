@@ -12,6 +12,7 @@ namespace Localization
 	public:
 		static void load(std::string_view pathToTranslation) noexcept;
 		static const std::string& fromKey(const std::string& key) noexcept;
+        static std::wstring fromKeyToWstring(const std::string& key) noexcept;
 
 	private:
 		inline static std::unordered_map<std::string, std::string> translationTable;

@@ -7,6 +7,7 @@
 #include <Error/ErrorManager.hpp>
 #include <StdUtils.hpp>
 
+
 namespace Localization
 {
     void Translation::load(std::string_view pathToTranslation) noexcept
@@ -71,6 +72,11 @@ namespace Localization
 
 
         return translationTable.at(key);
+    }
+
+    std::wstring Translation::fromKeyToWstring(const std::string& key) noexcept
+    {
+        return nbstl::toWString(fromKey(key));
     }
 }
 

@@ -74,6 +74,7 @@ namespace Win32Window
 
 	ChildWindow::~ChildWindow()
 	{
+        close();
         if (handle.as<HWND>())
         {
             DestroyWindow(handle.as<HWND>());

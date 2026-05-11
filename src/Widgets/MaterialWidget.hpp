@@ -5,6 +5,8 @@
 #include "Widgets/Label.hpp"
 #include <string>
 
+#include <Error/ErrorManager.hpp>
+
 namespace Widgets
 {
     class MaterialWidget : public IWidget
@@ -37,6 +39,12 @@ namespace Widgets
         bool hitTest(const NbPoint<int>& pos) override
         {
             return rect.isInside(pos);
+        }
+
+        void onClick() override
+        {
+            nb::Error::ErrorManager::instance().report(nb::Error::Type::INFO, "Click");
+            onClickSignal.emit();
         }
 
         const char* getClassName() const override
@@ -83,6 +91,8 @@ namespace Widgets
         {
             return typeLabel;
         }
+
+        Signal<void()> onClickSignal;
 
     private:
         std::shared_ptr<Label> nameLabel   = std::make_shared<Label>(L"");

@@ -48,7 +48,8 @@ namespace Localization
                 line = nbstl::trim(line);
 
                 size_t separatorPos = line.find(':');
-                translationTable[line.substr(0, separatorPos)] = line.substr(separatorPos+1);
+                translationTable[nbstl::trim(line.substr(0, separatorPos))] =
+                    nbstl::trim(line.substr(separatorPos + 1));
             }
             else
             {

@@ -136,114 +136,127 @@ namespace NNsLayout
 
     void VLayout::measure(const NbSize<int>& available) noexcept
     {
-        int totalFixed = 0;
+        int   totalFixed    = 0;
         float totalRelative = 0.0f;
-        int visibleCount = 0;
+        int   visibleCount  = 0;
 
         for (auto& child : children)
         {
             auto& st = child->style;
+            visibleCount++;
 
             if (st.heightSizeType == SizeType::RELATIVE)
             {
                 totalRelative += st.height;
-                visibleCount++;
                 continue;
             }
 
-            child->measure(available);
+            int decorationW = st.margin.left + st.margin.right + st.border.width.left +
+                              st.border.width.right + st.padding.left + st.padding.right;
+
+            int childInnerWidth = (std::max)(0, available.width - decorationW);
+
+            child->measure({childInnerWidth, available.height});
+
             auto s = child->getMeasuredSize();
 
-            // ЗАМЕНА: вместо border.width * 2 используем стороны
-            int fullH = st.margin.top + st.margin.bottom +
-                        st.border.width.top + st.border.width.bottom +
-                        st.padding.top + st.padding.bottom +
-                        s.height;
+            int decorationH = st.margin.top + st.margin.bottom + st.border.width.top +
+                              st.border.width.bottom + st.padding.top + st.padding.bottom;
 
-            totalFixed += fullH;
-            visibleCount++;
+            if (st.heightSizeType == SizeType::ABSOLUTE)
+            {
+                totalFixed += static_cast<int>(st.height) + decorationH;
+            }
+            else
+            { 
+                totalFixed += s.height + decorationH;
+            }
         }
 
-        if (visibleCount > 1) {
+        if (visibleCount > 1)
+        {
             totalFixed += (visibleCount - 1) * spacing;
         }
 
-        int remaining = (std::max)(0, available.height - totalFixed);
-
         measuredSize.width = available.width;
-        measuredSize.height = totalFixed;
 
         if (totalRelative > 0.0001f)
-            measuredSize.height += remaining;
+        {
+            measuredSize.height = (std::max)(totalFixed, available.height);
+        }
+        else
+        {
+            measuredSize.height = totalFixed;
+        }
     }
 
     void VLayout::layout(const NbRect<int>& bounds) noexcept
     {
         layoutRect = bounds;
 
-        float totalRelative = 0.0f;
-        int totalFixed = 0;
-        int visibleCount = 0;
+        float totalRelative              = 0.0f;
+        int   fixedHeightWithDecorations = 0;
+        int   visibleCount               = (int)children.size();
 
         for (auto& child : children)
         {
-            auto& st = child->style;
-            visibleCount++;
-
-            if (st.heightSizeType == SizeType::AUTO)
-                child->measure({bounds.width, bounds.height});
-
-            // ЗАМЕНА: Суммируем конкретные стороны рамки
-            int decorationH = st.margin.top + st.margin.bottom + 
-                             st.border.width.top + st.border.width.bottom + 
-                             st.padding.top + st.padding.bottom;
+            auto& st          = child->style;
+            int   decorationH = st.margin.top + st.margin.bottom + st.border.width.top +
+                                st.border.width.bottom + st.padding.top + st.padding.bottom;
 
             if (st.heightSizeType == SizeType::RELATIVE)
             {
                 totalRelative += st.height;
-                totalFixed += decorationH;
             }
             else if (st.heightSizeType == SizeType::ABSOLUTE)
             {
-                totalFixed += static_cast<int>(st.height) + decorationH;
+                fixedHeightWithDecorations += static_cast<int>(st.height) + decorationH;
             }
-            else if (st.heightSizeType == SizeType::AUTO)
-            {
-                totalFixed += child->getMeasuredSize().height + decorationH;
+            else
+            { 
+                fixedHeightWithDecorations += child->getMeasuredSize().height + decorationH;
             }
         }
 
-        if (visibleCount > 1) totalFixed += (visibleCount - 1) * spacing;
+        if (visibleCount > 1)
+        {
+            fixedHeightWithDecorations += (visibleCount - 1) * spacing;
+        }
 
-        int remaining = (std::max)(0, bounds.height - totalFixed);
-        int y = bounds.y - scrollOffset; 
+        int remaining = (std::max)(0, bounds.height - fixedHeightWithDecorations);
+        int y         = bounds.y - scrollOffset;
 
-
+        // 2. Расстановка
         for (size_t i = 0; i < children.size(); ++i)
         {
             auto& child = children[i];
-            auto& st = child->style;
+            auto& st    = child->style;
 
             int contentHeight = 0;
-            if (st.heightSizeType == SizeType::ABSOLUTE) contentHeight = static_cast<int>(st.height);
-            else if (st.heightSizeType == SizeType::AUTO) contentHeight = child->getMeasuredSize().height;
-            else if (st.heightSizeType == SizeType::RELATIVE && totalRelative > 0.0001f)
+            if (st.heightSizeType == SizeType::ABSOLUTE)
             {
-                contentHeight = static_cast<int>(remaining * (st.height / totalRelative));
+                contentHeight = static_cast<int>(st.height);
+            }
+            else if (st.heightSizeType == SizeType::AUTO)
+            {
+                contentHeight = child->getMeasuredSize().height;
+            }
+            else if (st.heightSizeType == SizeType::RELATIVE)
+            {
+                if (totalRelative > 0.0001f)
+                {
+                    contentHeight = static_cast<int>(remaining * (st.height / totalRelative));
+                }
             }
 
+            int decorationW = st.margin.left + st.margin.right + st.border.width.left +
+                              st.border.width.right + st.padding.left + st.padding.right;
+
             NbRect<int> childRect;
-            childRect.x = bounds.x + st.margin.left + st.border.width.left + st.padding.left;
-            childRect.y = y + st.margin.top + st.border.width.top + st.padding.top;
-            childRect.width =
-                bounds.width - (st.margin.left + st.margin.right + st.border.width.left +
-                                st.border.width.right + st.padding.left + st.padding.right);
+            childRect.x      = bounds.x + st.margin.left + st.border.width.left + st.padding.left;
+            childRect.y      = y + st.margin.top + st.border.width.top + st.padding.top;
+            childRect.width  = (std::max)(0, bounds.width - decorationW);
             childRect.height = contentHeight;
-            
-            if (childRect.width == 0)
-            {
-                childRect.height = 0;
-            }
 
             child->setRect(childRect);
             child->layout(childRect);
@@ -255,7 +268,6 @@ namespace NNsLayout
             {
                 y += spacing;
             }
-
         }
     }
 

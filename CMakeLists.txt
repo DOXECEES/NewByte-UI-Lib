@@ -104,8 +104,8 @@ set (SRC
         src/Renderer/Direct2dBitmapCache.cpp
         src/Renderer/Direct2dBitmapCache.hpp
 
+        src/Renderer/TextAlignment.cpp
         src/Renderer/TextAlignment.hpp
-
 
         src/RendererInterface/IRenderContext.cpp
         src/RendererInterface/IRenderContext.hpp
@@ -168,6 +168,8 @@ set (SRC
         src/Widgets/Thumbnail.hpp
 
         src/Widgets/MaterialWidget.hpp
+
+        src/Widgets/TextureWidget.hpp
 
 
         src/Widgets/Scrollbar.cpp

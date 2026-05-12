@@ -95,6 +95,13 @@ namespace Renderer
             const NbColor&     color
         ) noexcept;
 
+        void renderTexturelWidget(
+            IWidget*                      widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        ) noexcept;
+
+
+        
 
         template<typename T>
         T* castWidget(IWidget* widget) const noexcept

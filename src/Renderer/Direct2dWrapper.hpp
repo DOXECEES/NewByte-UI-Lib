@@ -713,19 +713,6 @@ public:
     {
         if (!m_d2dContext || !textLayout) return;
 
-        // Устанавливаем выравнивание для layout
-        switch (alignment)
-        {
-        case TextAlignment::CENTER:
-            textLayout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            break;
-        case TextAlignment::LEFT:
-            textLayout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-            break;
-        case TextAlignment::RIGHT:
-            textLayout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-            break;
-        }
 
         ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
         if (brush)

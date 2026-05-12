@@ -60,7 +60,6 @@ namespace NNsLayout
         for (auto& child : children)
         {
             const auto& st = child->style;
-            // Добавляем константные части (margin + border + padding) к фиксированной ширине
             int decorationW = st.margin.left + st.margin.right + st.border.width.left + st.border.width.right + st.padding.left + st.padding.right;
 
             switch (st.widthSizeType)
@@ -226,7 +225,6 @@ namespace NNsLayout
         int remaining = (std::max)(0, bounds.height - fixedHeightWithDecorations);
         int y         = bounds.y - scrollOffset;
 
-        // 2. Расстановка
         for (size_t i = 0; i < children.size(); ++i)
         {
             auto& child = children[i];

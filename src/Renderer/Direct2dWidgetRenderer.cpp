@@ -22,6 +22,7 @@
 #include "Widgets/ToolBar.hpp"
 #include "Widgets/MaterialWidget.hpp"
 #include "Widgets/FilePicker.hpp"
+#include "Widgets/TextureWidget.hpp"
 #include "Direct2dGlobalWidgetMapper.hpp"
 
 
@@ -111,6 +112,10 @@ namespace Renderer
         else if (strncmp(widgetName, FilePicker::CLASS_NAME, size) == 0)
         {
             renderFilePicker(widget, layoutStyle);
+        }
+        else if (strncmp(widgetName, TextureWidget::CLASS_NAME, size) == 0)
+        {
+            renderTexturelWidget(widget, layoutStyle);
         }
     }
 
@@ -846,6 +851,70 @@ namespace Renderer
         }
     }
 
+    void Direct2dWidgetRenderer::renderTexturelWidget(
+        IWidget*                      widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    ) noexcept
+    {
+        using namespace Widgets;
+        TextureWidget* texWidget = castWidget<TextureWidget>(widget);
+        if (!texWidget)
+        {
+            return;
+        }
+
+        const NbRect<int>& rect = texWidget->getRect();
+        if (rect.isEmpty())
+        {
+            return;
+        }
+        NbColor slotBg      = {35, 35, 35, 255};
+        NbColor borderColor = {60, 60, 60, 255};
+
+        if (texWidget->getState() == Widgets::WidgetState::HOVER)
+        {
+            slotBg      = {45, 45, 45, 255};
+            borderColor = {0, 120, 215, 255};
+        }
+
+        renderTarget->fillRoundedRectangle(rect, 2.0f, slotBg);
+
+        NbRect<int> pRect = texWidget->getPreviewRect();
+
+        if (texWidget->isTextureAssigned())
+        {
+
+            std::wstring texturePath =
+                texWidget->getNameLabel()->getText();
+
+            auto bitmap = bitmapCache.get(texturePath);
+            if (bitmap)
+            {
+                renderTarget->drawBitmap(pRect, bitmap.Get());
+            }
+            else
+            {
+                renderTarget->fillRectangle(pRect, {70, 20, 20, 255});
+            }
+        }
+        else
+        {
+            renderTarget->fillRectangle(pRect, {25, 25, 25, 255});
+            renderTarget->drawRectangle(pRect, {45, 45, 45, 255}, 1.0f);
+        }
+
+        if (texWidget->getNameLabel())
+        {
+            renderLabel(texWidget->getNameLabel().get(), layoutStyle);
+        }
+        if (texWidget->getResolutionLabel())
+        {
+            renderLabel(texWidget->getResolutionLabel().get(), layoutStyle);
+        }
+
+        renderTarget->drawRectangle(rect, borderColor, 1.0f);
+    }
+
     void Direct2dWidgetRenderer::renderLabel(
         IWidget*                      widget,
         const NNsLayout::LayoutStyle& layoutStyle
@@ -916,10 +985,17 @@ namespace Renderer
         if (textLayout)
         {
 
+            textLayout->SetMaxWidth(static_cast<float>(contentRect.width));
+            textLayout->SetMaxHeight(static_cast<float>(contentRect.height));
+
+            textLayout->SetTextAlignment(toDirect2dTextAlignment(style.alignment.textAlignment));
+
+            textLayout->SetParagraphAlignment(toDirect2dParagraphAlignment(style.alignment.paragraphAlignment));
+
             renderTarget->drawText(
-                textLayout.Get(), contentRect, style.baseTextColor,
-                static_cast<TextAlignment>(label->getVTextAlign())
+                textLayout.Get(), contentRect, style.baseTextColor
             );
+
         }
     }
 

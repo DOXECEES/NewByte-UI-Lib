@@ -60,7 +60,7 @@ namespace NNsLayout
         for (auto& child : children)
         {
             const auto& st = child->style;
-            int decorationW = st.margin.left + st.margin.right + st.border.width.left + st.border.width.right + st.padding.left + st.padding.right;
+            int decorationW = st.margin.left + st.margin.right + st.border.width.left + st.border.width.right;
 
             switch (st.widthSizeType)
             {
@@ -101,12 +101,12 @@ namespace NNsLayout
             }
 
             int decorationW   = st.margin.left + st.margin.right + st.border.width.left +
-                                st.border.width.right + st.padding.left + st.padding.right;
+                                st.border.width.right;
             int maxAvailableW = (std::max)(0, (bounds.x + bounds.width) - (x + decorationW));
             width             = (std::min)(width, maxAvailableW);
 
             int decorationH = st.margin.top + st.margin.bottom + st.border.width.top +
-                              st.border.width.bottom + st.padding.top + st.padding.bottom;
+                              st.border.width.bottom;
             int height =
                 (std::max)(0, bounds.height - decorationH); 
 
@@ -120,8 +120,8 @@ namespace NNsLayout
             }
 
             NbRect<int> childRect;
-            childRect.x      = x + st.margin.left + st.border.width.left + st.padding.left;
-            childRect.y      = bounds.y + st.margin.top + st.border.width.top + st.padding.top;
+            childRect.x      = x + st.margin.left + st.border.width.left;
+            childRect.y      = bounds.y + st.margin.top + st.border.width.top;
             childRect.width  = (std::max)(0, width);
             childRect.height = (std::max)(0, height);
 
@@ -201,7 +201,7 @@ namespace NNsLayout
         {
             auto& st          = child->style;
             int   decorationH = st.margin.top + st.margin.bottom + st.border.width.top +
-                                st.border.width.bottom + st.padding.top + st.padding.bottom;
+                                st.border.width.bottom;
 
             if (st.heightSizeType == SizeType::RELATIVE)
             {
@@ -248,11 +248,11 @@ namespace NNsLayout
             }
 
             int decorationW = st.margin.left + st.margin.right + st.border.width.left +
-                              st.border.width.right + st.padding.left + st.padding.right;
+                              st.border.width.right;
 
             NbRect<int> childRect;
-            childRect.x      = bounds.x + st.margin.left + st.border.width.left + st.padding.left;
-            childRect.y      = y + st.margin.top + st.border.width.top + st.padding.top;
+            childRect.x      = bounds.x + st.margin.left + st.border.width.left ;
+            childRect.y      = y + st.margin.top + st.border.width.top;
             childRect.width  = (std::max)(0, bounds.width - decorationW);
             childRect.height = contentHeight;
 
@@ -260,7 +260,7 @@ namespace NNsLayout
             child->layout(childRect);
 
             y += contentHeight + st.margin.top + st.margin.bottom + st.border.width.top +
-                 st.border.width.bottom + st.padding.top + st.padding.bottom;
+                 st.border.width.bottom;
 
             if (i < children.size() - 1)
             {

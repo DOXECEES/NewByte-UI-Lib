@@ -944,9 +944,8 @@ namespace Renderer
             if (layoutStyle.border.sideMask == Border::Side::BOTTOM)
             {
                 NbRect<int> bottomLine = {
-                    static_cast<int>(widgetRect.x),
-                    static_cast<int>(widgetRect.y + widgetRect.height - strokeWidth),
-                    static_cast<int>(widgetRect.width), static_cast<int>(strokeWidth)
+                    widgetRect.x, static_cast<int>(widgetRect.y + widgetRect.height - strokeWidth),
+                    widgetRect.width, static_cast<int>(strokeWidth)
                 };
                 renderTarget->fillRectangle(bottomLine, layoutStyle.border.color);
             }
@@ -957,10 +956,14 @@ namespace Renderer
         }
 
         NbRect<int> contentRect = widgetRect;
-        contentRect.x += layoutStyle.padding.left;
-        contentRect.y += layoutStyle.padding.top;
-        contentRect.width -= (layoutStyle.padding.left + layoutStyle.padding.right);
-        contentRect.height -= (layoutStyle.padding.top + layoutStyle.padding.bottom);
+        contentRect.x += (layoutStyle.border.width.left + layoutStyle.padding.left);
+        contentRect.y += (layoutStyle.border.width.top + layoutStyle.padding.top);
+        contentRect.width -=
+            (layoutStyle.border.width.left + layoutStyle.border.width.right +
+             layoutStyle.padding.left + layoutStyle.padding.right);
+        contentRect.height -=
+            (layoutStyle.border.width.top + layoutStyle.border.width.bottom +
+             layoutStyle.padding.top + layoutStyle.padding.bottom);
 
         if (contentRect.width <= 0 || contentRect.height <= 0)
         {
@@ -984,18 +987,15 @@ namespace Renderer
 
         if (textLayout)
         {
-
             textLayout->SetMaxWidth(static_cast<float>(contentRect.width));
             textLayout->SetMaxHeight(static_cast<float>(contentRect.height));
 
             textLayout->SetTextAlignment(toDirect2dTextAlignment(style.alignment.textAlignment));
-
-            textLayout->SetParagraphAlignment(toDirect2dParagraphAlignment(style.alignment.paragraphAlignment));
-
-            renderTarget->drawText(
-                textLayout.Get(), contentRect, style.baseTextColor
+            textLayout->SetParagraphAlignment(
+                toDirect2dParagraphAlignment(style.alignment.paragraphAlignment)
             );
 
+            renderTarget->drawText(textLayout.Get(), contentRect, style.baseTextColor);
         }
     }
 
@@ -1333,12 +1333,16 @@ namespace Renderer
             matWidget->isMaterialAssigned() ? NbColor(70, 110, 190) : NbColor(50, 50, 50);
 
         renderTarget->fillRectangle(pRect, matColor);
+
+        std::filesystem::path path = matWidget->getNameLabel()->getText();
+        path.replace_extension(".png");
         auto bitmap = bitmapCache.get(
             std::wstring(
-                L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\res\\"
+                L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\cache\\"
             ) +
-            L"Blockbuster14.tga"
+            path.wstring()
         );
+
         if (bitmap)
         {
             renderTarget->drawBitmap(pRect, bitmap.Get());

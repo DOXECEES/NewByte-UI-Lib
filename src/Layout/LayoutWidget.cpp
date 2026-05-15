@@ -187,16 +187,14 @@ namespace NNsLayout
         }
 
         // --- border + padding ---
-        const int borderPaddingW = style.border.width.left + style.border.width.right +
-                                   style.padding.left + style.padding.right;
+        const int borderPaddingW = style.border.width.left + style.border.width.right;
 
-        const int borderPaddingH = style.border.width.top + style.border.width.bottom +
-                                   style.padding.top + style.padding.bottom;
+        const int borderPaddingH = style.border.width.top + style.border.width.bottom;
 
         NbRect<int> content = box;
 
-        content.x += style.border.width.left + style.padding.left;
-        content.y += style.border.width.top + style.padding.top;
+        content.x += style.border.width.left;
+        content.y += style.border.width.top;
 
         content.width -= borderPaddingW;
         content.height -= borderPaddingH;

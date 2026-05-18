@@ -100,6 +100,11 @@ namespace Renderer
             const NNsLayout::LayoutStyle& layoutStyle
         ) noexcept;
 
+         void renderSpacer(
+            IWidget*                      widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        ) noexcept;
+
 
         
 

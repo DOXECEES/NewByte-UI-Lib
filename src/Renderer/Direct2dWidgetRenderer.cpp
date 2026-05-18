@@ -23,6 +23,8 @@
 #include "Widgets/MaterialWidget.hpp"
 #include "Widgets/FilePicker.hpp"
 #include "Widgets/TextureWidget.hpp"
+#include "Widgets/Spacer.hpp"
+
 #include "Direct2dGlobalWidgetMapper.hpp"
 
 
@@ -116,6 +118,10 @@ namespace Renderer
         else if (strncmp(widgetName, TextureWidget::CLASS_NAME, size) == 0)
         {
             renderTexturelWidget(widget, layoutStyle);
+        }
+        else if (strncmp(widgetName, Spacer::CLASS_NAME, size) == 0)
+        {
+            renderSpacer(widget, layoutStyle);
         }
     }
 
@@ -912,7 +918,19 @@ namespace Renderer
             renderLabel(texWidget->getResolutionLabel().get(), layoutStyle);
         }
 
-        renderTarget->drawRectangle(rect, borderColor, 1.0f);
+        renderTarget->drawRectangle(rect, borderColor, 0.5f);
+    }
+
+    void Direct2dWidgetRenderer::renderSpacer(
+        IWidget*                      widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    ) noexcept
+    {
+        Spacer*             spacer      = castWidget<Spacer>(widget);
+        const NbRect<int>& widgetRect = spacer->getRect();
+        NbColor             bgColor, textColor;
+        getWidgetThemeColorByState(spacer, bgColor, textColor);
+        renderTarget->fillRectangle(widgetRect, bgColor);
     }
 
     void Direct2dWidgetRenderer::renderLabel(

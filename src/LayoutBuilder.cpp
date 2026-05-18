@@ -473,7 +473,7 @@ namespace nbui
         colNode->style.heightSizeType = NNsLayout::SizeType::AUTO; // Высота зависит от содержимого
 
         colNode->setCollapsed(collapsed);
-        colNode->setSpacing(5); // Отступ между заголовком и контентом внутри
+        colNode->setSpacing(0); // Отступ между заголовком и контентом внутри
 
         b.node        = std::move(colNode);
         b.currentNode = b.node.get();

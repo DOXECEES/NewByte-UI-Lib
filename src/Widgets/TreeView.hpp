@@ -108,6 +108,12 @@ namespace Widgets
         bool hitTest(const NbPoint<int>& pos) override;
         bool hitTestClick(const NbPoint<int>& pos) noexcept override;
         bool hitTestRightClick(const NbPoint<int>& pos) noexcept override;
+
+        void onUnfocus() noexcept override
+        {
+            commitEditing();
+        }
+
         void onSymbolButtonClicked(const wchar_t symbol) override
         {
             inputChar(symbol);
@@ -129,6 +135,10 @@ namespace Widgets
             else if (symbol == VK_ESCAPE)
             {
                 cancelEditing();
+            }
+            else
+            {
+                inputChar(symbol);
             }
 
         }

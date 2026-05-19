@@ -64,8 +64,6 @@ namespace Widgets
         
         
         virtual void onClick(); 
-        
-
         virtual void onRelease() noexcept
         {
             if (state == WidgetState::DISABLE)
@@ -74,6 +72,11 @@ namespace Widgets
             }
 
             onReleasedSignal.emit();
+        }
+
+        virtual void onUnfocus() noexcept
+        {
+
         }
 
         virtual void onButtonClicked(const wchar_t symbol, SpecialKeyCode specialCode = SpecialKeyCode::NONE) {};

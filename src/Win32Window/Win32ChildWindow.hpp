@@ -463,9 +463,11 @@ namespace Win32Window
                                         if (focusedWidget && focusedWidget != clickedTarget)
                                         {
                                             focusedWidget->setUnfocused();
+                                            //nbui::GlobalWidgetContext::onUnfocus();
                                         }
                                         focusedWidget = clickedTarget;
                                         focusedWidget->setFocused();
+                                        nbui::GlobalWidgetContext::captureFocusedWidget(focusedWidget);
                                         clicked = true;
                                         return true; 
                                     }
@@ -507,6 +509,10 @@ namespace Win32Window
                         {
                             focusedWidget->setUnfocused();
                             focusedWidget = nullptr;
+                            //nbui::GlobalWidgetContext::onUnfocus();
+                            nbui::GlobalWidgetContext::releaseFocusedWidget();
+
+                            
                         }
                         // ::Widgets::Menu::closeAllMenu()
                         //::Widgets::ComboBox::closeAllDropDowns();
@@ -749,6 +755,7 @@ namespace Win32Window
                 }
                 case WM_KEYDOWN:
                 {
+
                     if (!focusedWidget)
                         return 0;
 

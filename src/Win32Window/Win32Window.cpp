@@ -10,6 +10,8 @@
 #include "../Widgets/Button.hpp"
 #include "NewRenderer/Direct2dWindowRenderer.hpp"
 
+#include "GlobalWidgetContext.hpp"
+
 namespace Win32Window
 {
     static NbPoint<int> getMousePoint(LPARAM lParam) noexcept
@@ -353,18 +355,19 @@ namespace Win32Window
 
     LRESULT Window::onKeyDown(WPARAM wParam)
     {
-        if (!focusedWidget)
+        auto focus = nbui::GlobalWidgetContext::getFocusedWidget();
+        if (!focus)
         {
             return FALSE;
         }
 
         if (GetAsyncKeyState(VK_CONTROL) & BUTTON_PRESSED_MASK)
         {
-            focusedWidget->onButtonClicked(wParam, SpecialKeyCode::CTRL);
+            focus->onButtonClicked(wParam, SpecialKeyCode::CTRL);
         }
         else
         {
-            focusedWidget->onButtonClicked(wParam);
+            focus->onButtonClicked(wParam);
         }
 
         return FALSE;

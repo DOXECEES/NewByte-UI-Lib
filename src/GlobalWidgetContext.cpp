@@ -45,6 +45,35 @@ namespace nbui
         return pressedWidget;
     }
 
+    void GlobalWidgetContext::captureFocusedWidget(Widgets::IWidget* widget) noexcept
+    {
+        focusedWidget = widget;
+    }
+
+    void GlobalWidgetContext::releaseFocusedWidget() noexcept
+    {
+        focusedWidget = nullptr;
+    }
+
+    Widgets::IWidget* GlobalWidgetContext::getFocusedWidget() noexcept
+    {
+        return focusedWidget;
+    }
+
+    void GlobalWidgetContext::onUnfocus() noexcept
+    {
+        if (focusedWidget)
+        {
+            focusedWidget->onUnfocus();
+        }
+
+    }
+
+    void GlobalWidgetContext::onSymbol(wchar_t symbol) noexcept
+    {
+        focusedWidget->onSymbolButtonClicked(symbol);
+    }
+
     void GlobalWidgetContext::onPress() noexcept
     {
         pressedWidget->onClick();

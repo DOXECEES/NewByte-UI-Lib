@@ -60,8 +60,7 @@ namespace NNsLayout
         for (auto& child : children)
         {
             const auto& st = child->style;
-            // Добавляем константные части (margin + border + padding) к фиксированной ширине
-            int decorationW = st.margin.left + st.margin.right + st.border.width.left + st.border.width.right + st.padding.left + st.padding.right;
+            int decorationW = st.margin.left + st.margin.right + st.border.width.left + st.border.width.right;
 
             switch (st.widthSizeType)
             {
@@ -80,10 +79,11 @@ namespace NNsLayout
 
         int remainingWidth = (std::max)(0, bounds.width - totalFixed);
 
+
         for (auto& child : children)
         {
-            const auto& st = child->style;
-            int width = 0;
+            const auto& st    = child->style;
+            int         width = 0;
 
             switch (st.widthSizeType)
             {
@@ -91,144 +91,181 @@ namespace NNsLayout
                 width = static_cast<int>(st.width);
                 break;
             case SizeType::RELATIVE:
-                width = (totalRelative > 0) ? static_cast<int>(remainingWidth * (st.width / totalRelative)) : 0;
+                width = (totalRelative > 0)
+                            ? static_cast<int>(remainingWidth * (st.width / totalRelative))
+                            : 0;
                 break;
             case SizeType::AUTO:
                 width = child->getMeasuredSize().width;
                 break;
             }
 
-            // Расчет высоты с учетом сторон
-            int height = bounds.height - (st.margin.top + st.margin.bottom + st.border.width.top + st.border.width.bottom + st.padding.top + st.padding.bottom);
-            if (st.heightSizeType == SizeType::ABSOLUTE) height = static_cast<int>(st.height);
-            else if (st.heightSizeType == SizeType::AUTO) height = child->getMeasuredSize().height;
+            int decorationW   = st.margin.left + st.margin.right + st.border.width.left +
+                                st.border.width.right;
+            int maxAvailableW = (std::max)(0, (bounds.x + bounds.width) - (x + decorationW));
+            width             = (std::min)(width, maxAvailableW);
+
+            int decorationH = st.margin.top + st.margin.bottom + st.border.width.top +
+                              st.border.width.bottom;
+            int height =
+                (std::max)(0, bounds.height - decorationH); 
+
+            if (st.heightSizeType == SizeType::ABSOLUTE)
+            {
+                height = (std::min)(height, static_cast<int>(st.height)); 
+            }
+            else if (st.heightSizeType == SizeType::AUTO)
+            {
+                height = (std::min)(height, child->getMeasuredSize().height); 
+            }
 
             NbRect<int> childRect;
-            childRect.x = x + st.margin.left + st.border.width.left + st.padding.left;
-            childRect.y = bounds.y + st.margin.top + st.border.width.top + st.padding.top;
-            childRect.width = width;
-            childRect.height = height;
+            childRect.x      = x + st.margin.left + st.border.width.left;
+            childRect.y      = bounds.y + st.margin.top + st.border.width.top;
+            childRect.width  = (std::max)(0, width);
+            childRect.height = (std::max)(0, height);
 
             child->setRect(childRect);
             child->layout(childRect);
 
-            x += width + st.margin.left + st.margin.right + st.border.width.left + st.border.width.right + st.padding.left + st.padding.right;
+            x += width + decorationW;
         }
+
     }
 
     void VLayout::measure(const NbSize<int>& available) noexcept
     {
-        int totalFixed = 0;
+        int   totalFixed    = 0;
         float totalRelative = 0.0f;
-        int visibleCount = 0;
+        int   visibleCount  = 0;
 
         for (auto& child : children)
         {
             auto& st = child->style;
+            visibleCount++;
 
             if (st.heightSizeType == SizeType::RELATIVE)
             {
                 totalRelative += st.height;
-                visibleCount++;
                 continue;
             }
 
-            child->measure(available);
+            int decorationW = st.margin.left + st.margin.right + st.border.width.left +
+                              st.border.width.right + st.padding.left + st.padding.right;
+
+            int childInnerWidth = (std::max)(0, available.width - decorationW);
+
+            child->measure({childInnerWidth, available.height});
+
             auto s = child->getMeasuredSize();
 
-            // ЗАМЕНА: вместо border.width * 2 используем стороны
-            int fullH = st.margin.top + st.margin.bottom +
-                        st.border.width.top + st.border.width.bottom +
-                        st.padding.top + st.padding.bottom +
-                        s.height;
+            int decorationH = st.margin.top + st.margin.bottom + st.border.width.top +
+                              st.border.width.bottom + st.padding.top + st.padding.bottom;
 
-            totalFixed += fullH;
-            visibleCount++;
+            if (st.heightSizeType == SizeType::ABSOLUTE)
+            {
+                totalFixed += static_cast<int>(st.height) + decorationH;
+            }
+            else
+            { 
+                totalFixed += s.height + decorationH;
+            }
         }
 
-        if (visibleCount > 1) {
+        if (visibleCount > 1)
+        {
             totalFixed += (visibleCount - 1) * spacing;
         }
 
-        int remaining = (std::max)(0, available.height - totalFixed);
-
         measuredSize.width = available.width;
-        measuredSize.height = totalFixed;
 
         if (totalRelative > 0.0001f)
-            measuredSize.height += remaining;
+        {
+            measuredSize.height = (std::max)(totalFixed, available.height);
+        }
+        else
+        {
+            measuredSize.height = totalFixed;
+        }
     }
 
     void VLayout::layout(const NbRect<int>& bounds) noexcept
     {
         layoutRect = bounds;
 
-        float totalRelative = 0.0f;
-        int totalFixed = 0;
-        int visibleCount = 0;
+        float totalRelative              = 0.0f;
+        int   fixedHeightWithDecorations = 0;
+        int   visibleCount               = (int)children.size();
 
         for (auto& child : children)
         {
-            auto& st = child->style;
-            visibleCount++;
-
-            if (st.heightSizeType == SizeType::AUTO)
-                child->measure({bounds.width, bounds.height});
-
-            // ЗАМЕНА: Суммируем конкретные стороны рамки
-            int decorationH = st.margin.top + st.margin.bottom + 
-                             st.border.width.top + st.border.width.bottom + 
-                             st.padding.top + st.padding.bottom;
+            auto& st          = child->style;
+            int   decorationH = st.margin.top + st.margin.bottom + st.border.width.top +
+                                st.border.width.bottom;
 
             if (st.heightSizeType == SizeType::RELATIVE)
             {
                 totalRelative += st.height;
-                totalFixed += decorationH;
             }
             else if (st.heightSizeType == SizeType::ABSOLUTE)
             {
-                totalFixed += static_cast<int>(st.height) + decorationH;
+                fixedHeightWithDecorations += static_cast<int>(st.height) + decorationH;
             }
-            else if (st.heightSizeType == SizeType::AUTO)
-            {
-                totalFixed += child->getMeasuredSize().height + decorationH;
+            else
+            { 
+                fixedHeightWithDecorations += child->getMeasuredSize().height + decorationH;
             }
         }
 
-        if (visibleCount > 1) totalFixed += (visibleCount - 1) * spacing;
+        if (visibleCount > 1)
+        {
+            fixedHeightWithDecorations += (visibleCount - 1) * spacing;
+        }
 
-        int remaining = (std::max)(0, bounds.height - totalFixed);
-        int y = bounds.y;
+        int remaining = (std::max)(0, bounds.height - fixedHeightWithDecorations);
+        int y         = bounds.y - scrollOffset;
 
         for (size_t i = 0; i < children.size(); ++i)
         {
             auto& child = children[i];
-            auto& st = child->style;
+            auto& st    = child->style;
 
             int contentHeight = 0;
-            if (st.heightSizeType == SizeType::ABSOLUTE) contentHeight = static_cast<int>(st.height);
-            else if (st.heightSizeType == SizeType::AUTO) contentHeight = child->getMeasuredSize().height;
-            else if (st.heightSizeType == SizeType::RELATIVE && totalRelative > 0.0001f)
+            if (st.heightSizeType == SizeType::ABSOLUTE)
             {
-                contentHeight = static_cast<int>(remaining * (st.height / totalRelative));
+                contentHeight = static_cast<int>(st.height);
+            }
+            else if (st.heightSizeType == SizeType::AUTO)
+            {
+                contentHeight = child->getMeasuredSize().height;
+            }
+            else if (st.heightSizeType == SizeType::RELATIVE)
+            {
+                if (totalRelative > 0.0001f)
+                {
+                    contentHeight = static_cast<int>(remaining * (st.height / totalRelative));
+                }
             }
 
+            int decorationW = st.margin.left + st.margin.right + st.border.width.left +
+                              st.border.width.right;
+
             NbRect<int> childRect;
-            // Учитываем левую и правую рамки/отступы для ширины контента
-            childRect.x = bounds.x + st.margin.left + st.border.width.left + st.padding.left;
-            childRect.y = y + st.margin.top + st.border.width.top + st.padding.top;
-            childRect.width = bounds.width - (st.margin.left + st.margin.right + st.border.width.left + st.border.width.right + st.padding.left + st.padding.right);
+            childRect.x      = bounds.x + st.margin.left + st.border.width.left ;
+            childRect.y      = y + st.margin.top + st.border.width.top;
+            childRect.width  = (std::max)(0, bounds.width - decorationW);
             childRect.height = contentHeight;
 
             child->setRect(childRect);
             child->layout(childRect);
 
-            // ЗАМЕНА: Инкремент Y с учетом всех сторон
-            y += contentHeight + st.margin.top + st.margin.bottom + 
-                 st.border.width.top + st.border.width.bottom + 
-                 st.padding.top + st.padding.bottom;
+            y += contentHeight + st.margin.top + st.margin.bottom + st.border.width.top +
+                 st.border.width.bottom;
 
-            if (i < children.size() - 1) y += spacing;
+            if (i < children.size() - 1)
+            {
+                y += spacing;
+            }
         }
     }
 

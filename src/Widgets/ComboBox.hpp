@@ -57,6 +57,8 @@ namespace Widgets
 		const char* getClassName() const override;
 
 		void setHoverForElement(const size_t hoverIndex) noexcept;
+        void setHoverForElementSilently(const size_t hoverIndex) noexcept;
+
 		NB_NODISCARD size_t getHoverElementIndex() const noexcept;
 		NB_NODISCARD NbRect<int> getHoverElementRect() const noexcept;
 
@@ -126,6 +128,8 @@ namespace Widgets
 
 		const ListItem& getSelectedItem() const noexcept;
 
+		void setSelectedItem(size_t index) const noexcept;
+
 		NbRect<int> getRequestedSize() const noexcept override;
 
 		virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
@@ -194,6 +198,7 @@ namespace Widgets
 	public:
 
 		Signal<void(const ListItem&)> onItemChecked;
+        Signal<void(const ListItem&)> onSelectionChanged;
 
 	private:
 

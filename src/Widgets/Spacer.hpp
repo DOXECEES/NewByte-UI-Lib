@@ -16,6 +16,8 @@ namespace Widgets
         Spacer() noexcept;
         ~Spacer() noexcept override = default;
 
+        DECLARE_WIDGET_CLASS_NAME(Spacer);
+        
         NB_NON_COPYMOVABLE(Spacer);
 
         bool hitTest(const NbPoint<int>& pos) override;

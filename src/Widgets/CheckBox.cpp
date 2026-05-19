@@ -70,11 +70,25 @@ namespace Widgets
 		return isChecked;
 	}
 
-	void CheckBox::toogleIsChecked() noexcept
+	void CheckBox::setChecked(bool flag) noexcept
+    {
+		isChecked = flag;
+    }
+
+    void CheckBox::toogleIsChecked() noexcept
 	{
 		isChecked = !isChecked;
+		if (onToggle)
+		{
+			onToggle(isChecked);
+		}
 		onCheckStateChanged.emit(isChecked);
-	}
+    }
+
+    void CheckBox::onToggled(const std::function<void(bool)>& func) noexcept
+    {
+        onToggle = func;
+    }
 
 	const NbRect<int>& CheckBox::getBoxRect() const noexcept
 	{

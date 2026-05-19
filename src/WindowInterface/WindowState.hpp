@@ -4,6 +4,9 @@
 #include "../Core.hpp"
 #include "WindowCore.hpp"
 
+#include <Array.hpp>
+#include <Types.hpp>
+
 namespace WindowInterface
 {
     struct FrameSize
@@ -29,7 +32,7 @@ namespace WindowInterface
         void setFontColor(const NbColor& newFontColor);
         void setMinSize(const NbSize<int>& newMinSize);
         void setFrameSize(const FrameSize& newFrameSize);
-
+        void setExcludeFromTop(const int size);
         void setClientRect(const NbRect<int>& newRect);
 
         void calculateClientSize();
@@ -39,6 +42,15 @@ namespace WindowInterface
 
         // TODO: change to private
     public:
+        constexpr static Size COUNT_OF_SIDES = 4;
+        enum ExcludeSide
+        {
+            TOP = 0,
+            BOT = 1,
+            RIGHT = 2,
+            LEFT = 3,
+        };
+
         NbColor         color       = { 45, 45, 45 };
         NbColor         frameColor  = { 35, 35, 35 };
         NbSize<int>     size        = { 800, 600 };
@@ -48,7 +60,8 @@ namespace WindowInterface
         NbColor         fontColor   = { 255, 255, 255 };
         NbSize<int>     minSize     = { 400, 300 };
         NbRect<int>     clientRect  = { 0, 0, size.width - frameSize.left - frameSize.right, size.height - frameSize.top - frameSize.bot };
-        
+        nbstl::Array<int, COUNT_OF_SIDES> excludeSizes = {0, 0, 0, 0};
+
         
 
         FrameSize       frameSize;

@@ -18,8 +18,12 @@
 #include "Widgets/Section.hpp"
 #include "Widgets/Slider.hpp"
 #include "Widgets/Thumbnail.hpp"
-
+#include "Widgets/Menu.hpp"
 #include "Widgets/ToolBar.hpp"
+#include "Widgets/MaterialWidget.hpp"
+#include "Widgets/FilePicker.hpp"
+#include "Widgets/TextureWidget.hpp"
+#include "Widgets/Spacer.hpp"
 
 #include "Direct2dGlobalWidgetMapper.hpp"
 
@@ -103,6 +107,22 @@ namespace Renderer
         {
             renderThumbnail(widget, layoutStyle);
         }
+        else if (strncmp(widgetName, MaterialWidget::CLASS_NAME, size) == 0)
+        {
+            renderMaterialWidget(widget, layoutStyle);
+        }
+        else if (strncmp(widgetName, FilePicker::CLASS_NAME, size) == 0)
+        {
+            renderFilePicker(widget, layoutStyle);
+        }
+        else if (strncmp(widgetName, TextureWidget::CLASS_NAME, size) == 0)
+        {
+            renderTexturelWidget(widget, layoutStyle);
+        }
+        else if (strncmp(widgetName, Spacer::CLASS_NAME, size) == 0)
+        {
+            renderSpacer(widget, layoutStyle);
+        }
     }
 
 
@@ -127,6 +147,7 @@ namespace Renderer
         {
             PopUpRenderParams params = popupQueue.front();
             popupQueue.pop();
+
             
             renderTarget->fillRectangle(params.rect, params.color);
             if (!params.addictionalRects.empty())
@@ -149,6 +170,26 @@ namespace Renderer
 
             
         }
+    }
+
+    void Direct2dWidgetRenderer::addMenuToPopupQueue(Widgets::Menu* menu)
+    {
+        if (!menu)
+        {
+            return;
+        }
+
+        PopUpRenderParams params;
+
+        params.rect = menu->getRect();
+        params.color = {30, 30, 30};
+
+        for (const auto& item : menu->getItems())
+        {
+            params.items.push_back({Utils::toWstring(item.text), item.callback});
+        }
+
+        popupQueue.push(params);
     }
 
     // TODO: изменить width border с top на конкретные размеры
@@ -279,6 +320,11 @@ namespace Renderer
 
         bool isSelected = button->getIsChecked();
 
+        if (button->getRect().isEmpty())
+        {
+            return;
+        }
+
         const Font& font = bStyle.font(); 
         const TextFormatAlignment& alignment = bStyle.textAlignment();
 
@@ -335,7 +381,7 @@ namespace Renderer
     }
 
     void Direct2dWidgetRenderer::renderSection(
-        IWidget* widget,
+        Widgets::IWidget* widget,
         const NNsLayout::LayoutStyle& layoutStyle
     )
     {
@@ -343,61 +389,64 @@ namespace Renderer
         SectionWidget* section = castWidget<SectionWidget>(widget);
 
         NbRect<int> rect = section->getRect();
-        bool isExpanded = section->isExpanded();
+        bool isExpanded = section->isExpanded(); // заменяем isExpanded()
         WidgetState state = section->getState();
 
-        NbColor headerBgColor = NbColor(45, 45, 45); // Темно-серый фон шапки
-        NbColor textColor = NbColor(200, 200, 200);  // Светло-серый текст
-        NbColor arrowColor = NbColor(150, 150, 150); // Цвет стрелочки
+        constexpr NbColor HEADER_COLOR = {45, 45, 45};
+        constexpr NbColor HEADER_HOVER_COLOR = {55, 55, 55};
+        constexpr NbColor TEXT_COLOR = {200, 200, 200};
+        constexpr NbColor ARROW_COLOR = {150, 150, 150};
+        constexpr NbColor SEPARATOR_COLOR = {30, 30, 30, 255};
+        constexpr int HEADER_HEIGHT = 24;
 
-        if (state == WidgetState::HOVER)
-        {
-            headerBgColor = NbColor(55, 55, 55); // Чуть светлее при наведении
-        }
+        NbColor headerBg = (state == WidgetState::HOVER) ? HEADER_HOVER_COLOR : HEADER_COLOR;
+        NbRect<int> headerRect = {rect.x, rect.y, rect.width, HEADER_HEIGHT};
 
-        int headerHeight = 24;
-        NbRect<int> headerRect = {rect.x, rect.y, rect.width, headerHeight};
+        // Фон шапки
+        renderTarget->fillRectangle(headerRect, headerBg);
 
-        renderTarget->fillRectangle(headerRect, headerBgColor);
-
+        // Стрелка раскрытия
         std::wstring arrowSymbol = isExpanded ? L"▼" : L"▶";
+        NbRect<int> arrowRect = {headerRect.x + 5, headerRect.y, 20, HEADER_HEIGHT};
+        renderTarget->drawText(arrowSymbol.c_str(), arrowRect, ARROW_COLOR);
 
-        NbRect<int> arrowRect = {headerRect.x + 5, headerRect.y, 20, headerHeight};
-        renderTarget->drawText(arrowSymbol.c_str(), arrowRect, arrowColor);
-
-        // 4. Рисуем текст заголовка (с отступом от стрелочки)
-        NbRect<int> textRect
-            = {headerRect.x + 25, headerRect.y, headerRect.width - 25, headerHeight};
-        renderTarget->drawText(section->getTitle().c_str(), textRect, textColor);
-
-        NbRect<int> separatorLine = {
-            headerRect.x,
-            headerRect.y + headerHeight - 1,
-            headerRect.width,
-            1
+        // Заголовок
+        NbRect<int> titleRect = {
+            headerRect.x + 25, headerRect.y, headerRect.width - 25, HEADER_HEIGHT
         };
-        renderTarget->fillRectangle(separatorLine, NbColor(30, 30, 30, 255));
+        renderTarget->drawText(section->getTitle().c_str(), titleRect, TEXT_COLOR);
 
-        if (isExpanded)
+        // Разделитель
+        NbRect<int> separator = {
+            headerRect.x, headerRect.y + HEADER_HEIGHT - 1, headerRect.width, 1
+        };
+        renderTarget->fillRectangle(separator, SEPARATOR_COLOR);
+
+        // Контент
+        if (isExpanded && section->getInnerLayout())
         {
-            NbRect<int> contentRect= {
-                rect.x,
-                rect.y + headerHeight,
-                rect.width,
-                rect.height - headerHeight
+            NbRect<int> contentRect = {
+                rect.x, rect.y + HEADER_HEIGHT, rect.width, rect.height - HEADER_HEIGHT
             };
+            renderTarget->fillRectangle(contentRect, NbColor(35, 35, 35));
 
-            renderTarget->fillRectangle(
-                contentRect,
-                NbColor(35, 255, 255)
-            ); 
-
-            for (auto& child : section->getChildrens())
+            // Рендерим всех дочерних виджетов через innerLayout
+            for (auto& childNode : section->getInnerLayout()->getChildren())
             {
-                render(child.get(), layoutStyle);
+                if (!childNode || !childNode->getOwner())
+                {
+                    continue;
+                }
+
+                // безопасный dynamic_cast к IWidget*
+                if (auto* childWidget = dynamic_cast<Widgets::IWidget*>(childNode->getOwner()))
+                {
+                    render(childWidget, layoutStyle);
+                }
             }
         }
 
+        // Бордер
         drawBorder(section, layoutStyle.border);
     }
 
@@ -557,8 +606,6 @@ namespace Renderer
         const NbRect<int>& widgetRect = toolbar->getRect();
         const WidgetStyle& style = toolbar->getStyle();
 
-        
-      
 
         // TODO: border temp
         const Border& border = layoutStyle.border;
@@ -621,6 +668,11 @@ namespace Renderer
         const NbRect<int>& widgetRect = textEdit->getRect();
         const WidgetStyle& style = textEdit->getStyle();
 
+        if (widgetRect.isEmpty())
+        {
+            return;
+        }
+
         renderTarget->drawRectangle(widgetRect, style.baseColor);
 
         if (textEdit->getIsDataChanged())
@@ -678,16 +730,19 @@ namespace Renderer
         }
     }
 
-    
-    void Direct2dWidgetRenderer::renderTreeView(IWidget* widget, const NNsLayout::LayoutStyle& layoutStyle)
+
+    void Direct2dWidgetRenderer::renderTreeView(
+        IWidget*                      widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    )
     {
         using namespace Widgets;
+        TreeView*            treeView = castWidget<TreeView>(widget);
+        const WidgetStyle&   style    = treeView->getStyle();
+        const TreeViewStyle& tvStyle  = treeView->getTreeViewStyle();
+        const NbRect<int>&   viewRect = treeView->getRect();
 
-        TreeView* treeView = castWidget<TreeView>(widget);
-        const WidgetStyle& style = treeView->getStyle();
-        const NbRect<int>& widgetRect = treeView->getRect();
-        const TreeViewStyle& treeViewStyle = treeView->getTreeViewStyle();
-        renderTarget->fillRectangle(widgetRect, treeView->getStyle().baseColor);
+        renderTarget->fillRectangle(viewRect, style.baseColor);
 
         std::shared_ptr<ITreeModel> model = treeView->getModel();
         if (!model)
@@ -696,9 +751,10 @@ namespace Renderer
         }
 
         const int itemHeight = static_cast<int>(TreeView::HEIGHT_OF_ITEM_IN_PIXEL);
-        const int indent = 12;
+        const int indentStep = 16;
+        const int baseOffset = 12;
 
-        int y = widgetRect.y;
+        int    y            = viewRect.y;
         size_t visibleCount = treeView->getVisibleCount();
 
         for (size_t i = 0; i < visibleCount; ++i)
@@ -709,111 +765,255 @@ namespace Renderer
                 continue;
             }
 
-            NbRect<int> itemRect = {
-                widgetRect.x + indent * static_cast<int>(item->getDepth()) + 15,
-                y,
-                widgetRect.width - indent * static_cast<int>(item->getDepth()) - 15,
-                itemHeight
-            };
+            const ModelIndex index(item->getUuid());
 
-            NbRect<int> itemFullRect = {
-                widgetRect.x,
-                y,
-                widgetRect.width,
-                itemHeight
-            };
+            bool isSelected = treeView->isItemSelected(index);
+            bool isHovered  = (treeView->getLastHitIndex().getUuid() == item->getUuid());
 
+            NbRect<int> fullRowRect = {viewRect.x, y, viewRect.width, itemHeight};
 
-            const nbstl::Uuid uuid = item->getUuid();
-            const bool expanded = treeView->isItemExpanded(ModelIndex(uuid));
-            const bool selected = treeView->isItemSelected(ModelIndex(uuid));
-
-            
-            if (selected)
+            if (isSelected)
             {
-                renderTarget->fillRectangle(itemFullRect, treeViewStyle.selectionColor);
+                renderTarget->fillRectangle(fullRowRect, NbColor{0, 120, 215});
             }
-            else if (treeView->getLastClickIndex().isValid() &&
-                treeView->getLastClickIndex().getUuid() == uuid)
+            else if (isHovered)
             {
-                renderTarget->fillRectangle(itemFullRect, treeViewStyle.clickColor);
+                renderTarget->fillRectangle(fullRowRect, NbColor{45, 45, 45});
             }
-            else if (treeView->getLastHitIndex().getUuid() == item->getUuid())
+
+            const int depth    = static_cast<int>(item->getDepth());
+            int       contentX = viewRect.x + baseOffset + (depth * indentStep);
+
+            NbColor guideColor = isSelected ? NbColor{60, 140, 230} : NbColor{50, 50, 50};
+            for (int d = 0; d < depth; ++d)
             {
-                renderTarget->fillRectangle(itemFullRect, treeViewStyle.hoverSelectionColor);
+                int lineX = viewRect.x + baseOffset + (d * indentStep) - 8;
+                renderTarget->drawLine({lineX, y}, {lineX, y + itemHeight}, guideColor);
             }
 
             if (!item->children.empty())
             {
-                NbRect<int> box = { itemRect.x - indent + 2, itemRect.y + 6, 8, 8 };
-                renderTarget->drawRectangle(box, treeViewStyle.buttonColor);
-
-                if (!expanded)
-                {
-                    renderTarget->drawLine({ box.x + 4, box.y + 2 }, { box.x + 4, box.y + 6 }, treeViewStyle.inButtonColor); // вертикаль
-                }
-                renderTarget->drawLine({ box.x + 2, box.y + 4 }, { box.x + 6, box.y + 4 }, treeViewStyle.inButtonColor); // горизонталь
+                bool        isExpanded = treeView->isItemExpanded(index);
+                NbRect<int> iconRect   = {contentX - 8, y + (itemHeight - 8) / 2, 8, 8};
+                NbColor chevronColor = isSelected ? NbColor{255, 255, 255} : NbColor{140, 140, 140};
+                renderTriangleIcon(iconRect, isExpanded, chevronColor);
             }
 
-            // Текст
-            std::wstring text = Utils::toWstring(model->data(*item));
-            renderTarget->drawText(text, itemRect, style.baseTextColor,
-                TextAlignment::LEFT, ParagraphAlignment::TOP);
+            NbRect<int> textRect = {
+                contentX + 8, y, viewRect.width - (contentX - viewRect.x) - 8, itemHeight
+            };
+
+            std::wstring text = treeView->isEditingItem(index)
+                                    ? Utils::toWstring(treeView->getEditingText())
+                                    : Utils::toWstring(model->data(*item));
+
+            NbColor textColor = isSelected ? NbColor{255, 255, 255} : style.baseTextColor;
+
+            renderTarget->drawText(
+                text, textRect, textColor, TextAlignment::LEFT, ParagraphAlignment::CENTER
+            );
 
             y += itemHeight;
+        }
+
+        if (treeView->hasMenu() && castWidget<Menu>(treeView->getMenu())->isMenuVisible())
+        {
+            addMenuToPopupQueue(castWidget<Menu>(treeView->getMenu()));
         }
     }
 
 
-
-    void Direct2dWidgetRenderer::renderLabel(IWidget *widget, const NNsLayout::LayoutStyle& layoutStyle)
+    void Direct2dWidgetRenderer::renderTriangleIcon(
+        const NbRect<int>& rect,
+        bool               expanded,
+        const NbColor&     color
+    ) noexcept
     {
-        Label* label = castWidget<Label>(widget);
+        float midX = rect.x + rect.width / 2.0f;
+        float midY = rect.y + rect.height / 2.0f;
+        float half = rect.width / 2.5f;
+
+        if (expanded)
+        {
+            renderTarget->drawLine(
+                {(int)(midX - half), (int)(midY - half / 2)}, {(int)midX, (int)(midY + half / 2)},
+                color
+            );
+            renderTarget->drawLine(
+                {(int)midX, (int)(midY + half / 2)}, {(int)(midX + half), (int)(midY - half / 2)},
+                color
+            );
+        }
+        else
+        {
+            renderTarget->drawLine(
+                {(int)(midX - half / 2), (int)(midY - half)}, {(int)(midX + half / 2), (int)midY},
+                color
+            );
+            renderTarget->drawLine(
+                {(int)(midX + half / 2), (int)midY}, {(int)(midX - half / 2), (int)(midY + half)},
+                color
+            );
+        }
+    }
+
+    void Direct2dWidgetRenderer::renderTexturelWidget(
+        IWidget*                      widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    ) noexcept
+    {
+        using namespace Widgets;
+        TextureWidget* texWidget = castWidget<TextureWidget>(widget);
+        if (!texWidget)
+        {
+            return;
+        }
+
+        const NbRect<int>& rect = texWidget->getRect();
+        if (rect.isEmpty())
+        {
+            return;
+        }
+        NbColor slotBg      = {35, 35, 35, 255};
+        NbColor borderColor = {60, 60, 60, 255};
+
+        if (texWidget->getState() == Widgets::WidgetState::HOVER)
+        {
+            slotBg      = {45, 45, 45, 255};
+            borderColor = {0, 120, 215, 255};
+        }
+
+        renderTarget->fillRoundedRectangle(rect, 2.0f, slotBg);
+
+        NbRect<int> pRect = texWidget->getPreviewRect();
+
+        if (texWidget->isTextureAssigned())
+        {
+
+            std::wstring texturePath =
+                texWidget->getNameLabel()->getText();
+
+            auto bitmap = bitmapCache.get(texturePath);
+            if (bitmap)
+            {
+                renderTarget->drawBitmap(pRect, bitmap.Get());
+            }
+            else
+            {
+                renderTarget->fillRectangle(pRect, {70, 20, 20, 255});
+            }
+        }
+        else
+        {
+            renderTarget->fillRectangle(pRect, {25, 25, 25, 255});
+            renderTarget->drawRectangle(pRect, {45, 45, 45, 255}, 1.0f);
+        }
+
+        if (texWidget->getNameLabel())
+        {
+            renderLabel(texWidget->getNameLabel().get(), layoutStyle);
+        }
+        if (texWidget->getResolutionLabel())
+        {
+            renderLabel(texWidget->getResolutionLabel().get(), layoutStyle);
+        }
+
+        renderTarget->drawRectangle(rect, borderColor, 0.5f);
+    }
+
+    void Direct2dWidgetRenderer::renderSpacer(
+        IWidget*                      widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    ) noexcept
+    {
+        Spacer*             spacer      = castWidget<Spacer>(widget);
+        const NbRect<int>& widgetRect = spacer->getRect();
+        NbColor             bgColor, textColor;
+        getWidgetThemeColorByState(spacer, bgColor, textColor);
+        renderTarget->fillRectangle(widgetRect, bgColor);
+    }
+
+    void Direct2dWidgetRenderer::renderLabel(
+        IWidget*                      widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    )
+    {
+        Label*             label      = castWidget<Label>(widget);
         const NbRect<int>& widgetRect = label->getRect();
-        const WidgetStyle& style = label->getStyle();
+        const WidgetStyle& style      = label->getStyle();
+
+        if (style.baseColor.a > 0)
+        {
+            float radius = layoutStyle.border.radius;
+            if (radius > 0.1f)
+            {
+                renderTarget->fillRoundedRectangle(widgetRect, radius, style.baseColor);
+            }
+            else
+            {
+                renderTarget->fillRectangle(widgetRect, style.baseColor);
+            }
+        }
+
+        if (layoutStyle.border.width.top > 0 || layoutStyle.border.width.bottom > 0)
+        {
+            float strokeWidth = static_cast<float>(layoutStyle.border.width.bottom);
+
+            if (layoutStyle.border.sideMask == Border::Side::BOTTOM)
+            {
+                NbRect<int> bottomLine = {
+                    widgetRect.x, static_cast<int>(widgetRect.y + widgetRect.height - strokeWidth),
+                    widgetRect.width, static_cast<int>(strokeWidth)
+                };
+                renderTarget->fillRectangle(bottomLine, layoutStyle.border.color);
+            }
+            else
+            {
+                renderTarget->drawRectangle(widgetRect, layoutStyle.border.color, strokeWidth);
+            }
+        }
 
         NbRect<int> contentRect = widgetRect;
-        int bw = layoutStyle.border.width.top;
-        
-        contentRect.x += bw + layoutStyle.padding.left;
-        contentRect.y += bw + layoutStyle.padding.top;
-        contentRect.width -= (bw * 2 + layoutStyle.padding.left + layoutStyle.padding.right);
-        contentRect.height -= (bw * 2 + layoutStyle.padding.top + layoutStyle.padding.bottom);
+        contentRect.x += (layoutStyle.border.width.left + layoutStyle.padding.left);
+        contentRect.y += (layoutStyle.border.width.top + layoutStyle.padding.top);
+        contentRect.width -=
+            (layoutStyle.border.width.left + layoutStyle.border.width.right +
+             layoutStyle.padding.left + layoutStyle.padding.right);
+        contentRect.height -=
+            (layoutStyle.border.width.top + layoutStyle.border.width.bottom +
+             layoutStyle.padding.top + layoutStyle.padding.bottom);
 
-        renderTarget->fillRectangle(widgetRect, style.baseColor);
-
-        if (bw > 0) 
+        if (contentRect.width <= 0 || contentRect.height <= 0)
         {
-            renderTarget->drawRectangle(widgetRect, layoutStyle.border.color, static_cast<float>(bw));
+            return;
         }
 
         if (label->getFont().isDirty() || label->isSizeChange)
         {
             if (label->hasEllipsis())
+            {
                 createTextLayoutForLabelClipped(label);
+            }
             else
+            {
                 createTextLayoutForLabel(label);
+            }
         }
 
-        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout = Direct2dGlobalWidgetMapper::getTextLayoutByWidget(label);
+        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout =
+            Direct2dGlobalWidgetMapper::getTextLayoutByWidget(label);
 
-
-        //Renderer::TextFormatStyle textFormatStyle{
-        //    .font = label->getFont(),
-        //    .alignment = label->getStyle().alignment.textAlignment,
-        //    .paragraphAlignment = label->getStyle().alignment.paragraphAlignment
-        //};
-
-        //renderTarget->drawTextByFormat(label->getText(), widgetRect, style.baseTextColor, textFormatStyle);
-
-        if (textLayout) 
+        if (textLayout)
         {
-            renderTarget->drawText(
-                textLayout.Get(), 
-                contentRect, 
-                style.baseTextColor, 
-                static_cast<TextAlignment>(label->getVTextAlign())
+            textLayout->SetMaxWidth(static_cast<float>(contentRect.width));
+            textLayout->SetMaxHeight(static_cast<float>(contentRect.height));
+
+            textLayout->SetTextAlignment(toDirect2dTextAlignment(style.alignment.textAlignment));
+            textLayout->SetParagraphAlignment(
+                toDirect2dParagraphAlignment(style.alignment.paragraphAlignment)
             );
+
+            renderTarget->drawText(textLayout.Get(), contentRect, style.baseTextColor);
         }
     }
 
@@ -827,6 +1027,11 @@ namespace Renderer
 		WidgetState state = checkBox->getState();
 		NbColor color;
 		NbColor textColor;
+
+        if (checkBox->getRect().isEmpty())
+        {
+            return;
+        }
 
         getWidgetThemeColorByState(checkBox, color, textColor);
 		
@@ -1044,6 +1249,11 @@ namespace Renderer
         NbColor backgroundColor;
         NbColor textColor;
 
+        if (rect.isEmpty())
+        {
+            return;
+        }
+
         getWidgetThemeColorByState(slider, backgroundColor, textColor);
 
         renderTarget->fillRectangle(rect, backgroundColor);
@@ -1069,23 +1279,214 @@ namespace Renderer
 
         renderTarget->fillRoundedRectangle(cardRect, 4, backgroundColor);
 
-        if (thumbnail->getNameLabel())
-        {
-            renderLabel(thumbnail->getNameLabel().get(), layoutStyle);
-        }
-
-        if (thumbnail->getTypeLabel())
-        {
-            renderLabel(thumbnail->getTypeLabel().get(), layoutStyle);
-        }
-
         HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
         
-        auto bitmap = bitmapCache.get(std::wstring(L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\res\\") + thumbnail->getName());
+
+        NbRect<int> imgRect = thumbnail->getDrawRect();
+        imgRect.x += 2;
+        imgRect.y += 2;
+        imgRect.width -= 4;
+        imgRect.height -= 4;
+
+        auto bitmap = bitmapCache.get(
+            std::wstring(
+                L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\res\\"
+            ) +
+            thumbnail->getName()
+        );
         if (bitmap)
         {
-            renderTarget->drawBitmap(thumbnail->getDrawRect(), bitmap.Get());
+            renderTarget->drawBitmap(imgRect, bitmap.Get());
         }
+    }
+
+    void Direct2dWidgetRenderer::renderMenu(
+        IWidget* widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    )
+    {
+        using namespace Widgets;
+        Menu* menu = castWidget<Menu>(widget);
+
+        const NbRect<int>& rect = menu->getRect();
+        NbColor backgroundColor;
+        NbColor textColor;
+
+        getWidgetThemeColorByState(menu, backgroundColor, textColor);
+
+        renderTarget->fillRectangle(rect, backgroundColor);
+        
+        for (const auto& item : menu->getItems())
+        {
+            renderTarget->drawText(Utils::toWstring(item.text), item.rect, textColor);
+        }
+    }
+
+    void Direct2dWidgetRenderer::renderMaterialWidget(
+        IWidget*                      widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    )
+    {
+        using namespace Widgets;
+        MaterialWidget* matWidget = castWidget<MaterialWidget>(widget);
+        if (!matWidget)
+        {
+            return;
+        }
+
+        const NbRect<int>& rect = matWidget->getRect();
+        NbColor            bgColor, textColor;
+        getWidgetThemeColorByState(matWidget, bgColor, textColor);
+
+        NbColor slotBg = {35, 35, 35, 255};
+        if (matWidget->getState() == Widgets::WidgetState::HOVER)
+        {
+            slotBg = {45, 45, 45, 255}; 
+        }
+
+        renderTarget->fillRoundedRectangle(rect, 2, slotBg);
+
+        NbRect<int> pRect = matWidget->getPreviewRect();
+        NbColor     matColor =
+            matWidget->isMaterialAssigned() ? NbColor(70, 110, 190) : NbColor(50, 50, 50);
+
+        renderTarget->fillRectangle(pRect, matColor);
+
+        std::filesystem::path path = matWidget->getNameLabel()->getText();
+        path.replace_extension(".png");
+        auto bitmap = bitmapCache.get(
+            std::wstring(
+                L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\cache\\"
+            ) +
+            path.wstring()
+        );
+
+        if (bitmap)
+        {
+            renderTarget->drawBitmap(pRect, bitmap.Get());
+        }
+        //renderTarget->drawRectangle(pRect, {0, 0, 0, 100}, 1.0f);
+
+        if (matWidget->getNameLabel())
+        {
+            renderLabel(matWidget->getNameLabel().get(), layoutStyle);
+        }
+        if (matWidget->getTypeLabel())
+        {
+            renderLabel(matWidget->getTypeLabel().get(), layoutStyle);
+        }
+
+        NbColor borderColor = matWidget->getState() == Widgets::WidgetState::HOVER
+                                  ? NbColor(0, 120, 215)
+                                  : NbColor(60, 60, 60);
+        renderTarget->drawRectangle(rect, borderColor, 1.0f);
+
+
+    }
+
+    void Direct2dWidgetRenderer::renderFilePicker(
+        IWidget*                      widget,
+        const NNsLayout::LayoutStyle& layoutStyle
+    )
+    {
+        using namespace Widgets;
+
+        FilePicker* picker = castWidget<FilePicker>(widget);
+        if (!picker)
+        {
+            return;
+        }
+
+        const NbRect<int>& rect = picker->getRect();
+
+        NbColor bgColor = NbColor(40, 40, 40); 
+        renderTarget->fillRectangle(rect, bgColor);
+
+        if (auto pathBox = picker->getPathTextBox())
+        {
+            renderTextEdit(pathBox.get(), layoutStyle);
+        }
+
+        if (auto upBtn = picker->getUpButton())
+        {
+            renderButton(upBtn.get(), layoutStyle);
+        }
+
+        if (auto fileNameBox = picker->getFileNameTextBox())
+        {
+            renderTextEdit(fileNameBox.get(), layoutStyle);
+        }
+
+        if (auto openBtn = picker->getOpenButton())
+        {
+            renderButton(openBtn.get(), layoutStyle);
+        }
+
+        if (auto cancelBtn = picker->getCancelButton())
+        {
+            renderButton(cancelBtn.get(), layoutStyle);
+        }
+
+        if (auto listView = picker->getFileListView())
+        {
+            const NbRect<int>& lvRect = listView->getRect();
+
+            renderTarget->fillRectangle(lvRect, NbColor(25, 25, 25));
+            renderTarget->drawRectangle(lvRect, NbColor(60, 60, 60)); 
+
+            size_t count       = listView->getCount();
+            int    itemHeight  = ListView::HEIGHT_OF_ITEM_IN_PIXEL;
+            auto   selectedIdx = listView->getSelectedIndex();
+            int    lastHovered = listView->getLastHitIndex();
+
+            renderTarget->pushClip(lvRect);
+
+            for (size_t i = 0; i < count; ++i)
+            {
+                int itemY = lvRect.y + (int(i) * itemHeight) - listView->getScrollOffset();
+
+                // Оптимизация: не рисуем то, что за пределами видимости
+                if (itemY + itemHeight < lvRect.y || itemY > lvRect.y + lvRect.height)
+                {
+                    continue;
+                }
+
+                NbRect<int> itemRect = {lvRect.x, itemY, lvRect.width, itemHeight};
+
+                if (selectedIdx.has_value() && selectedIdx.value() == i)
+                {
+                    renderTarget->fillRectangle(itemRect, NbColor(38, 79, 120));
+                }
+                else if (lastHovered == (int)i)
+                {
+                    renderTarget->fillRectangle(itemRect, NbColor(255, 255, 255, 15));
+                }
+
+                std::string text     = listView->getItemText(i);
+                NbRect<int> textRect = {
+                    itemRect.x + 8, itemRect.y, itemRect.width - 16, itemRect.height
+                };
+
+                NbColor itemTextColor = NbColor(220, 220, 220);
+                if (text.find("📁") != std::string::npos)
+                {
+                    itemTextColor = NbColor(240, 200, 100); 
+
+                renderTarget->drawText(
+                    Utils::toWstring(text),
+                    textRect,
+                    itemTextColor,
+                    TextAlignment::LEFT
+                    
+                );
+
+            }
+
+            renderTarget->popClip();
+        }
+
+        // 4. Общая внешняя рамка FilePicker
+        renderTarget->drawRectangle(rect, NbColor(100, 100, 100));
     }
 
 
@@ -1196,18 +1597,18 @@ namespace Renderer
         Microsoft::WRL::ComPtr<IDWriteFactory> factory = FactorySingleton::getDirectWriteFactory();
 		factory->CreateTextLayout(text.c_str(), text.length(), textFormat.Get(), rect.width, rect.height, &textLayout);
 		textLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-		Direct2dGlobalWidgetMapper::addTextlayout(label, textLayout);
+		Direct2dGlobalWidgetMapper::addTextlayout(label, std::move(textLayout));
 	}
 
 
 	void Direct2dWidgetRenderer::createTextLayoutForLabelClipped(Label* label) noexcept
 	{
-		IDWriteTextLayout* textLayout = nullptr;
+        Microsoft::WRL::ComPtr<IDWriteTextLayout> textLayout = nullptr;
         Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(label);
         if (!textFormat || label->getFont().isDirty())
         {
-            Direct2dWrapper::createTextFormatForWidget(label, label->getFont());
-            textFormat = Direct2dGlobalWidgetMapper::getTextFormatByWidget(label);
+            textFormat = Direct2dWrapper::createTextFormatForWidget(label, label->getFont());
+            //Direct2dGlobalWidgetMapper::getTextFormatByWidget(label);
             label->getFont().clearDirty();
         }
 
@@ -1230,7 +1631,7 @@ namespace Renderer
 
 		factory->CreateTextLayout(text.c_str(), text.length(), textFormat.Get(), rect.width, rect.height, &textLayout);
 		textLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-		Direct2dGlobalWidgetMapper::addTextlayout(label, textLayout);
+		Direct2dGlobalWidgetMapper::addTextlayout(label, std::move(textLayout));
 	}
 
 };//////////////////////////////////////

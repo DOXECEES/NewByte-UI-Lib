@@ -93,7 +93,6 @@ namespace Renderer
                 auto widgetPtr = widgetLayout->getWidget();
                 if (widgetPtr)
                 {
-                    // 2. Проверяем сам рендерер
                     if (widgetRenderer)
                     {
                         widgetRenderer->render(widgetPtr.get(), widgetLayout->style);
@@ -101,7 +100,7 @@ namespace Renderer
                 }
 
             }
-            else if (auto layout = dynamic_cast<const NNsLayout::LayoutNode*>(node))
+            else if (auto layout = node)
             {
                 renderTarget.fillRectangle(layout->getRect(), layout->style.color);
                 if (layout->style.border.style != Border::Style::NONE)
@@ -165,8 +164,19 @@ namespace Renderer
 
      
 
-        widgetRenderer->renderPopUp();
+        NbColor commonBorderColor = {80, 80, 80};
+        float   borderThickness   = 1.0f;
 
+        renderTarget.drawRectangle(
+            {0, 0, windowSize.width, windowSize.height}, commonBorderColor, borderThickness
+        );
+
+
+        widgetRenderer->renderPopUp();
+        renderPopup(window->getPopupManager());
+
+
+        
         HRESULT hr = renderTarget.endDraw();
 
         if (FAILED(hr))
@@ -178,6 +188,47 @@ namespace Renderer
     void Direct2dRenderer::resize(WindowInterface::IWindow *window)
     {
         renderTarget.resize(window->getSize());
+    }
+
+    void Direct2dRenderer::renderPopup(const nbui::PopupManager& manager)
+    {
+       // auto menu = manager.getActivePopup();
+
+       // if (!menu)
+       // {
+       //     return;
+       // }
+
+       //const NbRect<int>& popupRect = manager.getPopupRect();
+       // 
+
+       // // фон popup
+       // renderTarget.fillRectangle(popupRect, {40, 40, 40}); 
+
+       // int index = 0;
+       // for (const auto& item : menu->getItems())
+       // {
+       //     NbRect<int> itemRect = popupRect;
+       //     itemRect.y = popupRect.y + index * 30;
+       //     itemRect.height = 30;
+
+       //     // текст элемента
+       //     renderTarget.drawText(
+       //         item.text, itemRect, {255, 255, 255}
+       //     );
+
+       //     index++;
+       // }
+
+       // // при желании можно добавить hover или выделение активного элемента:
+       // //if (hoveredIndex >= 0 && hoveredIndex < (int)menu->getItems().size())
+       // //{
+       // //    NbRect<int> hoverRect = popupRect;
+       // //    hoverRect.y = popupRect.y + hoveredIndex * itemHeight;
+       // //    hoverRect.height = itemHeight;
+       // //    renderTarget->fillRectangle(hoverRect, {70, 70, 70, 200}); // прозрачный highlight
+       // //}
+
     }
 }
 

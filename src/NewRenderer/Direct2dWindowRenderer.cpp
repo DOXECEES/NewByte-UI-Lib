@@ -48,7 +48,7 @@ namespace Renderer
 
         auto frameColor = resourceManager->createSolidBrush( {123,4,55});
         auto fontColor = resourceManager->createSolidBrush(window->getFontColor());
-        auto textFormat = resourceManager->createTextFormat(L"Times New Roman", 14);
+        auto textFormat = resourceManager->createTextFormat(L"Segoe UI", 14);
 
         const WindowInterface::FrameSize& frameSize = window->getFrameSize();
 

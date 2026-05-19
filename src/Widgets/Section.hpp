@@ -1,7 +1,11 @@
-#ifndef NBUI_SRC_WIDGETS_SECTION_HPP
-#define NBUI_SRC_WIDGETS_SECTION_HPP
+#pragma once
 
-#include "IWidget.hpp"
+#include "Layout/LayoutNode.hpp"
+#include "Widgets/Button.hpp"
+#include "Widgets/IWidget.hpp"
+#include <Core.hpp>
+#include <algorithm>
+#include <memory>
 #include <string>
 
 namespace Widgets
@@ -9,168 +13,101 @@ namespace Widgets
     class SectionWidget : public IWidget
     {
     public:
-
-        static constexpr const char* CLASS_NAME = "SectionWidget";
-
+        DECLARE_WIDGET_CLASS_NAME(SectionWidget);
 
         SectionWidget(
             const std::wstring& title,
-            const NbRect<int>& rect,
-            uint16_t zIndexOrder = 0
+            const NbRect<int>& rc
         )
-            : IWidget(
-                  rect,
-                  zIndexOrder
+            : headerButton(
+                  std::make_unique<Button>(
+                                            rc
+                  )
               ),
-              title(title)
+              collapsed(false),
+              IWidget({})
         {
-            expanded = true;
-            headerHeight = 24; 
-            
+            innerLayout = std::make_unique<NNsLayout::VLayout>();
         }
 
-        virtual const char* getClassName() const override
+        ~SectionWidget() = default;
+
+        // Для renderSection
+        const char* getClassName() const override
         {
             return CLASS_NAME;
         }
 
-        void toggle()
+        std::wstring getTitle() const
         {
-            expanded = !expanded;
-            for (auto child : childrens)
-            {
-                child->hide(!expanded);
-            }
-
-            isSizeChange = true;
-            onSizeChangedSignal.emit(rect);
+            return headerButton->getText();
         }
 
-        // Логика измерения размера (IMeasureLayout)
-        const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
+        bool isExpanded() const noexcept
         {
-            int width = maxSize.width;
-            int height = headerHeight;
+            return !collapsed;
+        }
 
-            if (expanded)
+        NNsLayout::LayoutNode* getInnerLayout() noexcept
+        {
+            return innerLayout.get();
+        }
+
+        void toggleCollapse()
+        {
+            collapsed = !collapsed;
+            innerLayout->setSpacing(collapsed ? 0 : 5);
+            innerLayout->markDirty();
+        }
+
+        const NbSize<int>& measure(const NbSize<int>& available) noexcept
+        {
+            headerButton->measure(available);
+            if (!collapsed)
             {
-                NbSize<int> childAvailable{maxSize.width, maxSize.height};
-
-                for (auto& child : childrens)
-                {
-                    if (!child || child->isHide())
-                    {
-                        continue;
-                    }
-
-                    auto childSize = child->measure(childAvailable);
-                    height += childSize.height;
-                    width = std::max(width, childSize.width);
-                }
-
+                innerLayout->measure(available);
+                const auto& sz = innerLayout->getMeasuredSize();
+                measuredSize.width = std::max(headerButton->getMeasuredSize().width, sz.width);
+                measuredSize.height = headerButton->getMeasuredSize().height + sz.height;
             }
-
-            measuredSize = {width, height};
+            else
+            {
+                measuredSize = headerButton->getMeasuredSize();
+            }
             return measuredSize;
         }
 
-        void layout(const NbRect<int>& rect) noexcept override
+        void layout(const NbRect<int>& bounds) noexcept
         {
-            setRect(rect);
+            NbRect<int> headerRect = bounds;
+            headerRect.height = headerButton->getMeasuredSize().height;
+            headerButton->setRect(headerRect);
+            headerButton->layout(headerRect);
 
-            if (!expanded)
+            if (!collapsed)
             {
-                for (auto& child : childrens)
-                {
-                    if (child)
-                    {
-                        child->layout({0, 0, 0, 0});
-                    }
-                }
-
-                return;
-            }
-
-            int currentY = rect.y + headerHeight;
-
-            NbSize<int> innerAvailable{rect.width, rect.height - headerHeight};
-
-            for (auto& child : childrens)
-            {
-                if (!child || child->isHide())
-                {
-                    continue;
-                }
-
-                auto childSize = child->measure(innerAvailable);
-
-                NbRect<int> childRect{rect.x, currentY, rect.width, childSize.height};
-
-                child->layout(childRect);
-
-                currentY += childSize.height;
-            }
-
-        }
-
-        virtual bool hitTest(const NbPoint<int>& pos) override
-        {
-            NbRect<int> headerRect = {
-                rect.x, 
-                rect.y,
-                rect.width,
-                headerHeight
-            };
-
-            if (headerRect.isInside(pos))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        virtual bool hitTestClick(const NbPoint<int>& pos) noexcept override
-        {
-            NbRect<int> headerRect = {
-                rect.x, 
-                rect.y,
-                rect.width,
-                headerHeight
-            };
-
-            if (headerRect.isInside(pos))
-            {
-                toggle();
-                return true;
-            }
-
-            IWidget::hitTestClick(pos);
-        }
-
-        bool isExpanded() const
-        {
-            return expanded;
-        }
-        void setExpanded(bool expand)
-        {
-            if (expanded != expand)
-            {
-                toggle();
+                NbRect<int> innerRect = bounds;
+                innerRect.y += headerRect.height;
+                innerRect.height -= headerRect.height;
+                innerLayout->setRect(innerRect);
+                innerLayout->layout(innerRect);
             }
         }
 
-        const std::wstring& getTitle() const noexcept
+        void onHeaderClick()
         {
-            return title;
+            toggleCollapse();
         }
 
-    protected:
-        std::wstring title;
-        bool expanded;
-        int headerHeight;
-        NbSize<int> measuredSize; 
+        // Дочерние виджеты для рендера
+        auto& getChildrens() noexcept
+        {
+            return innerLayout->getChildren();
+        }
+
+    private:
+        std::unique_ptr<Button> headerButton;
+        std::unique_ptr<NNsLayout::VLayout> innerLayout;
+        bool collapsed;
     };
-}; 
-
-#endif
+} // namespace Widgets

@@ -16,7 +16,7 @@ namespace Widgets
 
 	const char* Spacer::getClassName() const
 	{
-		return "SPACER";
+		return CLASS_NAME;
 	}
 	
 	const NbSize<int>& Spacer::measure(const NbSize<int>& max) noexcept

@@ -57,6 +57,8 @@ namespace Widgets
         void setIsRTL(bool rtl) noexcept;
         
 
+        Signal<void()> onTextChanged;
+
     private:
         Utils::Validator validator;
         std::wstring    data;

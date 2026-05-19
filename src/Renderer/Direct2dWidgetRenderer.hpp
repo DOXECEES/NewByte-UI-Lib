@@ -7,6 +7,7 @@
 #include "Widgets/TreeView.hpp"
 #include "Widgets/Label.hpp"
 #include "Widgets/ComboBox.hpp"
+#include "Widgets/Menu.hpp"
 #include "Geometry/BorderGeometryCache.hpp"
 #include "Geometry/WidgetsGeometryCache.hpp"
 #include "Direct2dBitmapCache.hpp"
@@ -72,6 +73,39 @@ namespace Renderer
             IWidget* widget,
             const NNsLayout::LayoutStyle& layoutStyle
         );
+
+        void renderMenu(
+            IWidget* widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        );
+
+        void renderMaterialWidget(
+            IWidget*                      widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        );
+
+        void renderFilePicker(
+            IWidget*                      widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        );
+        
+        void renderTriangleIcon(
+            const NbRect<int>& rect,
+            bool               expanded,
+            const NbColor&     color
+        ) noexcept;
+
+        void renderTexturelWidget(
+            IWidget*                      widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        ) noexcept;
+
+         void renderSpacer(
+            IWidget*                      widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        ) noexcept;
+
+
         
 
         template<typename T>
@@ -135,6 +169,9 @@ namespace Renderer
                 popupQueue.push(params);
             }
         }
+
+        void addMenuToPopupQueue(Widgets::Menu* menu);
+
 
         void createTextLayoutForWidget(IWidget* widget, const std::wstring& data = L"");
 

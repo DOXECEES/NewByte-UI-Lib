@@ -24,10 +24,15 @@ namespace WindowInterface
         {
             return;
         }
-        clientSize = { size.width - frameSize.left - frameSize.right, size.height - frameSize.top - frameSize.bot };
+        clientSize = {
+            size.width - frameSize.left - frameSize.right - excludeSizes[ExcludeSide::RIGHT] -
+                excludeSizes[ExcludeSide::LEFT],
+            size.height - frameSize.top - frameSize.bot - excludeSizes[ExcludeSide::BOT] -
+                excludeSizes[ExcludeSide::TOP]
+        };
 
-        clientRect.x = frameSize.left;
-        clientRect.y = frameSize.top;
+        clientRect.x = frameSize.left + excludeSizes[ExcludeSide::LEFT];
+        clientRect.y = frameSize.top + excludeSizes[ExcludeSide::TOP];
         clientRect.width = clientSize.width;
         clientRect.height = clientSize.height;
 
@@ -52,23 +57,37 @@ namespace WindowInterface
         isSizeChanged = false;
     }
 
+    void WindowState::setExcludeFromTop(const int size)
+    {
+        excludeSizes[ExcludeSide::TOP] = size;
+    }
+
     void WindowState::setClientRect(const NbRect<int>& newRect)
     {
         clientRect = {
             5 + newRect.x,
-            35 + newRect.y,
+            35 + newRect.y + 32,
             newRect.width - 5,
-            newRect.height - 35
+            newRect.height - 35 - 32
         };
     }
 
     void WindowState::calculateClientSize() {
-        clientSize  = { size.width - frameSize.left - frameSize.right
-                    , size.height - frameSize.top - frameSize.bot };
+        clientSize = {
+            size.width - frameSize.left - frameSize.right - excludeSizes[ExcludeSide::RIGHT] -
+                excludeSizes[ExcludeSide::LEFT],
+            size.height - frameSize.top - frameSize.bot - excludeSizes[ExcludeSide::BOT] -
+                excludeSizes[ExcludeSide::TOP]
+        };
     }
 
     void WindowState::calculateClientRect()
     {
-        clientRect = { frameSize.left, frameSize.top, clientSize.width, clientSize.height };
+        clientRect = {
+            frameSize.left + excludeSizes[ExcludeSide::LEFT],
+            frameSize.top + excludeSizes[ExcludeSide::TOP]
+        , clientSize.width,
+            clientSize.height
+        };
     }
 };

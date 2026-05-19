@@ -25,6 +25,13 @@ namespace nbui
         static void releasePressedWidget() noexcept;
         static Widgets::IWidget* getPressedWidget() noexcept;
 
+        static void              captureFocusedWidget(Widgets::IWidget* widget) noexcept;
+        static void              releaseFocusedWidget() noexcept;
+        static Widgets::IWidget* getFocusedWidget() noexcept;
+
+
+        static void onUnfocus() noexcept;
+        static void onSymbol(wchar_t symbol) noexcept;
         static void onPress() noexcept;
         static void onRelease() noexcept;
 
@@ -32,6 +39,8 @@ namespace nbui
     private:
         inline static Widgets::IWidget* capturedWidget = nullptr;
         inline static Widgets::IWidget* pressedWidget = nullptr;
+        inline static Widgets::IWidget* focusedWidget  = nullptr;
+
     };
 
 };

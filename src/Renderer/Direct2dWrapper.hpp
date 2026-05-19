@@ -276,77 +276,30 @@ private:
     }
 
 public:
-    // --- API методы ---
 
     void pushClip(const NbRect<int>& rect)
     {
-        if (!m_d2dFactory || !m_d2dContext) return;
-
-        // Создаем геометрию для дырки
-        ComPtr<ID2D1RectangleGeometry> holeGeometry;
-        D2D1_RECT_F holeRect = Direct2dUtils::toD2D1Rect(rect);
-        HRESULT hr = m_d2dFactory->CreateRectangleGeometry(holeRect, &holeGeometry);
-        if (FAILED(hr)) return;
-
-        // Создаем геометрию для всего холста
-        D2D1_SIZE_F size = m_d2dContext->GetSize();
-        ComPtr<ID2D1RectangleGeometry> fullScreenGeometry;
-        hr = m_d2dFactory->CreateRectangleGeometry(
-            D2D1::RectF(0, 0, size.width, size.height),
-            &fullScreenGeometry
-        );
-        if (FAILED(hr)) return;
-
-        // Создаем путь для результата вычитания
-        ComPtr<ID2D1PathGeometry> pathGeometry;
-        hr = m_d2dFactory->CreatePathGeometry(&pathGeometry);
-        if (FAILED(hr)) return;
-
-        ComPtr<ID2D1GeometrySink> sink;
-        hr = pathGeometry->Open(&sink);
-        if (FAILED(hr)) return;
-
-        // Вычитаем: Результат = ПолныйЭкран - Дырка
-        hr = fullScreenGeometry->CombineWithGeometry(
-            holeGeometry.Get(),
-            D2D1_COMBINE_MODE_EXCLUDE,
-            nullptr,
-            sink.Get()
-        );
-
-        if (SUCCEEDED(hr))
+        if (!m_d2dContext)
         {
-            sink->Close();
+            return;
         }
 
-        // Создаем или получаем слой
-        if (!m_layer)
-        {
-            m_d2dContext->CreateLayer(nullptr, &m_layer);
-        }
+        D2D1_RECT_F clipRect = Direct2dUtils::toD2D1Rect(rect);
 
-        // Настраиваем параметры слоя
-        D2D1_LAYER_PARAMETERS1 layerParams = D2D1::LayerParameters1(
-            D2D1::InfiniteRect(),
-            pathGeometry.Get(),
-            D2D1_ANTIALIAS_MODE_ALIASED,
-            D2D1::IdentityMatrix(),
-            1.0f,
-            nullptr,
-            D2D1_LAYER_OPTIONS1_NONE
+        m_d2dContext->PushAxisAlignedClip(
+            clipRect,
+            D2D1_ANTIALIAS_MODE_ALIASED 
         );
-
-        // Применяем слой
-        m_d2dContext->PushLayer(layerParams, m_layer.Get());
     }
 
     void popClip() noexcept
     {
         if (m_d2dContext)
         {
-            m_d2dContext->PopLayer();
+            m_d2dContext->PopAxisAlignedClip();
         }
     }
+
 
     void beginDraw() noexcept
     {
@@ -760,19 +713,6 @@ public:
     {
         if (!m_d2dContext || !textLayout) return;
 
-        // Устанавливаем выравнивание для layout
-        switch (alignment)
-        {
-        case TextAlignment::CENTER:
-            textLayout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            break;
-        case TextAlignment::LEFT:
-            textLayout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-            break;
-        case TextAlignment::RIGHT:
-            textLayout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-            break;
-        }
 
         ComPtr<ID2D1SolidColorBrush> brush = createSolidBrush(color);
         if (brush)

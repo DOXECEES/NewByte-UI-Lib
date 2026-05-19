@@ -128,7 +128,7 @@ namespace Widgets
 
         Font            font                = { };
 
-        bool            isEllipsisSet       = false;
+        bool            isEllipsisSet       = true;
 
         NbSize<int>     size;
         

@@ -3,6 +3,7 @@
 
 #include "../Core.hpp"
 #include "../Widgets/IWidgetRenderer.hpp"
+#include "PopupMenu.hpp"
 
 class CaptionButtonsContainer;
 
@@ -21,6 +22,7 @@ namespace WindowInterface
     {
     public:
         virtual void render(IWindow *window) = 0;
+        virtual void renderPopup(const nbui::PopupManager& manager) = 0;
         virtual void resize(IWindow *window) = 0;
         virtual ~IWindowRenderer() = default;
     

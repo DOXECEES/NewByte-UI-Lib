@@ -62,7 +62,7 @@ set (SRC
         src/WindowInterface/WindowState.cpp
         src/WindowInterface/WindowStyle.cpp
         src/WindowInterface/WindowStyle.hpp
-      
+        src/WindowInterface/PopupMenu.hpp    
 
         src/WindowInterface/WindowCore.hpp
 
@@ -104,8 +104,8 @@ set (SRC
         src/Renderer/Direct2dBitmapCache.cpp
         src/Renderer/Direct2dBitmapCache.hpp
 
+        src/Renderer/TextAlignment.cpp
         src/Renderer/TextAlignment.hpp
-
 
         src/RendererInterface/IRenderContext.cpp
         src/RendererInterface/IRenderContext.hpp
@@ -160,18 +160,35 @@ set (SRC
         src/Widgets/Spacer.hpp
         src/Widgets/FloatSpinBox.cpp
         src/Widgets/FloatSpinBox.hpp
+        src/Widgets/CollapsibleSection.cpp
+        src/Widgets/CollapsibleSection.hpp
 
         src/Widgets/Section.hpp
 
         src/Widgets/Thumbnail.hpp
 
+        src/Widgets/MaterialWidget.hpp
+
+        src/Widgets/TextureWidget.hpp
+
+
+        src/Widgets/Scrollbar.cpp
+        src/Widgets/Scrollbar.hpp
+
 
         src/Widgets/ColorPicker.hpp
+        src/Widgets/FilePicker.hpp
+        src/Widgets/ListView.hpp
+
+
         src/Widgets/ToolBar.cpp
         src/Widgets/ToolBar.hpp
         src/Widgets/ButtonGroup.hpp
         src/Widgets/ButtonGroup.cpp
         src/Widgets/Slider.hpp
+        src/Widgets/Menu.hpp
+        src/Widgets/Menu.cpp
+        src/Widgets/PopUp.hpp
 
 
         src/Layout/LayoutNode.cpp
@@ -233,6 +250,8 @@ endif()
 
 
 if(WIN32)
+    target_compile_options(${PROJECT_NAME} PRIVATE /utf-8)
+
     target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE _UNICODE)
     target_link_libraries(${PROJECT_NAME} PRIVATE user32 PUBLIC NbCommon)
     

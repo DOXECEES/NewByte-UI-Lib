@@ -48,7 +48,10 @@ namespace Widgets
         virtual const ModelItem* findById(const nbstl::Uuid& id) const noexcept = 0;
 
         virtual std::string data(const ModelItem& item) const noexcept = 0;
-
+        virtual void setData(
+            const nbstl::Uuid&,
+            const std::string&
+        ) noexcept {};
         virtual void forEach(std::function<void(const ModelItem&)> func) const noexcept = 0;
 
         virtual size_t size() const noexcept = 0;
@@ -104,8 +107,53 @@ namespace Widgets
 
         bool hitTest(const NbPoint<int>& pos) override;
         bool hitTestClick(const NbPoint<int>& pos) noexcept override;
+        bool hitTestRightClick(const NbPoint<int>& pos) noexcept override;
+
+        void onUnfocus() noexcept override
+        {
+            commitEditing();
+        }
+
+        void onSymbolButtonClicked(const wchar_t symbol) override
+        {
+            inputChar(symbol);
+        };
+
+        void onButtonClicked(
+            const wchar_t symbol,
+            SpecialKeyCode specialCode = SpecialKeyCode::NONE
+        ) override
+        {
+            if (symbol == VK_BACK)
+            {
+                backspace();
+            }
+            else if (symbol == VK_RETURN)
+            {
+                commitEditing();
+            }
+            else if (symbol == VK_ESCAPE)
+            {
+                cancelEditing();
+            }
+            else
+            {
+                inputChar(symbol);
+            }
+
+        }
+
+
         const char* getClassName() const override;
         NB_NODISCARD const TreeViewStyle& getTreeViewStyle() const noexcept;
+
+        void refresh() noexcept;
+        void renameItem(
+            const ModelIndex& index,
+            const std::string& name
+        ) noexcept;
+
+        void setSelectedItem(const ModelIndex& index) noexcept;
 
         void setModel(const std::shared_ptr<ITreeModel>& modelParam) noexcept;
         std::shared_ptr<ITreeModel> getModel() const noexcept { return model; }
@@ -131,6 +179,15 @@ namespace Widgets
         size_t getMaxCountOfItems() const noexcept;
         ModelIndex getLastClickIndex() const noexcept;
         ModelIndex getLastHitIndex() const noexcept;
+
+        void startEditing(const ModelIndex& index) noexcept;
+        void commitEditing() noexcept;
+        void cancelEditing() noexcept;
+        void inputChar(char c) noexcept;
+        void backspace() noexcept;
+
+        bool isEditingItem(const ModelIndex& index) const noexcept;
+        const std::string& getEditingText() const noexcept;
 
         virtual const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
         {
@@ -184,7 +241,7 @@ namespace Widgets
         Signal<void(const ModelIndex&)> onItemClickSignal;
         Signal<void(const ModelIndex&)> onItemButtonClickSignal;
         Signal<void(const ModelIndex&)> onItemChangeSignal;
-
+        Signal<void(const ModelIndex&)> onItemRightClickSignal;
     private:
         NbRect<int> geometry;
         NbSize<int> measuredSize;
@@ -202,6 +259,10 @@ namespace Widgets
 
         };
 
+        ModelIndex editingIndex;
+        std::string editingText;
+        bool isEditing = false;
+
         std::shared_ptr<ITreeModel>                         model               = nullptr;
         std::unordered_map<nbstl::Uuid, const ModelItem*>   uuidMap;
         std::unordered_map<nbstl::Uuid, NodeState>          nodeStates;
@@ -211,7 +272,7 @@ namespace Widgets
         ModelIndex                                          lastClickedIndex;
 
         std::pair<size_t, size_t>                           range               = { 0 , 0 };
-
+        int                       scrollOffsetY = 0;
         void buildUuidMap() noexcept;
         void collectVisibleRecursive(const ModelItem* node) noexcept;
     };

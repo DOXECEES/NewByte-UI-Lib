@@ -24,9 +24,11 @@ namespace Renderer
             ~Direct2dRenderer();
             void render(WindowInterface::IWindow *window) override;
             void resize(WindowInterface::IWindow *window) override;
+            void renderPopup(const nbui::PopupManager& manager) override;
 
         private:
             Direct2dHandleRenderTarget renderTarget;
+
     };
 };
 

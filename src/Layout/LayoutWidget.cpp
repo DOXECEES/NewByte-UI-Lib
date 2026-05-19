@@ -51,119 +51,232 @@ namespace NNsLayout
 
 
         void LayoutWidget::measure(const NbSize<int>& available) noexcept
-        {
-            const auto natural = widget ? widget->measure(available) : NbSize<int>{0, 0};
+    {
+        // available считается как доступный размер под MARGIN-BOX
 
-            int childrenWidth = 0;
-            int childrenHeight = 0;
+        // --- margin ---
+        const int marginW = style.margin.left + style.margin.right;
+        const int marginH = style.margin.top + style.margin.bottom;
+
+        // --- border + padding ---
+        const int borderPaddingW = style.border.width.left + style.border.width.right +
+                                   style.padding.left + style.padding.right;
+
+        const int borderPaddingH = style.border.width.top + style.border.width.bottom +
+                                   style.padding.top + style.padding.bottom;
+
+        // Размер доступный под BORDER-BOX (то есть без margin)
+        NbSize<int> availableBox = {
+            (nbstl::max)(0, available.width - marginW), (nbstl::max)(0, available.height - marginH)
+        };
+
+        // Размер доступный под CONTENT-BOX (то есть без margin/border/padding)
+        NbSize<int> availableContent = {
+            (nbstl::max)(0, availableBox.width - borderPaddingW),
+            (nbstl::max)(0, availableBox.height - borderPaddingH)
+        };
+
+        // --- natural size от внутреннего widget ---
+        const auto natural = widget ? widget->measure(availableContent) : NbSize<int>{0, 0};
+
+        // --- measure children ---
+        int childrenWidth  = 0;
+        int childrenHeight = 0;
+
+        for (auto& child : children)
+        {
+            if (!child)
+            {
+                continue;
+            }
+
+            child->measure(availableContent);
+
+            NbSize<int> childSize = child->getMeasuredSize();
+            childrenWidth += childSize.width;
+            childrenHeight = (nbstl::max)(childrenHeight, childSize.height);
+        }
+
+        // --- вычисляем content size ---
+        int contentW = 0;
+        switch (style.widthSizeType)
+        {
+        case SizeType::ABSOLUTE:
+            contentW = static_cast<int>(style.width);
+            break;
+
+        case SizeType::RELATIVE:
+            contentW = static_cast<int>(availableContent.width * style.width);
+            break;
+
+        case SizeType::AUTO:
+            contentW = (!children.empty()) ? childrenWidth : natural.width;
+            break;
+
+        case SizeType::FLEX:
+            contentW = availableContent.width;
+            break;
+        }
+
+        int contentH = 0;
+        switch (style.heightSizeType)
+        {
+        case SizeType::ABSOLUTE:
+            contentH = static_cast<int>(style.height);
+            break;
+
+        case SizeType::RELATIVE:
+            contentH = static_cast<int>(availableContent.height * style.height);
+            break;
+
+        case SizeType::AUTO:
+            contentH = (!children.empty()) ? childrenHeight : natural.height;
+            break;
+
+        case SizeType::FLEX:
+            contentH = availableContent.height;
+            break;
+        }
+
+        // clamp content
+        if (contentW < 0)
+        {
+            contentW = 0;
+        }
+        if (contentH < 0)
+        {
+            contentH = 0;
+        }
+
+        // --- border-box size ---
+        int boxW = contentW + borderPaddingW;
+        int boxH = contentH + borderPaddingH;
+
+        // --- применяем minSize (minSize считаем как минимум для BORDER-BOX) ---
+        boxW = (nbstl::max)(style.minSize.width, boxW);
+        boxH = (nbstl::max)(style.minSize.height, boxH);
+
+        // --- outer size (margin-box) ---
+        measuredSize = {boxW + marginW, boxH + marginH};
+    }
+
+    void LayoutWidget::layout(const NbRect<int>& bounds) noexcept
+    {
+        // bounds приходит как MARGIN-BOX (внешняя область)
+
+        if (!widget && children.empty())
+        {
+            return;
+        }
+
+        // --- margin ---
+        NbRect<int> box = bounds;
+
+        box.x += style.margin.left;
+        box.y += style.margin.top;
+        box.width -= (style.margin.left + style.margin.right);
+        box.height -= (style.margin.top + style.margin.bottom);
+
+        if (box.width < 0)
+        {
+            box.width = 0;
+        }
+        if (box.height < 0)
+        {
+            box.height = 0;
+        }
+
+        // --- border + padding ---
+        const int borderPaddingW = style.border.width.left + style.border.width.right;
+
+        const int borderPaddingH = style.border.width.top + style.border.width.bottom;
+
+        NbRect<int> content = box;
+
+        content.x += style.border.width.left;
+        content.y += style.border.width.top;
+
+        content.width -= borderPaddingW;
+        content.height -= borderPaddingH;
+
+        if (content.width < 0)
+        {
+            content.width = 0;
+        }
+        if (content.height < 0)
+        {
+            content.height = 0;
+        }
+
+        // layout внутреннего widget
+        if (widget)
+        {
+            widget->layout(content);
+        }
+
+        // layout детей (простая горизонтальная раскладка)
+        if (!children.empty())
+        {
+            int currentX = content.x;
 
             for (auto& child : children)
             {
-                child->measure(available);
-                NbSize<int> childSize = child->getMeasuredSize();
-                childrenWidth += childSize.width;
-                childrenHeight = (nbstl::max)(childrenHeight, childSize.height);
-            }
-
-            int internalW = style.padding.left + style.padding.right + style.border.width.left +
-                            style.border.width.right;
-            int internalH = style.padding.top + style.padding.bottom + style.border.width.top +
-                            style.border.width.bottom;
-
-            int w = 0;
-            switch (style.widthSizeType)
-            {
-            case SizeType::ABSOLUTE:
-                w = static_cast<int>(style.width);
-                break;
-            case SizeType::RELATIVE:
-                w = static_cast<int>(available.width * style.width);
-                break;
-            case SizeType::AUTO:
-                w = (!children.empty()) ? childrenWidth : natural.width;
-                break;
-            case SizeType::FLEX:
-                w = available.width - internalW; 
-                break;
-            }
-
-            int h = 0;
-            switch (style.heightSizeType)
-            {
-            case SizeType::ABSOLUTE:
-                h = static_cast<int>(style.height);
-                break;
-            case SizeType::RELATIVE:
-                h = static_cast<int>(available.height * style.height);
-                break;
-            case SizeType::AUTO:
-                h = (!children.empty()) ? childrenHeight : natural.height;
-                break;
-            case SizeType::FLEX:
-                h = available.height - internalH;
-                break;
-            }
-
-            w += internalW;
-            h += internalH;
-
-            measuredSize = {
-                (nbstl::max)(style.minSize.width, w), (nbstl::max)(style.minSize.height, h)
-            };
-        }
-
-        void LayoutWidget::layout(const NbRect<int>& bounds) noexcept
-        {
-            if (!widget)
-            {
-                return;
-            }
-
-            NbRect<int> inner = bounds;
-
-            int borderPaddingW = style.border.width.left + style.border.width.right +
-                                 style.padding.left + style.padding.right;
-            int borderPaddingH = style.border.width.top + style.border.width.bottom +
-                                 style.padding.top +
-                                 style.padding.bottom;
-
-            inner.x += style.border.width.left + style.padding.left;
-            inner.y += style.border.width.top + style.padding.top;
-
-            inner.width -= borderPaddingW;
-            inner.height -= borderPaddingH;
-
-            if (inner.width < 0)
-            {
-                inner.width = 0;
-            }
-            if (inner.height < 0)
-            {
-                inner.height = 0;
-            }
-
-            widget->layout(inner);
-
-            if (!children.empty())
-            {
-                int currentX = inner.x;
-
-                for (auto& child : children)
+                if (!child)
                 {
-                    NbSize<int> childSize = child->getMeasuredSize();
+                    continue;
+                }
 
-                    int finalChildWidth = childSize.width;
-                    if (child->style.widthSizeType == SizeType::RELATIVE)
-                    {
-                        finalChildWidth = static_cast<int>(inner.width * child->style.width);
-                    }
+                NbSize<int> childSize = child->getMeasuredSize();
 
-                    NbRect<int> childRect = {currentX, inner.y, finalChildWidth, inner.height};
+                int finalChildWidth = childSize.width;
 
-                    child->layout(childRect);
+                // RELATIVE должен быть от content.width (одна база с measure)
+                if (child->style.widthSizeType == SizeType::RELATIVE)
+                {
+                    finalChildWidth = static_cast<int>(content.width * child->style.width);
+                }
 
-                    currentX += finalChildWidth;
+                // FLEX растягиваем в оставшееся место
+                if (child->style.widthSizeType == SizeType::FLEX)
+                {
+                    finalChildWidth = (content.x + content.width) - currentX;
+                }
+
+                if (finalChildWidth < 0)
+                {
+                    finalChildWidth = 0;
+                }
+
+                // height: если RELATIVE, считаем от content.height
+                int finalChildHeight = childSize.height;
+
+                if (child->style.heightSizeType == SizeType::RELATIVE)
+                {
+                    finalChildHeight = static_cast<int>(content.height * child->style.height);
+                }
+
+                if (child->style.heightSizeType == SizeType::FLEX)
+                {
+                    finalChildHeight = content.height;
+                }
+
+                if (finalChildHeight < 0)
+                {
+                    finalChildHeight = 0;
+                }
+
+                NbRect<int> childRect = {currentX, content.y, finalChildWidth, finalChildHeight};
+
+                child->layout(childRect);
+
+                currentX += finalChildWidth;
+
+                // чтобы не убегать за content
+                if (currentX > content.x + content.width)
+                {
+                    break;
                 }
             }
         }
+    }
 }; 

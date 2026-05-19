@@ -2,6 +2,7 @@
 
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "Win32ModalWindow.hpp"
+#include <Error/ErrorManager.hpp>
 #include "../Renderer/Direct2dRenderer.hpp"
 
 namespace Win32Window
@@ -63,6 +64,8 @@ namespace Win32Window
         captionButtonsContainer.addButton(captionButtons[0]);
         captionButtonsContainer.addButton(captionButtons[1]);
         captionButtonsContainer.addButton(captionButtons[2]);
+        nb::Error::ErrorManager::instance().report(nb::Error::Type::FATAL, "Modal create");
+
     }
 
     ModalWindow::~ModalWindow()
@@ -70,6 +73,7 @@ namespace Win32Window
         WindowInterface::WindowMapper::unregisterWindow(handle);
         delete renderer;
         close();
+        nb::Error::ErrorManager::instance().report(nb::Error::Type::FATAL, "Modal close");
     }
 
     void ModalWindow::show()

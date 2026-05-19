@@ -10,6 +10,8 @@
 #include "../Widgets/Button.hpp"
 #include "NewRenderer/Direct2dWindowRenderer.hpp"
 
+#include "GlobalWidgetContext.hpp"
+
 namespace Win32Window
 {
     static NbPoint<int> getMousePoint(LPARAM lParam) noexcept
@@ -27,6 +29,12 @@ namespace Win32Window
             HIWORD(lParam)
         };
     }
+
+    void Window::excludeFromClientRect(const NbRect<int>& exclude) noexcept
+    {
+        state.setExcludeFromTop(exclude.x);
+    }
+
 
     Window::Window()
     {
@@ -102,6 +110,7 @@ namespace Win32Window
         captionButtonsContainer.addButton(captionButtons[1]);
         captionButtonsContainer.addButton(captionButtons[2]);
 
+        popupManager.init(handle.as<HWND>());
     }
 
 	Window::~Window()
@@ -306,6 +315,8 @@ namespace Win32Window
             , rect.bottom - rect.top - state.frameSize.top - state.frameSize.bot
         );
 
+        recalculateLayout();
+
         renderer->resize(this);
 
         onRectChanged.emit(state.clientRect);
@@ -344,18 +355,19 @@ namespace Win32Window
 
     LRESULT Window::onKeyDown(WPARAM wParam)
     {
-        if (!focusedWidget)
+        auto focus = nbui::GlobalWidgetContext::getFocusedWidget();
+        if (!focus)
         {
             return FALSE;
         }
 
         if (GetAsyncKeyState(VK_CONTROL) & BUTTON_PRESSED_MASK)
         {
-            focusedWidget->onButtonClicked(wParam, SpecialKeyCode::CTRL);
+            focus->onButtonClicked(wParam, SpecialKeyCode::CTRL);
         }
         else
         {
-            focusedWidget->onButtonClicked(wParam);
+            focus->onButtonClicked(wParam);
         }
 
         return FALSE;

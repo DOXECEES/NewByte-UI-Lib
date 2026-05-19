@@ -27,7 +27,11 @@ namespace Widgets
 		const char* getClassName() const noexcept override { return CLASS_NAME; }
             
 		bool getIsChecked() const noexcept;
+
+        void setChecked(bool flag) noexcept;
 		void toogleIsChecked() noexcept;
+
+        void onToggled(const std::function<void(bool)>& func) noexcept;
 		
 		const NbRect<int>& getBoxRect() const noexcept;
 
@@ -91,6 +95,8 @@ namespace Widgets
 
 		NbRect<int>				boxRect;
 		std::unique_ptr<Label>	label				= nullptr;	
+
+        std::function<void(bool)> onToggle = nullptr;
 
         NbSize<int>     size;
 

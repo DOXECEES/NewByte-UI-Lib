@@ -59,28 +59,30 @@ namespace Widgets
 		return false;
 	}
 
-	bool ComboBox::hitTestClick(const NbPoint<int>& pos) noexcept {
-		// Клик по основному полю или кнопке
-		if (buttonRect.isInside(pos) || selectedItemRect.isInside(pos)) {
-			toggleComboState();
-			return true;
-		}
+	bool ComboBox::hitTestClick(const NbPoint<int>& pos) noexcept
+        {
+            if (buttonRect.isInside(pos) || selectedItemRect.isInside(pos))
+            {
+                toggleComboState();
+                return true;
+            }
 
-		// Клик по элементу в выпадающем списке
-		if (comboBoxState == ComboState::EXPANDED && dropdownList)
-		{
-			if (dropdownList->getRect().isInside(pos))
-			{
+            if (comboBoxState == ComboState::EXPANDED && dropdownList)
+            {
+                if (dropdownList->getRect().isInside(pos))
+                {
+                    size_t clickedIndex = dropdownList->hitTestElement(pos);
 
-				dropdownList->hitTest(pos);
+                    dropdownList->setHoverForElement(clickedIndex);
 
-				
-				toggleComboState(); // Закрываем после выбора
-				return true;
-			}
-		}
-		return false;
-	}
+                    this->onSelectionChanged.emit(dropdownList->getListItem());
+
+                    toggleComboState(); 
+                    return true;
+                }
+            }
+            return false;
+        }
 
 
 	NB_NODISCARD const NbRect<int>& ComboBox::getButtonRect() const noexcept
@@ -121,6 +123,11 @@ namespace Widgets
 	const ListItem& ComboBox::getSelectedItem() const noexcept
 	{
 		return dropdownList->getListItem();
+    }
+
+	void ComboBox::setSelectedItem(size_t index) const noexcept
+	{
+		dropdownList->setHoverForElementSilently(index);
 	}
 
 	NbRect<int> ComboBox::getRequestedSize() const noexcept
@@ -261,6 +268,11 @@ namespace Widgets
 		hoverElement = hoverIndex;
 		onItemChecked.emit(getListItem());
 	}
+
+	void DropdownList::setHoverForElementSilently(const size_t hoverIndex) noexcept
+    {
+        hoverElement = hoverIndex;
+    }
 	
 
 

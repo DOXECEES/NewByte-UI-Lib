@@ -55,29 +55,36 @@ namespace Widgets
 
     bool TreeView::hitTest(const NbPoint<int>& pos)
     {
-        // 1. Сначала проверяем, входит ли точка в прямоугольник виджета
         if (!rect.isInside(pos))
         {
-            lastHitIndex = ModelIndex{}; // Сбрасываем индекс наведения
-            return false;                // Сообщаем системе, что мышь НЕ над виджетом
+            lastHitIndex = ModelIndex{};
+            return false;
         }
 
-        // 2. Если внутри, вычисляем какой именно элемент
-        size_t row = hitElement(pos);
-        lastHitIndex = indexFromVisibleRow(row);
+        int localY = pos.y - rect.y;
 
-        return true;
+        size_t absoluteRow = (scrollOffsetY + rect.y + localY) / HEIGHT_OF_ITEM_IN_PIXEL;
+
+        if (absoluteRow >= range.first)
+        {
+            size_t relativeIdx = absoluteRow - range.first;
+
+            if (relativeIdx < visibleItems.size())
+            {
+                lastHitIndex = ModelIndex(visibleItems[relativeIdx]->getUuid());
+                return true;
+            }
+        }
+
+        lastHitIndex = ModelIndex{};
+        return false;
     }
 
     size_t TreeView::hitElement(const NbPoint<int>& pos) const noexcept
     {
-        // Мы уже проверили isInside в hitTest или hitTestClick,
-        // но для надежности оставим локальный расчет.
 
         int localY = pos.y - rect.y;
 
-        // Важно: range.first — это смещение скролла в ПИКСЕЛЯХ.
-        // Если это так, то формула верна:
         size_t absoluteY = static_cast<size_t>(range.first + localY);
 
         return absoluteY / HEIGHT_OF_ITEM_IN_PIXEL;
@@ -91,43 +98,29 @@ namespace Widgets
             return false;
         }
 
-        // 1. Переходим в локальные координаты виджета
         NbPoint<int> localPos = {pos.x - rect.x, pos.y - rect.y};
+        size_t       row      = (localPos.y + range.first) / HEIGHT_OF_ITEM_IN_PIXEL;
 
-        // 2. Определяем индекс строки с учетом скролла
-        // range.first - это смещение скролла в пикселях
-        size_t row = (localPos.y + range.first) / HEIGHT_OF_ITEM_IN_PIXEL;
-
-        static ModelIndex prevClickedIndex;
-        lastClickedIndex = indexFromVisibleRow(row);
-
-        if (!lastClickedIndex.isValid())
+        ModelIndex clickedIndex = indexFromVisibleRow(row);
+        if (!clickedIndex.isValid())
         {
             return false;
         }
 
+        setItemState(clickedIndex, ItemState::SELECTED);
+
+        static ModelIndex prevClickedIndex;
+        lastClickedIndex = clickedIndex;
+
         const ModelItem* item = uuidMap.at(lastClickedIndex.getUuid());
 
-
-        int buttonLocalY = (int)(row * HEIGHT_OF_ITEM_IN_PIXEL) - range.first;
-        int buttonLocalX = (int)20 * (int)item->getDepth();
-
+        int         buttonLocalY    = (int)(row * HEIGHT_OF_ITEM_IN_PIXEL) - range.first;
+        int         buttonLocalX    = (int)20 * (int)item->getDepth();
         NbRect<int> buttonRectLocal = {buttonLocalX, buttonLocalY, 20, 20};
 
-        if (isItemHaveChildrens(lastClickedIndex))
+        if (isItemHaveChildrens(lastClickedIndex) && buttonRectLocal.isInside(localPos))
         {
-            if (buttonRectLocal.isInside(localPos))
-            {
-                onItemButtonClickSignal.emit(lastClickedIndex);
-            }
-            else
-            {
-                onItemClickSignal.emit(lastClickedIndex);
-                if (prevClickedIndex != lastClickedIndex)
-                {
-                    onItemChangeSignal.emit(lastClickedIndex);
-                }
-            }
+            onItemButtonClickSignal.emit(lastClickedIndex);
         }
         else
         {
@@ -141,6 +134,31 @@ namespace Widgets
         prevClickedIndex = lastClickedIndex;
         return true;
     }
+
+
+    bool TreeView::hitTestRightClick(const NbPoint<int>& pos) noexcept
+    {
+        if (!model || !rect.isInside(pos))
+        {
+            return false;
+        }
+
+        NbPoint<int> localPos = {pos.x - rect.x, pos.y - rect.y};
+        size_t       row      = (localPos.y + range.first) / HEIGHT_OF_ITEM_IN_PIXEL;
+
+        ModelIndex clickedIndex = indexFromVisibleRow(row);
+        if (!clickedIndex.isValid())
+        {
+            return false;
+        }
+
+        setItemState(clickedIndex, ItemState::SELECTED);
+        lastClickedIndex = clickedIndex;
+
+        onItemRightClickSignal.emit(lastClickedIndex);
+        return true;
+    }
+
 
 
     const char* TreeView::getClassName() const
@@ -175,6 +193,77 @@ namespace Widgets
         }
 
         rebuildVisibleList();
+    }
+
+    void TreeView::refresh() noexcept
+    {
+        if (!model)
+        {
+            return;
+        }
+
+        uuidMap.clear();
+        visibleItems.clear();
+
+        buildUuidMap();
+
+        for (const auto& [uuid, value] : uuidMap)
+        {
+            nodeStates.try_emplace(uuid, false, false);
+        }
+
+        rebuildVisibleList();
+    }
+
+    void TreeView::renameItem(
+        const ModelIndex& index,
+        const std::string& name
+    ) noexcept
+    {
+        if (!index.isValid() || !model)
+        {
+            return;
+        }
+
+        model->setData(index.getUuid(), name);
+        onItemChangeSignal.emit(index);
+
+        rebuildVisibleList();
+    }
+
+    void TreeView::setSelectedItem(const ModelIndex& index) noexcept
+    {
+        if (!index.isValid() || !model)
+        {
+            return;
+        }
+
+        auto itTarget = uuidMap.find(index.getUuid());
+        if (itTarget == uuidMap.end())
+        {
+            return;
+        }
+
+        for (auto& [uuid, state] : nodeStates)
+        {
+            state.selected = false;
+        }
+
+        nodeStates[index.getUuid()].selected = true;
+
+        const ModelItem* current = itTarget->second;
+        if (current)
+        {
+            ModelItem* parent = current->parent;
+            while (parent)
+            {
+                nodeStates[parent->getUuid()].expanded = true;
+                parent                                 = parent->parent;
+            }
+        }
+
+        rebuildVisibleList();
+        onItemChangeSignal.emit(index);
     }
 
     void TreeView::buildUuidMap() noexcept
@@ -289,6 +378,76 @@ namespace Widgets
         return lastHitIndex;
     }
 
+    void TreeView::startEditing(const ModelIndex& index) noexcept
+    {
+        if (!index.isValid() || !model)
+        {
+            return;
+        }
+
+        const auto* item = model->findById(index.getUuid());
+        if (!item)
+        {
+            return;
+        }
+
+        editingIndex = index;
+        editingText = model->data(*item);
+        isEditing = true;
+    }
+
+    void TreeView::commitEditing() noexcept
+    {
+        if (!isEditing)
+        {
+            return;
+        }
+
+        renameItem(editingIndex, editingText);
+
+        isEditing = false;
+    }
+
+    void TreeView::cancelEditing() noexcept
+    {
+        isEditing = false;
+    }
+
+    void TreeView::inputChar(char c) noexcept
+    {
+        if (!isEditing)
+        {
+            return;
+        }
+
+        if (c < 32)
+        {
+            return;
+        }
+
+        editingText += c;
+    }
+
+    void TreeView::backspace() noexcept
+    {
+        if (!isEditing || editingText.empty())
+        {
+            return;
+        }
+
+        editingText.pop_back();
+    }
+
+    bool TreeView::isEditingItem(const ModelIndex& index) const noexcept
+    {
+        return isEditing && index == editingIndex;
+    }
+
+    const std::string& TreeView::getEditingText() const noexcept
+    {
+        return editingText;
+    }
+
     TreeView::ItemState TreeView::getItemState(const ModelItem& item) const noexcept
     {
         const auto it = nodeStates.find(item.getUuid());
@@ -342,9 +501,10 @@ namespace Widgets
             nodeState.expanded = true;
             break;
         case ItemState::SELECTED:
-            // Снимаем выделение со всех, если нужно single-select
             for (auto& [uuid, st] : nodeStates)
+            {
                 st.selected = false;
+            }
             nodeState.selected = true;
             break;
         default:

@@ -97,20 +97,23 @@ namespace Temp
 
         void updateLayout(const NbRect<int>& newRect) noexcept override
         {
-            rect = newRect;
-            for (auto& child : children)
+            rect = newRect;            // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ Split пїЅпїЅпїЅ TabGroup)
+            if (!children.empty())
             {
-                child->updateLayout(newRect);
+                children[0]->updateLayout(newRect);
             }
+
         }
 
         void addChild(const std::shared_ptr<DockNode>& child) noexcept
         {
             if (canAcceptChild(child))
             {
+                children.clear(); // Root пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
                 child->setParent(shared_from_this());
                 children.push_back(child);
             }
+
         }
 
     private:
@@ -145,10 +148,9 @@ namespace Temp
             child->setParent(shared_from_this());
             children.push_back(child);
             sizes.push_back(sizePercent);
-            recalcChildLayouts(); // сразу пересчитываем
+            recalcChildLayouts(); // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         }
 
-        // --- публичный метод для пересчета layout извне ---
         void recalculateLayout() noexcept
         {
             recalcChildLayouts();
@@ -165,17 +167,19 @@ namespace Temp
             return sizes[index];
         }
 
-        void replaceChild(size_t index,
+        void replaceChild(
+            size_t                           index,
             const std::shared_ptr<DockNode>& newChild,
-            Percent newSize) noexcept
+            Percent                          newSize
+        ) noexcept
         {
-            assert(index < children.size());
-            assert(index < sizes.size());
-
+            if (index >= children.size())
+            {
+                return;
+            }
             children[index] = newChild;
-            sizes[index] = newSize;
-
-            newChild->setParent(shared_from_this());
+            sizes[index]    = newSize;
+            newChild->setParent(shared_from_this()); 
         }
 
 
@@ -183,44 +187,47 @@ namespace Temp
         void recalcChildLayouts() noexcept
         {
             if (children.empty() || sizes.size() != children.size())
+            {
                 return;
+            }
 
-            int total = (orientation == Orientation::HORIZONTAL) ? rect.width : rect.height;
+            int total       = (orientation == Orientation::HORIZONTAL) ? rect.width : rect.height;
             int accumulated = 0;
 
             for (size_t i = 0; i < children.size(); ++i)
             {
                 NbRect<int> childRect = rect;
-                int sizePx = static_cast<int>(total * sizes[i].toFactor());
 
-                if (orientation == Orientation::HORIZONTAL)
+                if (i < children.size() - 1)
                 {
-                    childRect.x += accumulated;
-                    childRect.width = sizePx;
+                    int sizePx = static_cast<int>(total * sizes[i].toFactor());
+                    if (orientation == Orientation::HORIZONTAL)
+                    {
+                        childRect.x += accumulated;
+                        childRect.width = sizePx;
+                    }
+                    else
+                    {
+                        childRect.y += accumulated;
+                        childRect.height = sizePx;
+                    }
+                    accumulated += sizePx;
                 }
-                else
+                else 
                 {
-                    childRect.y += accumulated;
-                    childRect.height = sizePx;
+                    if (orientation == Orientation::HORIZONTAL)
+                    {
+                        childRect.x += accumulated;
+                        childRect.width = std::max(0, rect.width - accumulated);
+                    }
+                    else
+                    {
+                        childRect.y += accumulated;
+                        childRect.height = std::max(0, rect.height - accumulated);
+                    }
                 }
-
-                // рекурсивно обновляем layout дочернего узла
                 children[i]->updateLayout(childRect);
-                accumulated += sizePx;
             }
-
-            if (!children.empty())
-            {
-                NbRect<int> lastRect = children.back()->getRect();
-
-                if (orientation == Orientation::HORIZONTAL)
-                    lastRect.width = rect.width - (accumulated - lastRect.width);
-                else
-                    lastRect.height = rect.height - (accumulated - lastRect.height);
-
-                children.back()->updateLayout(lastRect);
-            }
-
         }
 
 
@@ -230,8 +237,7 @@ namespace Temp
         uint16_t minSizeInPixel;
     };
 
-    // ---------------- TabNode ----------------
-    class TabGroupNode; // Forward
+    class TabGroupNode; 
 
     class TabNode : public DockNode
     {
@@ -264,7 +270,7 @@ namespace Temp
 
     private:
         std::weak_ptr<TabGroupNode> tabGroup;
-        std::shared_ptr<WindowInterface::IWindow> window; // <-- тут хранится UI окно
+        std::shared_ptr<WindowInterface::IWindow> window; // <-- пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ UI пїЅпїЅпїЅпїЅ
         std::string title;
         uint8_t tabFlags = 0;
     };
@@ -283,14 +289,25 @@ namespace Temp
         void updateLayout(const NbRect<int>& newRect) noexcept override
         {
             rect = newRect;
-
             for (size_t i = 0; i < tabs.size(); ++i)
             {
                 auto& tab = tabs[i];
+                auto  win = tab->getWindow();
+                if (!win)
+                {
+                    continue;
+                }
+
                 if (i == activeTabIndex)
-                    tab->updateLayout(rect);  // активная вкладка занимает весь rect
+                {
+                    tab->updateLayout(rect);
+                    // win->show(true);
+                }
                 else
-                    tab->updateLayout({ 0,0,0,0 }); // неактивная — ноль
+                {
+                    tab->updateLayout({0, 0, 0, 0});
+                    // win->show(false); 
+                }
             }
         }
 
@@ -299,7 +316,7 @@ namespace Temp
             if (!canAcceptChild(tab)) return;
             tab->setTabGroup(shared_from_this());
             tabs.push_back(tab);
-            children.push_back(tab); // унифицированное хранение
+            children.push_back(tab);
             updateLayout(rect);
         }
 
@@ -382,7 +399,7 @@ namespace Temp
         std::unordered_map<nbstl::Uuid, std::weak_ptr<DockNode>>& getRegistry() { return registry; }
         
 
-        void optimizeTree(); // TODO: удаление пустых Split/TabGroup
+        void optimizeTree(); // TODO: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ Split/TabGroup
 
     private:
         std::shared_ptr<RootNode> root;
@@ -405,36 +422,33 @@ namespace Temp
         DockingSystem(std::shared_ptr<WindowInterface::IWindow> mainWindow)
             : mainWindow(mainWindow)
         {
-            // RootNode создаём
+            // RootNode пїЅпїЅпїЅпїЅпїЅпїЅ
             rootNode = std::make_shared<RootNode>();
 
-            // Менеджер
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             manager = std::make_shared<DockTreeManager>();
             manager->setRoot(rootNode);
             manager->registerNode(rootNode);
 
-            // Обновление layout
-            NbRect<int> rect{ 0, 0, mainWindow->getWidth(), mainWindow->getHeight() };
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ layout
+            NbRect<int> rect = { 0, 0, mainWindow->getWidth(), mainWindow->getHeight() };
             rootNode->updateLayout(rect);
         }
 
 
-        // --- Доковать как вкладку ---
+        // --- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ ---
         std::shared_ptr<TabNode> dockAsTab(std::shared_ptr<WindowInterface::IWindow> window,
             std::shared_ptr<WindowInterface::IWindow> targetWindow = nullptr,
             const std::string& title = "")
         {
             if (!window) return nullptr;
 
-            // Ищем targetNode
             auto targetNode = findNodeByWindow(targetWindow);
             if (!targetNode)
             {
-                // Если не найдено, добавляем в первый Split/TabGroup под root
                 targetNode = rootNode->getChildren().empty() ? nullptr : rootNode->getChildren()[0];
                 if (!targetNode)
                 {
-                    // Создаем TabGroup под root
                     auto tabGroup = std::make_shared<TabGroupNode>();
                     rootNode->addChild(tabGroup);
                     manager->registerNode(tabGroup);
@@ -450,7 +464,7 @@ namespace Temp
                 group = std::dynamic_pointer_cast<TabGroupNode>(targetNode->getParent());
             else
             {
-                // targetNode — Split
+                // targetNode пїЅ Split
                 auto split = std::dynamic_pointer_cast<SplitNode>(targetNode);
                 if (!split->getChildren().empty() && split->getChildren()[0]->getType() == DockNodeType::TAB_GROUP)
                     group = std::dynamic_pointer_cast<TabGroupNode>(split->getChildren()[0]);
@@ -472,7 +486,6 @@ namespace Temp
             return tab;
         }
 
-        // --- Доковать как плавающее окно ---
         std::shared_ptr<FloatingNode> dockAsFloating(std::shared_ptr<WindowInterface::IWindow> window,
             const NbRect<int>& rect)
         {
@@ -488,83 +501,78 @@ namespace Temp
             return floating;
         }
 
-        // --- Доковать относительно другого окна (split) ---
         std::shared_ptr<DockNode> dockRelative(
             std::shared_ptr<WindowInterface::IWindow> window,
-            DockPosition position,
+            DockPosition                              position,
             std::shared_ptr<WindowInterface::IWindow> targetWindow = nullptr,
-            Percent size = Percent(50))
+            Percent                                   size         = Percent(50)
+        )
         {
-            if (!window) return nullptr;
+            if (!window)
+            {
+                return nullptr;
+            }
 
-            auto targetNode = findNodeByWindow(targetWindow);
-            if (!targetNode)
-                targetNode = rootNode->getChildren().empty() ? nullptr : rootNode->getChildren()[0];
+            std::shared_ptr<DockNode> targetNode = findNodeByWindow(targetWindow);
+
+            if (!targetNode && !rootNode->getChildren().empty())
+            {
+                targetNode = rootNode->getChildren()[0];
+            }
 
             if (!targetNode)
+            {
                 return dockAsTab(window, nullptr);
-
+            }
             if (position == DockPosition::TAB)
+            {
                 return dockAsTab(window, targetWindow);
+            }
 
-            // Если target — TAB, берём его группу
             if (targetNode->getType() == DockNodeType::TAB)
+            {
                 targetNode = targetNode->getParent();
+            }
 
             auto oldParent = targetNode->getParent();
+            if (!oldParent)
+            {
+                return nullptr;
+            }
 
             SplitNode::Orientation orientation =
                 (position == DockPosition::LEFT || position == DockPosition::RIGHT)
-                ? SplitNode::Orientation::HORIZONTAL
-                : SplitNode::Orientation::VERTICAL;
+                    ? SplitNode::Orientation::HORIZONTAL
+                    : SplitNode::Orientation::VERTICAL;
 
             auto newSplit = std::make_shared<SplitNode>(orientation);
+            manager->registerNode(newSplit);
 
-            // --- создаём TabGroup ---
             auto newGroup = std::make_shared<TabGroupNode>();
-            auto newTab = std::make_shared<TabNode>();
+            auto newTab   = std::make_shared<TabNode>();
             newTab->setWindow(window);
             newGroup->addTab(newTab);
-
-            manager->registerNode(newSplit);
             manager->registerNode(newGroup);
             manager->registerNode(newTab);
 
-            // --- заменяем targetNode в родителе ---
-            if (oldParent && oldParent->getType() == DockNodeType::SPLIT)
+            if (oldParent->getType() == DockNodeType::SPLIT)
             {
-                auto parentSplit = std::dynamic_pointer_cast<SplitNode>(oldParent);
-                auto& siblings = parentSplit->getChildren();
-
-                auto it = std::find(siblings.begin(), siblings.end(), targetNode);
-                if (it != siblings.end())
+                auto  parentSplit = std::static_pointer_cast<SplitNode>(oldParent);
+                auto& children    = parentSplit->getChildren();
+                auto  it          = std::find(children.begin(), children.end(), targetNode);
+                if (it != children.end())
                 {
-                    size_t index = std::distance(siblings.begin(), it);
-                    Percent oldSize = parentSplit->getSize(index);
-
-                    parentSplit->replaceChild(index, newSplit, oldSize);
+                    size_t index = std::distance(children.begin(), it);
+                    parentSplit->replaceChild(index, newSplit, parentSplit->getSize(index));
                 }
             }
-            else if (oldParent)
+            else if (oldParent->getType() == DockNodeType::ROOT)
             {
-                auto& siblings = oldParent->getChildren();
-                auto it = std::find(siblings.begin(), siblings.end(), targetNode);
-
-                if (it != siblings.end())
-                {
-                    *it = newSplit;
-                    newSplit->setParent(oldParent);
-                }
-            }
-            else
-            {
-                rootNode->addChild(newSplit);
-                newSplit->setParent(rootNode);
+                auto root = std::static_pointer_cast<RootNode>(oldParent);
+                root->addChild(newSplit); 
             }
 
-            // --- делим target область ---
             Percent targetPercent = Percent(100 - size.get());
-
             if (position == DockPosition::LEFT || position == DockPosition::TOP)
             {
                 newSplit->addChild(newGroup, size);
@@ -577,13 +585,14 @@ namespace Temp
             }
 
             rootNode->updateLayout(rootNode->getRect());
+            recalcLayout();
             return newTab;
         }
 
 
         void onSize(int width, int height)
         {
-            NbRect<int> rect{ 0, 0, width, height };
+            NbRect<int> rect{ 0, 0, width, height};
             rootNode->updateLayout(rect);
             recalcLayout();
         }
@@ -638,28 +647,35 @@ namespace Temp
             Utils::Windows::WindowPosQueue queue;
             queue.begin(64);
 
-            auto visit = [&](auto&& self, std::shared_ptr<DockNode> node)
+            auto visit = [&](auto&& self, std::shared_ptr<DockNode> node) -> void
+            {
+                if (!node)
                 {
-                    if (!node) return;
-
-                    if (node->getType() == DockNodeType::TAB)
+                    return;
+                }
+                if (node->getType() == DockNodeType::TAB)
+                {
+                    auto tab = std::static_pointer_cast<TabNode>(node);
+                    if (auto win = tab->getWindow())
                     {
-                        auto tab = std::dynamic_pointer_cast<TabNode>(node);
-                        if (auto win = tab->getWindow())
-                            queue.push(win->getHandle(), node->getRect());
+                        queue.push(win->getHandle(), tab->getRect());
                     }
-                    else if (node->getType() == DockNodeType::FLOATING)
-                    {
-                        auto floating = std::dynamic_pointer_cast<FloatingNode>(node);
-                        if (auto win = floating->getWindow())
-                            queue.push(win->getHandle(), node->getRect());
-                    }
-
-                    for (auto& child : node->getChildren())
-                        self(self, child);
-                };
-
+                }
+                for (auto& child : node->getChildren())
+                {
+                    self(self, child);
+                }
+            };
             visit(visit, rootNode);
+
+            for (auto& floating : floatingWindows)
+            {
+                if (auto win = floating->getWindow())
+                {
+                    queue.push(win->getHandle(), floating->getRect());
+                }
+            }
+
             queue.apply();
         }
 

@@ -1397,49 +1397,55 @@ namespace Renderer
             return;
         }
 
-        // 1. Общий фон окна
-        NbColor bgColor, textColor;
-        getWidgetThemeColorByState(picker, bgColor, textColor);
         const NbRect<int>& rect = picker->getRect();
 
-        renderTarget->fillRectangle(rect, bgColor); // Основной фон
+        NbColor bgColor = NbColor(40, 40, 40); 
+        renderTarget->fillRectangle(rect, bgColor);
 
-        // 2. Рендерим текстовые поля (Путь и Имя файла)
-        // Если у вас есть renderTextBox, используем его.
-        // Если нет, текстовые поля часто рендерятся как SpinBox без кнопок.
-        renderTextEdit(picker->getPathTextBox().get(), layoutStyle);
-        renderTextEdit(picker->getFileNameTextBox().get(), layoutStyle);
+        if (auto pathBox = picker->getPathTextBox())
+        {
+            renderTextEdit(pathBox.get(), layoutStyle);
+        }
 
-        // 3. Рендерим кнопки (Up, Open, Cancel)
-        renderButton(picker->getUpButton().get(), layoutStyle);
-        renderButton(picker->getOpenButton().get(), layoutStyle);
-        renderButton(picker->getCancelButton().get(), layoutStyle);
+        if (auto upBtn = picker->getUpButton())
+        {
+            renderButton(upBtn.get(), layoutStyle);
+        }
 
-        // 4. Рендерим ListView (Самая важная часть)
-        ListView* listView = picker->getFileListView().get();
-        if (listView)
+        if (auto fileNameBox = picker->getFileNameTextBox())
+        {
+            renderTextEdit(fileNameBox.get(), layoutStyle);
+        }
+
+        if (auto openBtn = picker->getOpenButton())
+        {
+            renderButton(openBtn.get(), layoutStyle);
+        }
+
+        if (auto cancelBtn = picker->getCancelButton())
+        {
+            renderButton(cancelBtn.get(), layoutStyle);
+        }
+
+        if (auto listView = picker->getFileListView())
         {
             const NbRect<int>& lvRect = listView->getRect();
 
-            // Фон списка (обычно чуть темнее или светлее основного)
-            renderTarget->fillRectangle(lvRect, NbColor(30, 30, 30));
-            renderTarget->drawRectangle(lvRect, NbColor(60, 60, 60)); // Рамка списка
+            renderTarget->fillRectangle(lvRect, NbColor(25, 25, 25));
+            renderTarget->drawRectangle(lvRect, NbColor(60, 60, 60)); 
 
-            // Отрисовка элементов списка
             size_t count       = listView->getCount();
             int    itemHeight  = ListView::HEIGHT_OF_ITEM_IN_PIXEL;
             auto   selectedIdx = listView->getSelectedIndex();
+            int    lastHovered = listView->getLastHitIndex();
 
-            // Настраиваем отсечение (Clip), чтобы текст не вылезал за границы ListView
             renderTarget->pushClip(lvRect);
 
             for (size_t i = 0; i < count; ++i)
             {
-                // Вычисляем позицию Y с учетом прокрутки (range.first)
-                // Примечание: предполагается, что в ListView есть доступ к range
                 int itemY = lvRect.y + (int(i) * itemHeight) - listView->getScrollOffset();
 
-                // Пропускаем те, что вне видимости
+                // Оптимизация: не рисуем то, что за пределами видимости
                 if (itemY + itemHeight < lvRect.y || itemY > lvRect.y + lvRect.height)
                 {
                     continue;
@@ -1447,33 +1453,40 @@ namespace Renderer
 
                 NbRect<int> itemRect = {lvRect.x, itemY, lvRect.width, itemHeight};
 
-                // Подсветка выбранного элемента
                 if (selectedIdx.has_value() && selectedIdx.value() == i)
                 {
-                    renderTarget->fillRectangle(itemRect, NbColor(60, 120, 180, 150));
+                    renderTarget->fillRectangle(itemRect, NbColor(38, 79, 120));
                 }
-                // Подсветка при наведении (если в ListView хранится lastHitIndex)
-                else if (listView->getLastHitIndex() == (int)i)
+                else if (lastHovered == (int)i)
                 {
-                    renderTarget->fillRectangle(itemRect, NbColor(255, 255, 255, 30));
+                    renderTarget->fillRectangle(itemRect, NbColor(255, 255, 255, 15));
                 }
 
-                // Отрисовка текста элемента
-                std::string text = listView->getItemText(i);
-                // Используем стандартный метод отрисовки текста вашего движка
+                std::string text     = listView->getItemText(i);
                 NbRect<int> textRect = {
-                    itemRect.x + 5, itemRect.y, itemRect.width - 10, itemRect.height
+                    itemRect.x + 8, itemRect.y, itemRect.width - 16, itemRect.height
                 };
+
+                NbColor itemTextColor = NbColor(220, 220, 220);
+                if (text.find("📁") != std::string::npos)
+                {
+                    itemTextColor = NbColor(240, 200, 100); 
+
                 renderTarget->drawText(
-                    Utils::toWstring(text), textRect, NbColor(220, 220, 220)
+                    Utils::toWstring(text),
+                    textRect,
+                    itemTextColor,
+                    TextAlignment::LEFT
+                    
                 );
+
             }
 
             renderTarget->popClip();
         }
 
-        // 5. Внешняя рамка всего окна
-        renderTarget->drawRectangle(rect, NbColor(80, 80, 80));
+        // 4. Общая внешняя рамка FilePicker
+        renderTarget->drawRectangle(rect, NbColor(100, 100, 100));
     }
 
 

@@ -84,6 +84,13 @@ namespace Widgets
         virtual void onTimer() {};
 
         virtual void onMouseMove(const MouseState& pos) noexcept {};
+        virtual void onMouseWheel(
+            const NbPoint<int>& pos,
+            int                 delta
+        )
+        {
+
+        }
 
         virtual bool hitTest(const NbPoint<int>& pos) = 0;
         virtual bool hitTestClick(const NbPoint<int>& pos) noexcept 

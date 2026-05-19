@@ -1,13 +1,13 @@
 #pragma once
 
 #include "IWidget.hpp"
+#include <algorithm>
 #include <optional>
 #include <string>
 #include <vector>
 
 namespace Widgets
 {
-
     class ListView : public IWidget
     {
     public:
@@ -16,16 +16,11 @@ namespace Widgets
 
         ListView() noexcept : IWidget({})
         {
-            range.first = 0;
-   
+            range = {0, 0};
         }
-
         ListView(const NbRect<int>& rect) noexcept : IWidget(rect)
         {
-            // range.first - смещение прокрутки (scroll offset)
-            // range.second - высота видимой области
-            range.first  = 0;
-            range.second = rect.height;
+            range = {0, rect.height};
         }
 
         const char* getClassName() const override
@@ -33,7 +28,6 @@ namespace Widgets
             return CLASS_NAME;
         }
 
-        // Добавление элементов
         void addItem(const std::string& text)
         {
             items.push_back(text);
@@ -43,29 +37,59 @@ namespace Widgets
         {
             items.clear();
             selectedIndex = std::nullopt;
-            range.first   = 0;
+            range.first   = 0; 
         }
+
+        void onMouseWheel(
+            const NbPoint<int>& pos,
+            int                 delta
+        ) override
+        {
+            if (!rect.isInside(pos))
+            {
+                return;
+            }
+
+            int contentHeight = (int)items.size() * HEIGHT_OF_ITEM_IN_PIXEL;
+            int visibleHeight = rect.height;
+            int maxScroll     = std::max(0, contentHeight - visibleHeight);
+
+            int scrollAmount = (delta > 0 ? -HEIGHT_OF_ITEM_IN_PIXEL : HEIGHT_OF_ITEM_IN_PIXEL);
+
+            range.first = std::clamp(range.first + scrollAmount, 0, maxScroll);
+        }
+
+        void setScrollOffset(int offset)
+        {
+            int maxScroll =
+                std::max(0, (int)(items.size() * HEIGHT_OF_ITEM_IN_PIXEL) - rect.height);
+            range.first = std::clamp(offset, 0, maxScroll);
+        }
+
+        int getScrollOffset() const
+        {
+            return range.first;
+        }
+
 
         std::string getItemText(size_t index) const
         {
-            if (index < items.size())
-            {
-                return items[index];
-            }
-            return "";
+            return (index < items.size()) ? items[index] : "";
         }
 
         size_t getCount() const
         {
             return items.size();
         }
-
         std::optional<size_t> getSelectedIndex() const
         {
             return selectedIndex;
         }
+        int getLastHitIndex() const
+        {
+            return lastHitIndex;
+        }
 
-        // Хит-тест для определения индекса под мышью
         bool hitTest(const NbPoint<int>& pos) override
         {
             if (!rect.isInside(pos))
@@ -73,48 +97,28 @@ namespace Widgets
                 lastHitIndex = -1;
                 return false;
             }
-
-            int localY    = pos.y - rect.y;
-            int absoluteY = localY + range.first;
+            int absoluteY = (pos.y - rect.y) + range.first;
             lastHitIndex  = absoluteY / HEIGHT_OF_ITEM_IN_PIXEL;
 
-            if (lastHitIndex >= (int)items.size())
+            if (lastHitIndex < 0 || lastHitIndex >= (int)items.size())
             {
                 lastHitIndex = -1;
                 return false;
             }
-
             return true;
         }
 
         bool hitTestClick(const NbPoint<int>& pos) noexcept override
         {
-            if (!rect.isInside(pos))
+            if (!hitTest(pos))
             {
                 return false;
             }
 
-            int localY    = pos.y - rect.y;
-            int absoluteY = localY + range.first;
-            int row       = absoluteY / HEIGHT_OF_ITEM_IN_PIXEL;
-
-            if (row >= 0 && row < (int)items.size())
-            {
-                selectedIndex = row;
-                onItemSelectedSignal.emit(row);
-                onItemClickSignal.emit(row);
-                return true;
-            }
-
-            return false;
-        }
-
-        // Обработка колеса мыши для прокрутки (как пример расширения функционала)
-        void onMouseWheel(int delta) noexcept
-        {
-            int maxScroll =
-                std::max(0, (int)(items.size() * HEIGHT_OF_ITEM_IN_PIXEL) - rect.height);
-            range.first = std::clamp(range.first - (delta * 20), 0, maxScroll);
+            selectedIndex = lastHitIndex;
+            onItemSelectedSignal.emit(lastHitIndex);
+            onItemClickSignal.emit(lastHitIndex);
+            return true;
         }
 
         void layout(const NbRect<int>& newRect) noexcept override
@@ -129,27 +133,15 @@ namespace Widgets
             return measuredSize;
         }
 
-        int getScrollOffset() const
-        {
-            return range.first;
-        }
-        int getLastHitIndex() const
-        {
-            return lastHitIndex;
-        }
-
     public:
-        // Сигналы в вашем стиле
         Signal<void(int)> onItemSelectedSignal;
         Signal<void(int)> onItemClickSignal;
 
     private:
         std::vector<std::string> items;
         std::optional<size_t>    selectedIndex;
-
-        int                 lastHitIndex = -1;
-        std::pair<int, int> range; // {scrollOffset, visibleHeight}
-        NbSize<int>         measuredSize;
+        int                      lastHitIndex = -1;
+        std::pair<int, int>      range; 
+        NbSize<int>              measuredSize;
     };
-
 } // namespace Widgets

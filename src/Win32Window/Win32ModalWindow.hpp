@@ -427,6 +427,86 @@ namespace Win32Window
                 InvalidateRect(hWnd, NULL, FALSE);
                 return 0;
             }
+            case WM_MOUSEWHEEL:
+            {
+                int   delta    = GET_WHEEL_DELTA_WPARAM(wParam);
+                POINT screenPt = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+
+                ScreenToClient(hWnd, &screenPt);
+                NbPoint<int> point = {(int)screenPt.x, (int)screenPt.y};
+
+                auto getZIndex = [](const NNsLayout::LayoutNode* node) -> Core::ZIndex
+                {
+                    if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                    {
+                        if (auto widget = widgetLayout->getWidget().get())
+                        {
+                            return widget->getZIndex();
+                        }
+                    }
+                    return Core::ZIndex(Core::ZIndex::ZType::MAIN, 0);
+                };
+
+                auto getSortedChildren = [&](const NNsLayout::LayoutNode* node)
+                {
+                    nbstl::Vector<const NNsLayout::LayoutNode*> children;
+                    int                                         count = node->getChildrenSize();
+                    children.reserve(count);
+                    for (int i = 0; i < count; i++)
+                    {
+                        children.pushBack(node->getChildrenAt(i));
+                    }
+                    std::stable_sort(
+                        children.begin(), children.end(),
+                        [&](const NNsLayout::LayoutNode* a, const NNsLayout::LayoutNode* b)
+                        {
+                            return getZIndex(a) > getZIndex(b);
+                        }
+                    );
+                    return children;
+                };
+
+                std::function<::Widgets::IWidget*(::Widgets::IWidget*, NbPoint<int>)>
+                    findDeepestWidget;
+                findDeepestWidget = [&](::Widgets::IWidget* current,
+                                        NbPoint<int>        p) -> ::Widgets::IWidget*
+                {
+                    const auto& subChildren = current->getChildrens();
+                    for (auto it = subChildren.rbegin(); it != subChildren.rend(); ++it)
+                    {
+                        auto* sub = it->get();
+                        if (sub && !sub->isHide() && !sub->isDisable() && sub->hitTest(p))
+                        {
+                            return findDeepestWidget(sub, p);
+                        }
+                    }
+                    return current;
+                };
+
+                nbstl::dfs(
+                    this->getLayoutRoot(), getSortedChildren,
+                    [&](const NNsLayout::LayoutNode* node)
+                    {
+                        if (auto widgetLayout = dynamic_cast<const NNsLayout::LayoutWidget*>(node))
+                        {
+                            auto rootWidget = widgetLayout->getWidget().get();
+                            if (rootWidget && !rootWidget->isHide() && rootWidget->hitTest(point))
+                            {
+                                auto* target = findDeepestWidget(rootWidget, point);
+                                if (target)
+                                {
+                                    target->onMouseWheel(point, delta);
+                                    return true; 
+                                }
+                            }
+                        }
+                        return false;
+                    }
+                );
+
+                InvalidateRect(hWnd, nullptr, FALSE);
+                return 0;
+            }
             case WM_KEYDOWN:
             {
                 if (!focusedWidget)
@@ -505,7 +585,6 @@ namespace Win32Window
                     return children;
                 };
 
-                // Ищем самый верхний виджет под курсором
                 nbstl::dfs(
                     this->getLayoutRoot(), getSortedChildren,
                     [&](const NNsLayout::LayoutNode* node)

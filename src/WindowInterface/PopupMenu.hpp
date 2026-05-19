@@ -16,6 +16,13 @@
 
 namespace nbui
 {
+
+    enum class PopupStyle
+    {
+        ContextMenu, 
+        MenuBarItem  
+    };
+
     enum class IconType
     {
         None,
@@ -91,10 +98,12 @@ namespace nbui
         void show(
             PopupMenu* menu,
             int        x,
-            int        y
+            int        y,
+            PopupStyle style = PopupStyle::ContextMenu
         ) const
         {
             activePopup  = menu;
+            currentStyle = style; 
             hoveredIndex = -1;
 
             int totalHeight = 0;
@@ -103,12 +112,13 @@ namespace nbui
                 totalHeight += (item.type == ItemType::Separator) ? sepHeight : itemHeight;
             }
 
-            width  = 300; 
+            width  = (currentStyle == PopupStyle::MenuBarItem) ? 200 : 300;
             height = totalHeight;
 
             SetWindowPos(popupHwnd, HWND_TOPMOST, x, y, width, height, SWP_SHOWWINDOW);
             createRenderTarget();
             render();
+
         }
 
         void hide() const
@@ -125,6 +135,7 @@ namespace nbui
         mutable ID2D1HwndRenderTarget*                    popupRT = nullptr;
         mutable Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat;
         mutable PopupMenu*                                activePopup = nullptr;
+        mutable PopupStyle                                currentStyle = PopupStyle::ContextMenu;
 
         mutable Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> textBrush;
         mutable Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> hoverBrush;
@@ -294,7 +305,7 @@ namespace nbui
             }
 
             float iconSize   = 16.0f;
-            float leftMargin = 6.0f;
+            float leftMargin = 8.0f;
             float topMargin  = (itemHeight - iconSize) / 2.0f;
 
             D2D1_RECT_F box = D2D1::RectF(
@@ -302,12 +313,17 @@ namespace nbui
                 rect.top + topMargin + iconSize
             );
 
-            popupRT->DrawRectangle(box, textBrush.Get(), 0.5f, dashedStyle.Get());
+            // ОТЛИЧИЕ 1: Рисуем пунктирную рамку только для контекстного меню
+            if (currentStyle == PopupStyle::ContextMenu)
+            {
+                popupRT->DrawRectangle(box, textBrush.Get(), 0.5f, dashedStyle.Get());
+            }
 
             float midX = box.left + iconSize / 2.0f;
             float midY = box.top + iconSize / 2.0f;
-            float s    = 3.0f; 
+            float s    = 3.0f;
 
+            // Рисование иконок (без изменений)
             if (type == IconType::Plus)
             {
                 popupRT->DrawLine({midX - s, midY}, {midX + s, midY}, iconPlusBrush.Get(), 1.5f);
@@ -338,7 +354,16 @@ namespace nbui
             }
 
             popupRT->BeginDraw();
-            popupRT->Clear(D2D1::ColorF(0.12f, 0.12f, 0.12f)); 
+
+            // ОТЛИЧИЕ 2: Разный фон
+            if (currentStyle == PopupStyle::MenuBarItem)
+            {
+                popupRT->Clear(D2D1::ColorF(0.18f, 0.18f, 0.18f)); // Чуть светлее
+            }
+            else
+            {
+                popupRT->Clear(D2D1::ColorF(0.12f, 0.12f, 0.12f)); // Глубокий темный
+            }
 
             float currentY = 0;
             int   index    = 0;
@@ -365,14 +390,15 @@ namespace nbui
                     drawIcon(item.icon, rect);
 
                     D2D1_RECT_F textRect = rect;
-                    textRect.left += (item.icon != IconType::None) ? 28.0f : 10.0f;
+                    // ОТЛИЧИЕ 3: Отступы текста
+                    float textOffset = (item.icon != IconType::None) ? 30.0f : 12.0f;
+                    textRect.left += textOffset;
 
                     popupRT->DrawTextW(
                         item.text.c_str(), (UINT32)item.text.size(), textFormat.Get(), textRect,
                         textBrush.Get()
                     );
                 }
-
                 currentY += h;
                 index++;
             }

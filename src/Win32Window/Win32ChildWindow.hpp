@@ -6,9 +6,12 @@
 #include "Debug.hpp"
 #include <windowsx.h>
 #include <algorithm>
+#include <filesystem>
 
 #include <Utility.hpp>
 #include <winuser.h>
+#include <shellapi.h> 
+
 #include "Widgets/CheckBox.hpp"
 #include "Layout/LayoutWidget.hpp"
 
@@ -30,45 +33,60 @@ namespace Win32Window
 
         void onMouseWheel(int delta) override
         {
-            // 1. Получаем корень разметки
-            auto* root = this->getLayoutRoot();
-            if (!root)
+            POINT pt;
+            GetCursorPos(&pt);
+            ScreenToClient(handle.as<HWND>(), &pt);
+            NbPoint<int> mousePoint = {(int)pt.x, (int)pt.y};
+
+            NNsLayout::VLayout* targetLayout = nullptr;
+
+            nbstl::dfs(
+                this->getLayoutRoot(),
+                [](const NNsLayout::LayoutNode* node)
+                {
+                    nbstl::Vector<const NNsLayout::LayoutNode*> children;
+                    for (int i = 0; i < node->getChildrenSize(); i++)
+                    {
+                        children.pushBack(node->getChildrenAt(i));
+                    }
+                    return children;
+                },
+                [&](const NNsLayout::LayoutNode* node)
+                {
+                    auto vLayout = dynamic_cast<const NNsLayout::VLayout*>(node);
+                    if (vLayout)
+                    {
+                        const auto& rect = vLayout->getRect();
+                        if (rect.isInside(mousePoint))
+                        {
+                            targetLayout = const_cast<NNsLayout::VLayout*>(vLayout);
+                        }
+                    }
+                    return false;
+                }
+            );
+
+            if (targetLayout)
             {
-                return;
+                int contentHeight = targetLayout->getMeasuredSize().height;
+                int viewHeight    = targetLayout->getRect().height;
+                int maxScroll     = (std::max)(0, contentHeight - viewHeight);
+
+                int currentOffset = targetLayout->getScrollOffset();
+
+                int scrollStep   = 60;
+                int scrollAmount = (delta / 120) * scrollStep;
+
+                int newOffset = (std::clamp)(currentOffset - scrollAmount, 0, maxScroll);
+
+                if (newOffset != currentOffset)
+                {
+                    targetLayout->setScrollOffset(newOffset);
+                    targetLayout->markDirty();
+
+                    InvalidateRect(handle.as<HWND>(), NULL, FALSE);
+                }
             }
-
-            // 2. Находим наш VLayout (он обычно первый или единственный ребенок корня)
-            // В вашем коде: Window -> LayoutRoot -> VLayout (финальный UI)
-            auto& children = root->getChildren();
-            if (children.empty())
-            {
-                return;
-            }
-
-            // Нам нужен именно VLayout, в котором лежат компоненты
-            auto* vLayout = dynamic_cast<NNsLayout::VLayout*>(children[0].get());
-            if (!vLayout)
-            {
-                return;
-            }
-
-            // 3. Вычисляем границы скролла
-            int contentHeight = vLayout->getMeasuredSize().height; // Полная высота всех полей
-            int viewHeight = vLayout->getRect().height;            // Высота видимого окна
-            int maxScroll = std::max(0, contentHeight - viewHeight);
-
-            // 4. Обновляем смещение (delta обычно +1 или -1, умножаем на скорость скролла)
-            int currentOffset = vLayout->getScrollOffset();
-            int scrollSpeed = 30; // Пикселей за один щелчок колеса
-            int newOffset = std::clamp(currentOffset - (delta * scrollSpeed), 0, maxScroll);
-
-            // 5. Применяем и помечаем разметку как "грязную", чтобы она пересчиталась
-            if (newOffset != currentOffset)
-            {
-                vLayout->setScrollOffset(newOffset);
-                vLayout->markDirty();
-            }
-        
         }
 
 
@@ -130,6 +148,12 @@ namespace Win32Window
             return nullptr;
         }
 
+        void setOnFileDropCallback(
+            const std::function<void(const std::filesystem::path&)>& callback
+        ) noexcept
+        {
+            onFileDrop = callback;
+        }
 
         void close() override
         {
@@ -152,6 +176,8 @@ namespace Win32Window
     public:
         Signal<void(const NbSize<int>&)> onSizeChanged;
         Signal<void()> onDraw;
+        
+        std::function<void(const std::filesystem::path&)> onFileDrop;
         NbPoint<int> prevMousePoint = {-1, -1};
         NbPoint<int> mousePosition = {0, 0};
         bool leftMouseClicked = false;
@@ -188,6 +214,7 @@ namespace Win32Window
                     SetThreadpoolTimer(timer, &dueTime, CARET_FLICKERING_TIME_MS, 0);
 
                     //SetTimer(hWnd, 100, 500, nullptr);
+                    DragAcceptFiles(hWnd, TRUE);
 
                     return FALSE;
                 }
@@ -751,6 +778,29 @@ namespace Win32Window
                     }
 
                     InvalidateRect(hWnd, NULL, FALSE);
+                    return 0;
+                }
+                case WM_DROPFILES:
+                {
+                    HDROP hDrop = (HDROP)wParam;
+
+                    // Узнаем количество файлов
+                    UINT fileCount = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0);
+
+                    for (UINT i = 0; i < fileCount; i++)
+                    {
+                        TCHAR filePath[MAX_PATH];
+                        // Получаем путь к каждому файлу
+                        DragQueryFile(hDrop, i, filePath, MAX_PATH);
+
+                        if (onFileDrop)
+                        {
+                            onFileDrop(filePath);
+                        }
+                    }
+
+                    // Освобождаем память
+                    DragFinish(hDrop);
                     return 0;
                 }
                 case WM_KEYDOWN:

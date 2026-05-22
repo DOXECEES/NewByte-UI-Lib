@@ -59,6 +59,7 @@ namespace Win32Window
             ShowWindow(handle.as<HWND>(), SW_HIDE);
         });
 
+        state.minSize = size;
         //widgets.push_back(new Widgets::Button(NbRect<int>(100, 100, 100, 100)));
         
         captionButtonsContainer.addButton(captionButtons[0]);

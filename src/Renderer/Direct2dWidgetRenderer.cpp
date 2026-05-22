@@ -1399,9 +1399,12 @@ namespace Renderer
 
         const NbRect<int>& rect = picker->getRect();
 
-        NbColor bgColor = NbColor(40, 40, 40); 
+        // 1. Фон всего окна (используем цвет темы или фиксированный темный)
+        NbColor bgColor = NbColor(40, 40, 40); // Чуть светлее для контраста с ListView
         renderTarget->fillRectangle(rect, bgColor);
 
+        // 2. Делегируем рендер стандартных дочерних элементов
+        // Мы просто вызываем существующие функции рендера для каждого компонента
         if (auto pathBox = picker->getPathTextBox())
         {
             renderTextEdit(pathBox.get(), layoutStyle);
@@ -1427,12 +1430,14 @@ namespace Renderer
             renderButton(cancelBtn.get(), layoutStyle);
         }
 
+        // 3. Рендерим ListView (С кастомным стилем для проводника)
         if (auto listView = picker->getFileListView())
         {
             const NbRect<int>& lvRect = listView->getRect();
 
+            // Фон зоны списка (более темный, как в VS Code или проводнике)
             renderTarget->fillRectangle(lvRect, NbColor(25, 25, 25));
-            renderTarget->drawRectangle(lvRect, NbColor(60, 60, 60)); 
+            renderTarget->drawRectangle(lvRect, NbColor(60, 60, 60)); // Тонкая рамка
 
             size_t count       = listView->getCount();
             int    itemHeight  = ListView::HEIGHT_OF_ITEM_IN_PIXEL;
@@ -1453,24 +1458,30 @@ namespace Renderer
 
                 NbRect<int> itemRect = {lvRect.x, itemY, lvRect.width, itemHeight};
 
+                // Состояния подсветки
                 if (selectedIdx.has_value() && selectedIdx.value() == i)
                 {
+                    // Синий акцент для выбранного
                     renderTarget->fillRectangle(itemRect, NbColor(38, 79, 120));
                 }
                 else if (lastHovered == (int)i)
                 {
+                    // Легкая подсветка при наведении
                     renderTarget->fillRectangle(itemRect, NbColor(255, 255, 255, 15));
                 }
 
+                // Отрисовка текста (Иконка + Имя)
                 std::string text     = listView->getItemText(i);
                 NbRect<int> textRect = {
                     itemRect.x + 8, itemRect.y, itemRect.width - 16, itemRect.height
                 };
 
+                // Если текст начинается с папки, можно покрасить его в другой цвет
                 NbColor itemTextColor = NbColor(220, 220, 220);
                 if (text.find("📁") != std::string::npos)
                 {
-                    itemTextColor = NbColor(240, 200, 100); 
+                    itemTextColor = NbColor(240, 200, 100); // Желтоватый для папок
+                }
 
                 renderTarget->drawText(
                     Utils::toWstring(text),
@@ -1480,6 +1491,9 @@ namespace Renderer
                     
                 );
 
+                // Разделительная линия (опционально, делает список чище)
+                // renderTarget->drawLine({lvRect.x, itemY + itemHeight}, {lvRect.x + lvRect.width,
+                // itemY + itemHeight}, NbColor(40,40,40));
             }
 
             renderTarget->popClip();

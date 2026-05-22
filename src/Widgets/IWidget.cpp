@@ -5,8 +5,29 @@
 #include "Menu.hpp"
 #include "PopUp.hpp"
 
+#include "GlobalWidgetContext.hpp"
+
 namespace Widgets
 {
+
+	IWidget::~IWidget()
+    {
+		if (nbui::GlobalWidgetContext::getPressedWidget() == this)
+		{
+		    nbui::GlobalWidgetContext::releasePressedWidget();
+		}
+
+		if (nbui::GlobalWidgetContext::getFocusedWidget() == this)
+        {
+            nbui::GlobalWidgetContext::releaseFocusedWidget();
+        }
+
+		if (nbui::GlobalWidgetContext::getCapturedWidget() == this)
+        {
+            nbui::GlobalWidgetContext::releaseWidget(nullptr);
+        }
+    }
+
 	void IWidget::hide() noexcept
 	{
 		isHide_ = true;

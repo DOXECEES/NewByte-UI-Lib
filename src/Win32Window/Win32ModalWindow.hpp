@@ -655,13 +655,21 @@ namespace Win32Window
 
             case WM_DESTROY:
             {
-                focusedWidget = nullptr;
+                if (nbui::GlobalWidgetContext::getPressedWidget())
+                {
+                    nbui::GlobalWidgetContext::releasePressedWidget();
+                }
 
+                if (nbui::GlobalWidgetContext::getFocusedWidget())
+                {
+                    nbui::GlobalWidgetContext::releaseFocusedWidget();
+                }
+
+                focusedWidget = nullptr; 
                 onClose.emit();
-                //onClose.disconnectAll();
-
                 return 0;
             }
+
             case WM_NCDESTROY:
             {
                 SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);

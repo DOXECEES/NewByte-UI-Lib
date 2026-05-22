@@ -414,27 +414,33 @@ namespace NNsLayout
 
     void FlowLayout::layout(const NbRect<int>& bounds) noexcept
     {
-        layoutRect = bounds;
+        this->layoutRect = bounds;
         if (children.empty())
         {
             return;
         }
 
+        // 1. Учитываем padding самого FlowLayout
+        int paddingX       = style.padding.left + style.padding.right;
+        int availableWidth = (std::max)(0, bounds.width - paddingX);
+
         auto& firstStyle = children[0]->style;
-        int childW = static_cast<int>(firstStyle.width);
-        int childH = static_cast<int>(firstStyle.height);
+        int   childW     = static_cast<int>(firstStyle.width);
+        int   childH     = static_cast<int>(firstStyle.height);
 
         int stepX = childW + firstStyle.margin.left + firstStyle.margin.right;
         int stepY = childH + firstStyle.margin.top + firstStyle.margin.bottom;
 
-        int columns = bounds.width / stepX;
+        // 2. Рассчитываем колонки на основе РЕАЛЬНО доступной ширины
+        int columns = availableWidth / stepX;
         if (columns < 1)
         {
             columns = 1;
         }
 
+        // Центрирование сетки
         int totalGridWidth = columns * stepX;
-        int offsetX = (bounds.width - totalGridWidth) / 2;
+        int offsetX        = (availableWidth - totalGridWidth) / 2;
 
         int index = 0;
         for (auto& child : children)
@@ -444,14 +450,12 @@ namespace NNsLayout
 
             auto& st = child->style;
 
-            int x = bounds.x + offsetX + (col * stepX) + st.margin.left;
+            // Координаты с учетом отступов (padding) и смещения (offsetX)
+            int x = bounds.x + style.padding.left + offsetX + (col * stepX) + st.margin.left;
+            int y = bounds.y + style.padding.top + (row * stepY) + st.margin.top;
 
-            int y = bounds.y + (row * stepY) + st.margin.top;
-
-            NbRect<int> childRect{x, y, childW, childH};
-
-            child->setRect(childRect);
-            child->layout(childRect);
+            child->setRect({x, y, childW, childH});
+            child->layout({x, y, childW, childH});
 
             index++;
         }

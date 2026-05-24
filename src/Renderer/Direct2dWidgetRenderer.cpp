@@ -1288,12 +1288,44 @@ namespace Renderer
         imgRect.width -= 4;
         imgRect.height -= 4;
 
-        auto bitmap = bitmapCache.get(
-            std::wstring(
-                L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\res\\"
-            ) +
-            thumbnail->getName()
+        std::wstring path;
+
+        if (thumbnail->getAssetType() == AssetType::TEXTURE)
+        {
+            path =
+                std::wstring(
+                    L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\res\\"
+                ) +
+                thumbnail->getName();
+        }
+        else if (thumbnail->getAssetType() == AssetType::SCRIPT)
+        {
+            path = std::wstring(
+                L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\internal\\script_icon.png"
+            );
+        }
+        else if (thumbnail->getAssetType() == AssetType::SHADER)
+        {
+            path = std::wstring(
+                L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-"
+                L"Debug\\SDK\\Assets\\internal\\shader_icon.png"
+            );
+        }
+        else if (thumbnail->getAssetType() == AssetType::MATERIAL)
+        {
+            std::wstring pathToResource = thumbnail->getFullPath();
+            std::replace(pathToResource.begin(), pathToResource.end(), '\\', '_');
+
+
+            path = L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-"
+                   L"Debug\\SDK\\Assets\\cache\\" +
+                   pathToResource + L".png";
+           
+        }
+        
+        auto bitmap = bitmapCache.get(path
         );
+
         if (bitmap)
         {
             renderTarget->drawBitmap(imgRect, bitmap.Get());
@@ -1352,13 +1384,15 @@ namespace Renderer
 
         renderTarget->fillRectangle(pRect, matColor);
 
-        std::filesystem::path path = matWidget->getNameLabel()->getText();
-        path.replace_extension(".png");
+        std::filesystem::path path = matWidget->getFullPath();
+        //path.replace_extension(".png");
+        std::wstring stringPath = path.wstring();
+        std::replace(stringPath.begin(), stringPath.end(), '/', '_');
         auto bitmap = bitmapCache.get(
             std::wstring(
                 L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\cache\\"
             ) +
-            path.wstring()
+            stringPath + L".png"
         );
 
         if (bitmap)

@@ -6,6 +6,7 @@
 #include <string>
 #include <memory>
 #include <functional>
+#include <filesystem>
 
 #include <Alghorithm.hpp>
 
@@ -22,6 +23,7 @@ namespace Widgets
 {
     class IWidget;
     enum class TextAlign;
+    enum class AssetType;
 }
 
 namespace nb
@@ -288,7 +290,12 @@ namespace nbui
 
         LayoutBuilder&& endGroup() &&;
         
-        static LayoutBuilder thumbnail(const std::wstring& name, const std::wstring& type);
+        static LayoutBuilder thumbnail(
+            const std::wstring&          name,
+            const std::wstring&          type,
+            Widgets::AssetType           assetType,
+            const std::filesystem::path& path
+        );
         static LayoutBuilder treeView();
 
         LayoutBuilder&& child(LayoutBuilder&& childBuilder)&&;

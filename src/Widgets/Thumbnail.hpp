@@ -8,15 +8,28 @@
 #include "Widgets/Label.hpp"
 #include <oaidl.h>
 #include <string>
+#include <filesystem>
 
 namespace Widgets
 {
+
+    enum class AssetType
+    {
+        TEXTURE,
+        MODEL,
+        SHADER,
+        MATERIAL,
+        SCRIPT,
+    };
+
 	class Thumbnail : public IWidget
 	{
 
     public:
-		Thumbnail(const std::wstring& name, const std::wstring& type)
+		Thumbnail(const std::wstring& name, const std::wstring& type, AssetType assetType, const std::filesystem::path& path)
 			:IWidget({})
+            , type(assetType)
+            , fullPath(path)
         {
             typeLabel->setText(type);
             nameLabel->setText(name);
@@ -77,6 +90,11 @@ namespace Widgets
             return typeLabel;
         }
 
+        AssetType getAssetType() const noexcept
+        {
+            return type;
+        }
+
 		NbRect<int> getDrawRect() const noexcept
 		{
 			NbRect<int> rc = {
@@ -99,10 +117,16 @@ namespace Widgets
             return typeLabel->getText();
         }
 
+        const std::filesystem::path& getFullPath() const noexcept
+        {
+            return fullPath;
+        }
+
     private:
         std::shared_ptr<Label> nameLabel = std::make_shared<Label>(L"Some name");
         std::shared_ptr<Label> typeLabel = std::make_shared<Label>(L"Some type");
-
+        std::filesystem::path  fullPath;
+        AssetType              type;
 	};
 };
 

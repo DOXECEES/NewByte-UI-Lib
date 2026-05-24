@@ -29,10 +29,12 @@ namespace Widgets
 
         void setMaterial(
             const std::wstring& name,
+            const std::filesystem::path& fullPath,
             bool                isAssigned = true
         )
         {
             nameLabel->setText(isAssigned ? name : L"None (Material)");
+            this->fullPath   = fullPath;
             this->isAssigned = isAssigned;
         }
 
@@ -82,6 +84,11 @@ namespace Widgets
             return isAssigned;
         }
 
+        const std::filesystem::path& getFullPath() const noexcept
+        {
+            return fullPath;
+        }
+
         const std::shared_ptr<Label>& getNameLabel() const noexcept
         {
             return nameLabel;
@@ -97,6 +104,8 @@ namespace Widgets
     private:
         std::shared_ptr<Label> nameLabel   = std::make_shared<Label>(L"");
         std::shared_ptr<Label> typeLabel   = std::make_shared<Label>(L"");
+
+        std::filesystem::path  fullPath    = {};
         NbRect<int>            previewRect = {0, 0, 0, 0};
         bool                   isAssigned  = false;
     };

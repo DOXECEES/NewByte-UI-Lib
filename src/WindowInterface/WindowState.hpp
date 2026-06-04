@@ -61,7 +61,7 @@ namespace WindowInterface
         NbSize<int>     minSize     = { 400, 300 };
         NbRect<int>     clientRect  = { 0, 0, size.width - frameSize.left - frameSize.right, size.height - frameSize.top - frameSize.bot };
         nbstl::Array<int, COUNT_OF_SIDES> excludeSizes = {0, 0, 0, 0};
-
+        NbPoint<int> position = { 0, 0 };
         
 
         FrameSize       frameSize;

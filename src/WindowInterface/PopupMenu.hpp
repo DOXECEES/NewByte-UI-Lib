@@ -116,7 +116,7 @@ namespace nbui
             height = totalHeight;
 
             SetWindowPos(popupHwnd, HWND_TOPMOST, x, y, width, height, SWP_SHOWWINDOW);
-            createRenderTarget();
+            createRenderTarget(width, height);
             render();
 
         }
@@ -249,10 +249,11 @@ namespace nbui
             );
         }
 
-        void createRenderTarget() const
+        void createRenderTarget(int width, int height) const
         {
             if (popupRT)
             {
+                popupRT->Resize(D2D1::SizeU(width, height));
                 return;
             }
 

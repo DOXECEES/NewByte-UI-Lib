@@ -171,6 +171,7 @@ set (SRC
 
         src/Widgets/TextureWidget.hpp
 
+        src/Widgets/ShaderCanvas.hpp
 
         src/Widgets/Scrollbar.cpp
         src/Widgets/Scrollbar.hpp

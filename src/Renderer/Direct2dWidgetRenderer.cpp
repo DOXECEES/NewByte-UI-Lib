@@ -24,6 +24,7 @@
 #include "Widgets/FilePicker.hpp"
 #include "Widgets/TextureWidget.hpp"
 #include "Widgets/Spacer.hpp"
+#include "Widgets/ShaderCanvas.hpp"
 
 #include "Direct2dGlobalWidgetMapper.hpp"
 
@@ -122,6 +123,10 @@ namespace Renderer
         else if (strncmp(widgetName, Spacer::CLASS_NAME, size) == 0)
         {
             renderSpacer(widget, layoutStyle);
+        }
+        else if (strncmp(widgetName, ShaderCanvas::CLASS_NAME, size) == 0)
+        {
+            renderShaderCanvas(widget, layoutStyle);
         }
     }
 
@@ -933,9 +938,75 @@ namespace Renderer
         renderTarget->fillRectangle(widgetRect, bgColor);
     }
 
-    void Direct2dWidgetRenderer::renderLabel(
+    void Direct2dWidgetRenderer::renderShaderCanvas(
         IWidget*                      widget,
         const NNsLayout::LayoutStyle& layoutStyle
+    ) noexcept
+    {
+        ShaderCanvas*      canvas     = castWidget<ShaderCanvas>(widget);
+        const NbRect<int>& widgetRect = canvas->getRect();
+
+        NbColor color = {255, 255, 255};
+
+        // Convert widget boundaries to floats for precision
+        const int startX = static_cast<int>(widgetRect.x);
+        const int startY = static_cast<int>(widgetRect.y);
+        const int width  = static_cast<int>(widgetRect.width);
+        const int height = static_cast<int>(widgetRect.height);
+
+        const float spacing = 25.0f;
+
+        const float offset = 0.5f;
+
+        for (float x = offset; x < width; x += spacing)
+        {
+            renderTarget->drawLine(
+                {startX + (int)x, startY},         
+                {startX + (int)x, startY + height}, 
+                color
+            );
+        }
+
+        for (float y = offset; y < height; y += spacing)
+        {
+            renderTarget->drawLine(
+                {startX, startY + (int)y},         
+                {startX + width, startY + (int)y}, 
+                color
+            );
+        }
+
+
+        NbColor nodeBgColor     = {50, 50, 50};  // Dark gray node background
+        NbColor nodeBorderColor = {0, 120, 215}; // Blue border
+
+        for (const auto& node : canvas->getNodes())
+        {
+            const NbRect<int>& nodeRect = node->getRect();
+
+            // Map the node's local coordinates relative to the canvas position
+            NbRect<int> absoluteNodeRect = {
+                nodeRect.x,
+                nodeRect.y,
+                nodeRect.width,
+                nodeRect.height
+            };
+
+            // Draw node background
+            renderTarget->fillRectangle(absoluteNodeRect, nodeBgColor);
+
+            // Draw node border
+            renderTarget->drawRectangle(absoluteNodeRect, nodeBorderColor);
+
+            // (Optional) Draw node text/title here if your render target supports it
+        }
+
+
+    }
+
+    void Direct2dWidgetRenderer::renderLabel(
+    IWidget*                      widget,
+    const NNsLayout::LayoutStyle& layoutStyle
     )
     {
         Label*             label      = castWidget<Label>(widget);
@@ -978,10 +1049,47 @@ namespace Renderer
         contentRect.y += (layoutStyle.border.width.top + layoutStyle.padding.top);
         contentRect.width -=
             (layoutStyle.border.width.left + layoutStyle.border.width.right +
-             layoutStyle.padding.left + layoutStyle.padding.right);
+            layoutStyle.padding.left + layoutStyle.padding.right);
         contentRect.height -=
             (layoutStyle.border.width.top + layoutStyle.border.width.bottom +
-             layoutStyle.padding.top + layoutStyle.padding.bottom);
+            layoutStyle.padding.top + layoutStyle.padding.bottom);
+
+        int gapX = static_cast<int>(style.alignment.gap);
+        int gapY = static_cast<int>(0); // curently not availiable
+
+        switch (style.alignment.textAlignment)
+        {
+            case TextAlignment::LEFT: 
+                contentRect.x += gapX;
+                contentRect.width -= gapX;
+                break;
+            case TextAlignment::RIGHT: 
+                contentRect.width -= gapX;
+                break;
+            case TextAlignment::CENTER:
+                contentRect.x += gapX;
+                contentRect.width -= (gapX * 2);
+                break;
+            default:
+                break;
+        }
+
+        switch (style.alignment.paragraphAlignment)
+        {
+            case ParagraphAlignment::TOP: 
+                contentRect.y += gapY;
+                contentRect.height -= gapY;
+                break;
+            case ParagraphAlignment::BOTTOM: 
+                contentRect.height -= gapY;
+                break;
+            case ParagraphAlignment::CENTER:
+                contentRect.y += gapY;
+                contentRect.height -= (gapY * 2);
+                break;
+            default:
+                break;
+        }
 
         if (contentRect.width <= 0 || contentRect.height <= 0)
         {

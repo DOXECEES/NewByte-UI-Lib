@@ -24,6 +24,7 @@ namespace Win32Window
         if (setOwnDC)
         {
             wc.style = CS_OWNDC;
+            isRenderable =false;
         }
         else
         {

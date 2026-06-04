@@ -98,21 +98,23 @@ namespace Win32Window
 
         const NbWindowHandle &getHandle() const noexcept { return handle; };
 
-        void addCaption() noexcept;
+        void addCaption() noexcept override;
         void setRenderable(bool flag) noexcept;
 		bool getIsRenderable() const noexcept { return isRenderable; };
-        void setSize(const NbSize<int>& newSize)
+        void setSize(const NbSize<int>& newSize) noexcept override
         {
             state.setSize(newSize);
             SetWindowPos(handle.as<HWND>(), nullptr, 0, 0, state.size.width, state.size.height, SWP_NOMOVE | SWP_NOOWNERZORDER) ;
         }
 
-        void setPosition(const NbPoint<int>& point)
+        void setPosition(const NbPoint<int>& point) noexcept override
         {
             SetWindowPos(
                 handle.as<HWND>(), nullptr, point.x, point.y, 0, 0,
                 SWP_NOSIZE | SWP_NOOWNERZORDER
             );
+
+            state.position = point;
         }
 
         inline static Widgets::IWidget* focusedWidget = nullptr; // only one widget can have focus
@@ -174,8 +176,6 @@ namespace Win32Window
         }
 
     public:
-        Signal<void(const NbSize<int>&)> onSizeChanged;
-        Signal<void()> onDraw;
         
         std::function<void(const std::filesystem::path&)> onFileDrop;
         NbPoint<int> prevMousePoint = {-1, -1};

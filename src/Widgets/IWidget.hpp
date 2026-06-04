@@ -60,7 +60,7 @@ namespace Widgets
         IWidget(const NbRect<int>& rect, const uint16_t zIndexOrder = 0) 
             : rect(rect)
             , zIndex(Core::ZIndex::ZType::WIDGET, zIndexOrder) {}
-        virtual ~IWidget() = default;
+        virtual ~IWidget();
         
         
         virtual void onClick(); 

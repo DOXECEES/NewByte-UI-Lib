@@ -207,10 +207,21 @@ namespace Widgets
 
         buildUuidMap();
 
+        std::unordered_map<nbstl::Uuid, NodeState> newNodeStates;
         for (const auto& [uuid, value] : uuidMap)
         {
-            nodeStates.try_emplace(uuid, false, false);
+            auto it = nodeStates.find(uuid);
+            if (it != nodeStates.end())
+            {
+                newNodeStates[uuid] = it->second;
+            }
+            else
+            {
+                newNodeStates.try_emplace(uuid, false, false);
+            }
         }
+
+        nodeStates = std::move(newNodeStates);
 
         rebuildVisibleList();
     }

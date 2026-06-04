@@ -27,6 +27,7 @@ namespace Widgets
         {
             disableHoverState(true);
 
+            // Подготовка фильтров расширений
             for (auto& ext : m_allowedExtensions)
             {
                 if (!ext.empty() && ext[0] != '.')
@@ -47,6 +48,7 @@ namespace Widgets
             addChildrenWidget(openButton);
             addChildrenWidget(cancelButton);
 
+            // Кнопка "Вверх"
             subscribe(
                 *upButton, &Widgets::IWidget::onReleasedSignal,
                 [this]()
@@ -59,34 +61,38 @@ namespace Widgets
                 }
             );
 
+            // Выбор в списке (Клик по элементу)
             subscribe(
                 *fileListView, &Widgets::ListView::onItemSelectedSignal,
                 [this](int index)
                 {
                     std::string rawName = fileListView->getItemText(index);
 
+                    // Ищем первый пробел после иконки (📁 или 📄)
                     size_t spacePos = rawName.find(' ');
                     if (spacePos == std::string::npos)
                     {
                         return;
                     }
 
-                    std::string cleanName = rawName.substr(spacePos + 1);
-
+                    std::string           cleanName = rawName.substr(spacePos + 1);
                     std::filesystem::path fullPath =
                         std::filesystem::path(m_currentPath) / cleanName;
 
                     if (std::filesystem::is_directory(fullPath))
                     {
+                        // Мгновенный переход при выборе папки в списке
                         refreshDirectory(fullPath.string());
                     }
                     else
                     {
+                        // Просто подставляем имя файла в поле ввода
                         fileNameTextBox->setData(Utils::toWstring(cleanName));
                     }
                 }
             );
 
+            // Кнопка Select (Подтверждение)
             subscribe(
                 *openButton, &Widgets::IWidget::onReleasedSignal,
                 [this]()
@@ -97,24 +103,24 @@ namespace Widgets
                         return;
                     }
 
-
                     std::filesystem::path finalPath =
                         std::filesystem::path(m_currentPath) / wFileName;
 
-                    if (std::filesystem::exists(finalPath))
+                    // Если в поле ввода указана существующая папка — заходим в неё
+                    if (std::filesystem::exists(finalPath) &&
+                        std::filesystem::is_directory(finalPath))
                     {
-                        if (!std::filesystem::is_directory(finalPath))
-                        {
-                            onFileSelected.emit(finalPath.string());
-                        }
-                        else
-                        {
-                            refreshDirectory(finalPath.string());
-                        }
+                        refreshDirectory(finalPath.string());
+                    }
+                    else
+                    {
+                        // Если это файл (существующий или новый) — возвращаем путь
+                        onFileSelected.emit(finalPath.string());
                     }
                 }
             );
 
+            // Кнопка Cancel
             subscribe(
                 *cancelButton, &Widgets::IWidget::onReleasedSignal,
                 [this]()
@@ -130,7 +136,6 @@ namespace Widgets
         {
             return CLASS_NAME;
         }
-
         bool hitTest(const NbPoint<int>& pos) override
         {
             return rect.isInside(pos);
@@ -145,22 +150,23 @@ namespace Widgets
             {
                 fileListView->onMouseWheel(pos, delta);
             }
-
         }
 
         void refreshDirectory(const std::string& path)
         {
-            m_currentPath = path;
-            pathTextBox->setData(Utils::toWstring(path));
-            fileListView->clear();
-            fileNameTextBox->setData(L"");
-
             try
             {
+                std::filesystem::path fsPath(path);
+                m_currentPath = std::filesystem::absolute(fsPath).string();
+
+                pathTextBox->setData(Utils::toWstring(m_currentPath));
+                fileListView->clear();
+                fileNameTextBox->setData(L"");
+
                 std::vector<std::filesystem::directory_entry> dirs;
                 std::vector<std::filesystem::directory_entry> files;
 
-                for (const auto& entry : std::filesystem::directory_iterator(path))
+                for (const auto& entry : std::filesystem::directory_iterator(m_currentPath))
                 {
                     if (entry.is_directory())
                     {
@@ -176,11 +182,9 @@ namespace Widgets
                         {
                             std::string ext = entry.path().extension().string();
                             std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-
-                            auto it = std::find(
-                                m_allowedExtensions.begin(), m_allowedExtensions.end(), ext
-                            );
-                            if (it != m_allowedExtensions.end())
+                            if (std::find(
+                                    m_allowedExtensions.begin(), m_allowedExtensions.end(), ext
+                                ) != m_allowedExtensions.end())
                             {
                                 files.push_back(entry);
                             }
@@ -210,51 +214,7 @@ namespace Widgets
             }
         }
 
-        const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
-        {
-            measuredSize.width  = std::clamp(500, 0, maxSize.width);
-            measuredSize.height = std::clamp(600, 0, maxSize.height);
-            return measuredSize;
-        }
-
-        void layout(const NbRect<int>& rect) noexcept override
-        {
-            setRect(rect);
-
-            const int p          = 12; 
-            const int s          = 6;  
-            const int topH       = 32;
-            const int bottomH    = 34;
-            const int upBtnW     = 65;
-            const int actionBtnW = 90;
-
-            NbRect<int> upBtnRect = {rect.x + rect.width - p - upBtnW, rect.y + p, upBtnW, topH};
-            NbRect<int> pathRect  = {rect.x + p, rect.y + p, rect.width - p * 2 - upBtnW - s, topH};
-
-            int bottomY = rect.y + rect.height - p - bottomH;
-
-            NbRect<int> cancelBtnRect = {
-                rect.x + rect.width - p - actionBtnW, bottomY, actionBtnW, bottomH
-            };
-            NbRect<int> openBtnRect = {
-                cancelBtnRect.x - s - actionBtnW, bottomY, actionBtnW, bottomH
-            };
-            NbRect<int> fileNameRect = {
-                rect.x + p, bottomY, openBtnRect.x - rect.x - p - s, bottomH
-            };
-
-            int         listY    = pathRect.y + pathRect.height + s;
-            int         listH    = fileNameRect.y - listY - s;
-            NbRect<int> listRect = {rect.x + p, listY, rect.width - p * 2, listH};
-
-            pathTextBox->layout(pathRect);
-            upButton->layout(upBtnRect);
-            fileListView->layout(listRect);
-            fileNameTextBox->layout(fileNameRect);
-            openButton->layout(openBtnRect);
-            cancelButton->layout(cancelBtnRect);
-        }
-
+        // --- Геттеры для рендерера ---
         std::shared_ptr<TextEdit> getPathTextBox() const
         {
             return pathTextBox;
@@ -279,10 +239,40 @@ namespace Widgets
         {
             return cancelButton;
         }
-
         const std::string& getCurrentPath() const
         {
             return m_currentPath;
+        }
+
+        const NbSize<int>& measure(const NbSize<int>& maxSize) noexcept override
+        {
+            m_measuredSize.width  = std::clamp(500, 0, maxSize.width);
+            m_measuredSize.height = std::clamp(600, 0, maxSize.height);
+            return m_measuredSize;
+        }
+
+        void layout(const NbRect<int>& rect) noexcept override
+        {
+            setRect(rect);
+            const int p = 12, s = 6, topH = 32, bottomH = 34, upBtnW = 65, actionBtnW = 90;
+
+            pathTextBox->layout({rect.x + p, rect.y + p, rect.width - p * 2 - upBtnW - s, topH});
+            upButton->layout({rect.x + rect.width - p - upBtnW, rect.y + p, upBtnW, topH});
+
+            int bottomY = rect.y + rect.height - p - bottomH;
+            cancelButton->layout(
+                {rect.x + rect.width - p - actionBtnW, bottomY, actionBtnW, bottomH}
+            );
+            openButton->layout(
+                {cancelButton->getRect().x - s - actionBtnW, bottomY, actionBtnW, bottomH}
+            );
+            fileNameTextBox->layout(
+                {rect.x + p, bottomY, openButton->getRect().x - p - s, bottomH}
+            );
+
+            int listY = pathTextBox->getRect().y + topH + s;
+            int listH = fileNameTextBox->getRect().y - listY - s;
+            fileListView->layout({rect.x + p, listY, rect.width - p * 2, listH});
         }
 
     public:
@@ -301,5 +291,4 @@ namespace Widgets
         std::shared_ptr<Button>   openButton      = std::make_shared<Button>();
         std::shared_ptr<Button>   cancelButton    = std::make_shared<Button>();
     };
-
 } // namespace Widgets

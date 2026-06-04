@@ -24,6 +24,7 @@
 #include "Widgets/FilePicker.hpp"
 #include "Widgets/TextureWidget.hpp"
 #include "Widgets/Spacer.hpp"
+#include "Widgets/ShaderCanvas.hpp"
 
 #include "Direct2dGlobalWidgetMapper.hpp"
 
@@ -122,6 +123,10 @@ namespace Renderer
         else if (strncmp(widgetName, Spacer::CLASS_NAME, size) == 0)
         {
             renderSpacer(widget, layoutStyle);
+        }
+        else if (strncmp(widgetName, ShaderCanvas::CLASS_NAME, size) == 0)
+        {
+            renderShaderCanvas(widget, layoutStyle);
         }
     }
 
@@ -933,9 +938,75 @@ namespace Renderer
         renderTarget->fillRectangle(widgetRect, bgColor);
     }
 
-    void Direct2dWidgetRenderer::renderLabel(
+    void Direct2dWidgetRenderer::renderShaderCanvas(
         IWidget*                      widget,
         const NNsLayout::LayoutStyle& layoutStyle
+    ) noexcept
+    {
+        ShaderCanvas*      canvas     = castWidget<ShaderCanvas>(widget);
+        const NbRect<int>& widgetRect = canvas->getRect();
+
+        NbColor color = {255, 255, 255};
+
+        // Convert widget boundaries to floats for precision
+        const int startX = static_cast<int>(widgetRect.x);
+        const int startY = static_cast<int>(widgetRect.y);
+        const int width  = static_cast<int>(widgetRect.width);
+        const int height = static_cast<int>(widgetRect.height);
+
+        const float spacing = 25.0f;
+
+        const float offset = 0.5f;
+
+        for (float x = offset; x < width; x += spacing)
+        {
+            renderTarget->drawLine(
+                {startX + (int)x, startY},         
+                {startX + (int)x, startY + height}, 
+                color
+            );
+        }
+
+        for (float y = offset; y < height; y += spacing)
+        {
+            renderTarget->drawLine(
+                {startX, startY + (int)y},         
+                {startX + width, startY + (int)y}, 
+                color
+            );
+        }
+
+
+        NbColor nodeBgColor     = {50, 50, 50};  // Dark gray node background
+        NbColor nodeBorderColor = {0, 120, 215}; // Blue border
+
+        for (const auto& node : canvas->getNodes())
+        {
+            const NbRect<int>& nodeRect = node->getRect();
+
+            // Map the node's local coordinates relative to the canvas position
+            NbRect<int> absoluteNodeRect = {
+                nodeRect.x,
+                nodeRect.y,
+                nodeRect.width,
+                nodeRect.height
+            };
+
+            // Draw node background
+            renderTarget->fillRectangle(absoluteNodeRect, nodeBgColor);
+
+            // Draw node border
+            renderTarget->drawRectangle(absoluteNodeRect, nodeBorderColor);
+
+            // (Optional) Draw node text/title here if your render target supports it
+        }
+
+
+    }
+
+    void Direct2dWidgetRenderer::renderLabel(
+    IWidget*                      widget,
+    const NNsLayout::LayoutStyle& layoutStyle
     )
     {
         Label*             label      = castWidget<Label>(widget);
@@ -978,10 +1049,47 @@ namespace Renderer
         contentRect.y += (layoutStyle.border.width.top + layoutStyle.padding.top);
         contentRect.width -=
             (layoutStyle.border.width.left + layoutStyle.border.width.right +
-             layoutStyle.padding.left + layoutStyle.padding.right);
+            layoutStyle.padding.left + layoutStyle.padding.right);
         contentRect.height -=
             (layoutStyle.border.width.top + layoutStyle.border.width.bottom +
-             layoutStyle.padding.top + layoutStyle.padding.bottom);
+            layoutStyle.padding.top + layoutStyle.padding.bottom);
+
+        int gapX = static_cast<int>(style.alignment.gap);
+        int gapY = static_cast<int>(0); // curently not availiable
+
+        switch (style.alignment.textAlignment)
+        {
+            case TextAlignment::LEFT: 
+                contentRect.x += gapX;
+                contentRect.width -= gapX;
+                break;
+            case TextAlignment::RIGHT: 
+                contentRect.width -= gapX;
+                break;
+            case TextAlignment::CENTER:
+                contentRect.x += gapX;
+                contentRect.width -= (gapX * 2);
+                break;
+            default:
+                break;
+        }
+
+        switch (style.alignment.paragraphAlignment)
+        {
+            case ParagraphAlignment::TOP: 
+                contentRect.y += gapY;
+                contentRect.height -= gapY;
+                break;
+            case ParagraphAlignment::BOTTOM: 
+                contentRect.height -= gapY;
+                break;
+            case ParagraphAlignment::CENTER:
+                contentRect.y += gapY;
+                contentRect.height -= (gapY * 2);
+                break;
+            default:
+                break;
+        }
 
         if (contentRect.width <= 0 || contentRect.height <= 0)
         {
@@ -1288,12 +1396,44 @@ namespace Renderer
         imgRect.width -= 4;
         imgRect.height -= 4;
 
-        auto bitmap = bitmapCache.get(
-            std::wstring(
-                L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\res\\"
-            ) +
-            thumbnail->getName()
+        std::wstring path;
+
+        if (thumbnail->getAssetType() == AssetType::TEXTURE)
+        {
+            path =
+                std::wstring(
+                    L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\res\\"
+                ) +
+                thumbnail->getName();
+        }
+        else if (thumbnail->getAssetType() == AssetType::SCRIPT)
+        {
+            path = std::wstring(
+                L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\internal\\script_icon.png"
+            );
+        }
+        else if (thumbnail->getAssetType() == AssetType::SHADER)
+        {
+            path = std::wstring(
+                L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-"
+                L"Debug\\SDK\\Assets\\internal\\shader_icon.png"
+            );
+        }
+        else if (thumbnail->getAssetType() == AssetType::MATERIAL)
+        {
+            std::wstring pathToResource = thumbnail->getFullPath();
+            std::replace(pathToResource.begin(), pathToResource.end(), '\\', '_');
+
+
+            path = L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-"
+                   L"Debug\\SDK\\Assets\\cache\\" +
+                   pathToResource + L".png";
+           
+        }
+        
+        auto bitmap = bitmapCache.get(path
         );
+
         if (bitmap)
         {
             renderTarget->drawBitmap(imgRect, bitmap.Get());
@@ -1352,13 +1492,15 @@ namespace Renderer
 
         renderTarget->fillRectangle(pRect, matColor);
 
-        std::filesystem::path path = matWidget->getNameLabel()->getText();
-        path.replace_extension(".png");
+        std::filesystem::path path = matWidget->getFullPath();
+        //path.replace_extension(".png");
+        std::wstring stringPath = path.wstring();
+        std::replace(stringPath.begin(), stringPath.end(), '/', '_');
         auto bitmap = bitmapCache.get(
             std::wstring(
                 L"C:\\Repos\\Engine\\NewByte-Engine\\out\\build\\x64-Debug\\SDK\\Assets\\cache\\"
             ) +
-            path.wstring()
+            stringPath + L".png"
         );
 
         if (bitmap)
@@ -1399,9 +1541,12 @@ namespace Renderer
 
         const NbRect<int>& rect = picker->getRect();
 
-        NbColor bgColor = NbColor(40, 40, 40); 
+        // 1. Фон всего окна (используем цвет темы или фиксированный темный)
+        NbColor bgColor = NbColor(40, 40, 40); // Чуть светлее для контраста с ListView
         renderTarget->fillRectangle(rect, bgColor);
 
+        // 2. Делегируем рендер стандартных дочерних элементов
+        // Мы просто вызываем существующие функции рендера для каждого компонента
         if (auto pathBox = picker->getPathTextBox())
         {
             renderTextEdit(pathBox.get(), layoutStyle);
@@ -1427,12 +1572,14 @@ namespace Renderer
             renderButton(cancelBtn.get(), layoutStyle);
         }
 
+        // 3. Рендерим ListView (С кастомным стилем для проводника)
         if (auto listView = picker->getFileListView())
         {
             const NbRect<int>& lvRect = listView->getRect();
 
+            // Фон зоны списка (более темный, как в VS Code или проводнике)
             renderTarget->fillRectangle(lvRect, NbColor(25, 25, 25));
-            renderTarget->drawRectangle(lvRect, NbColor(60, 60, 60)); 
+            renderTarget->drawRectangle(lvRect, NbColor(60, 60, 60)); // Тонкая рамка
 
             size_t count       = listView->getCount();
             int    itemHeight  = ListView::HEIGHT_OF_ITEM_IN_PIXEL;
@@ -1453,24 +1600,30 @@ namespace Renderer
 
                 NbRect<int> itemRect = {lvRect.x, itemY, lvRect.width, itemHeight};
 
+                // Состояния подсветки
                 if (selectedIdx.has_value() && selectedIdx.value() == i)
                 {
+                    // Синий акцент для выбранного
                     renderTarget->fillRectangle(itemRect, NbColor(38, 79, 120));
                 }
                 else if (lastHovered == (int)i)
                 {
+                    // Легкая подсветка при наведении
                     renderTarget->fillRectangle(itemRect, NbColor(255, 255, 255, 15));
                 }
 
+                // Отрисовка текста (Иконка + Имя)
                 std::string text     = listView->getItemText(i);
                 NbRect<int> textRect = {
                     itemRect.x + 8, itemRect.y, itemRect.width - 16, itemRect.height
                 };
 
+                // Если текст начинается с папки, можно покрасить его в другой цвет
                 NbColor itemTextColor = NbColor(220, 220, 220);
                 if (text.find("📁") != std::string::npos)
                 {
-                    itemTextColor = NbColor(240, 200, 100); 
+                    itemTextColor = NbColor(240, 200, 100); // Желтоватый для папок
+                }
 
                 renderTarget->drawText(
                     Utils::toWstring(text),
@@ -1480,6 +1633,9 @@ namespace Renderer
                     
                 );
 
+                // Разделительная линия (опционально, делает список чище)
+                // renderTarget->drawLine({lvRect.x, itemY + itemHeight}, {lvRect.x + lvRect.width,
+                // itemY + itemHeight}, NbColor(40,40,40));
             }
 
             renderTarget->popClip();

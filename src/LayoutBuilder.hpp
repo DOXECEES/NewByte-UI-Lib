@@ -6,11 +6,15 @@
 #include <string>
 #include <memory>
 #include <functional>
+#include <filesystem>
+
+#include <Alghorithm.hpp>
 
 #include "Widgets/WidgetStyle.hpp"
 #include "Widgets/Indentations.hpp"
 #include "Widgets/Menu.hpp"
 #include "Layout/LayoutNode.hpp"
+#include "Layout/LayoutWidget.hpp"
 #include "Signal.hpp"
 
 #include "Renderer/TextAlignment.hpp"
@@ -19,6 +23,7 @@ namespace Widgets
 {
     class IWidget;
     enum class TextAlign;
+    enum class AssetType;
 }
 
 namespace nb
@@ -32,7 +37,6 @@ namespace NNsLayout
 }
 
 
-// В LayoutBuilder.hpp (уточненная версия)
 namespace NNsLayout
 {
     class CollapsibleLayout : public VLayout
@@ -136,6 +140,83 @@ namespace NNsLayout
 
 } // namespace NNsLayout
 
+namespace Widgets
+{
+    class ScrollArea : public IWidget
+    {
+    public:
+        ScrollArea()
+            : IWidget(
+                  {0,
+                   0,
+                   0,
+                   0}
+              )
+        {
+        }
+
+        void setManagedLayout(NNsLayout::VLayout* l)
+        {
+            m_layout = l;
+        }
+
+        const char* getClassName() const override
+        {
+            return "ScrollArea";
+        }
+
+
+        const NbSize<int>& measure(const NbSize<int>& available) noexcept override
+        {
+            if (m_layout)
+            {
+                m_layout->measure({available.width, 100000});
+            }
+            measuredSize = available;
+            return measuredSize;
+        }
+
+        void layout(const NbRect<int>& rect) noexcept override
+        {
+            this->setRect(rect); 
+
+            if (m_layout)
+            {
+                m_layout->layout(rect);
+            }
+        }
+
+
+        bool hitTest(const NbPoint<int>& pos) override
+        {
+            return false;
+        }
+
+        void onMouseWheel(
+            const NbPoint<int>& pos,
+            int                 delta
+        ) override
+        {
+            if (m_layout)
+            {
+                int contentHeight = m_layout->getMeasuredSize().height;
+                int viewHeight    = rect.height; 
+                int maxScroll     = (std::max)(0, contentHeight - viewHeight);
+
+                int scrollAmount = (delta / 120) * 40;
+                int newOffset =
+                    (nbstl::clamp)(m_layout->getScrollOffset() - scrollAmount, 0, maxScroll);
+
+                m_layout->setScrollOffset(newOffset);
+                m_layout->markDirty();
+            }
+        }
+
+    private:
+        NNsLayout::VLayout* m_layout = nullptr;
+    };
+} // namespace Widgets
+
 namespace nbui
 {
     class LayoutBuilder
@@ -167,6 +248,30 @@ namespace nbui
             return b;
         }
 
+        static LayoutBuilder scrollBox()
+        {
+            auto scrollWidget = new Widgets::ScrollArea();
+
+            auto vLayout = std::make_unique<NNsLayout::VLayout>();
+            scrollWidget->setManagedLayout(vLayout.get());
+
+            auto widgetNode = std::make_unique<NNsLayout::LayoutWidget>(scrollWidget);
+
+            auto* vLayoutPtr = vLayout.get();
+            widgetNode->addChild(std::move(vLayout));
+
+            LayoutBuilder b;
+            b.node = std::move(widgetNode);
+            b.currentNode = vLayoutPtr;
+            b.currentNode->style.widthSizeType  = NNsLayout::SizeType::RELATIVE;
+            b.currentNode->style.width          = 1.0f;
+            b.currentNode->style.heightSizeType = NNsLayout::SizeType::RELATIVE;
+            b.currentNode->style.height         = 1.0f;
+
+            return b;
+        }
+
+
         static LayoutBuilder widget(Widgets::IWidget* w);
         static LayoutBuilder label(const std::wstring& text);
         static LayoutBuilder hBox();
@@ -185,7 +290,12 @@ namespace nbui
 
         LayoutBuilder&& endGroup() &&;
         
-        static LayoutBuilder thumbnail(const std::wstring& name, const std::wstring& type);
+        static LayoutBuilder thumbnail(
+            const std::wstring&          name,
+            const std::wstring&          type,
+            Widgets::AssetType           assetType,
+            const std::filesystem::path& path
+        );
         static LayoutBuilder treeView();
 
         LayoutBuilder&& child(LayoutBuilder&& childBuilder)&&;

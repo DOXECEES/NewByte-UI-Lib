@@ -113,6 +113,11 @@ namespace Widgets
 
     void TextEdit::setData(const std::wstring& data) noexcept
     {
+        if (this->data == data)
+        {
+            return; 
+        }
+
         this->data = data;
         caretPosition = data.length();  
         isDataChanged = true;

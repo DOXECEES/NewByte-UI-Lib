@@ -105,6 +105,11 @@ namespace Renderer
             const NNsLayout::LayoutStyle& layoutStyle
         ) noexcept;
 
+         
+        void renderShaderCanvas(
+            IWidget*                      widget,
+            const NNsLayout::LayoutStyle& layoutStyle
+        ) noexcept;
 
         
 

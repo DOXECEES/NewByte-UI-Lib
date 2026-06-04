@@ -20,7 +20,7 @@ namespace nbui
         static Widgets::IWidget* getCapturedWidget() noexcept;
 
         static void onMouseMove(const MouseState& pos) noexcept;
-
+        
         static void capturePressedWidget(Widgets::IWidget* widget) noexcept;
         static void releasePressedWidget() noexcept;
         static Widgets::IWidget* getPressedWidget() noexcept;

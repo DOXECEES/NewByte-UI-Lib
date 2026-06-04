@@ -246,6 +246,15 @@ namespace Widgets
                     stepDown();
                 }
             );
+
+            input->onTextChanged.connect(
+                [this]()
+                {
+                    
+                    applyTextValue();
+                }
+            );
+
         }
 
         void stepUp()
@@ -345,7 +354,28 @@ namespace Widgets
             {
                 std::wstringstream ss;
                 ss << std::fixed << std::setprecision(precision) << v;
-                return ss.str();
+                std::wstring str = ss.str();
+
+                // Проверяем, есть ли точка (чтобы не испортить целые числа)
+                if (str.find(L'.') != std::wstring::npos)
+                {
+                    // 1. Находим позицию последнего символа, который НЕ '0'
+                    size_t lastNotZero = str.find_last_not_of(L'0');
+
+                    if (lastNotZero != std::wstring::npos)
+                    {
+                        // Удаляем всё после этого символа
+                        str.erase(lastNotZero + 1);
+                    }
+
+                    if (!str.empty() && str.back() == L'.')
+                    {
+                        str.pop_back();
+                    }
+                }
+
+                // 3. Если вдруг строка стала пустой (теоретически), вернем хотя бы "0"
+                return str.empty() ? L"0" : str;
             }
             else
             {

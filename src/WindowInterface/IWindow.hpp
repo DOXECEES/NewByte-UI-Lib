@@ -18,6 +18,7 @@
 #include "Layout/LayoutNode.hpp"
 #include "PopupMenu.hpp"
 
+#include <cassert>
 
 namespace WindowInterface
 {
@@ -44,6 +45,7 @@ namespace WindowInterface
 
         virtual void onMouseWheel(int delta) {};
 
+        virtual void addCaption() noexcept {};
 
         const NbWindowHandle &getHandle() const noexcept { return handle; };
 
@@ -59,6 +61,10 @@ namespace WindowInterface
 
         const int getWidth() const noexcept { return state.clientSize.width; }
         const int getHeight() const noexcept { return state.clientSize.height; }
+
+        const NbPoint<int>& getPosition() const noexcept { return state.position; };
+        virtual void setPosition(const NbPoint<int>& pos) noexcept { assert(false, "not implemented"); }; 
+        virtual void setSize(const NbSize<int>& newSize) noexcept { assert(false, "not implemented");}
 
         const WindowStyle& getStyle() const noexcept { return style; };
         const NbRect<int> getClientRect() const noexcept { return state.clientRect; };
@@ -89,6 +95,8 @@ namespace WindowInterface
 
         Signal<void()> onClose;
         Signal<void(NbPoint<float>&)> onMouseMove;
+        Signal<void(const NbSize<int>&)> onSizeChanged;
+        Signal<void()> onDraw;
 
         void attachMenuToWidget(
             Widgets::IWidget* widget,

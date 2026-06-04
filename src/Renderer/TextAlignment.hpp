@@ -22,6 +22,7 @@ struct TextFormatAlignment
 {
     TextAlignment textAlignment = TextAlignment::CENTER;
     ParagraphAlignment paragraphAlignment = ParagraphAlignment::CENTER;
+    int gap = 0;
 };
 
 

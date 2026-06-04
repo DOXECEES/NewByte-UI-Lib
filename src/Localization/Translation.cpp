@@ -26,39 +26,64 @@ namespace Localization
         bufferStream << file.rdbuf();
         std::string buffer = bufferStream.str();
 
-        // Убираем BOM если есть
-        if (buffer.size() >= 3 &&
-            static_cast<unsigned char>(buffer[0]) == 0xEF &&
+        if (buffer.size() >= 3 && static_cast<unsigned char>(buffer[0]) == 0xEF &&
             static_cast<unsigned char>(buffer[1]) == 0xBB &&
             static_cast<unsigned char>(buffer[2]) == 0xBF)
         {
             buffer.erase(0, 3);
         }
 
-        size_t pos = 0;
+        size_t pos       = 0;
         size_t lineStart = 0;
 
         while (pos <= buffer.size())
         {
-            if (pos == buffer.size() || buffer[pos] == '\n')
+            if (pos == buffer.size() || buffer[pos] == '\n' || buffer[pos] == '\r')
             {
-                std::string line(buffer.begin() + lineStart, buffer.begin() + pos);
-                lineStart = pos + 1;
+                std::string line = buffer.substr(lineStart, pos - lineStart);
+                lineStart        = pos + 1;
                 pos++;
 
                 line = nbstl::trim(line);
 
-                size_t separatorPos = line.find(':');
-                translationTable[nbstl::trim(line.substr(0, separatorPos))] =
-                    nbstl::trim(line.substr(separatorPos + 1));
+                if (line.empty() || line[0] == '#')
+                {
+                    continue;
+                }
+
+                size_t separatorPos = std::string::npos;
+                for (size_t i = 0; i < line.size(); ++i)
+                {
+                    if (line[i] == ':')
+                    {
+                        bool prevIsColon = (i > 0 && line[i - 1] == ':');
+                        bool nextIsColon = (i + 1 < line.size() && line[i + 1] == ':');
+
+                        if (!prevIsColon && !nextIsColon)
+                        {
+                            separatorPos = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (separatorPos != std::string::npos)
+                {
+                    std::string key   = nbstl::trim(line.substr(0, separatorPos));
+                    std::string value = nbstl::trim(line.substr(separatorPos + 1));
+
+                    if (!key.empty())
+                    {
+                        translationTable[key] = value;
+                    }
+                }
             }
             else
             {
                 pos++;
             }
         }
-
-	}
+    }
 
     const std::string& Translation::fromKey(const std::string& key) noexcept
     {

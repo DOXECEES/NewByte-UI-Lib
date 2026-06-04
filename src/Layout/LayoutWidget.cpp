@@ -208,13 +208,11 @@ namespace NNsLayout
             content.height = 0;
         }
 
-        // layout внутреннего widget
         if (widget)
         {
             widget->layout(content);
         }
 
-        // layout детей (простая горизонтальная раскладка)
         if (!children.empty())
         {
             int currentX = content.x;
@@ -230,13 +228,11 @@ namespace NNsLayout
 
                 int finalChildWidth = childSize.width;
 
-                // RELATIVE должен быть от content.width (одна база с measure)
                 if (child->style.widthSizeType == SizeType::RELATIVE)
                 {
                     finalChildWidth = static_cast<int>(content.width * child->style.width);
                 }
 
-                // FLEX растягиваем в оставшееся место
                 if (child->style.widthSizeType == SizeType::FLEX)
                 {
                     finalChildWidth = (content.x + content.width) - currentX;
@@ -247,7 +243,6 @@ namespace NNsLayout
                     finalChildWidth = 0;
                 }
 
-                // height: если RELATIVE, считаем от content.height
                 int finalChildHeight = childSize.height;
 
                 if (child->style.heightSizeType == SizeType::RELATIVE)
